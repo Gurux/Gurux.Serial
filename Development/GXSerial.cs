@@ -912,6 +912,11 @@ namespace Gurux.Serial
             }
         }
 
+        public string ReadExisting()
+        {
+            return m_base.ReadExisting();
+        }
+
 		/// <summary>
 		/// Gets or sets a value indicating whether the Request to Send (RTS) signal is enabled during serial communication.
 		/// </summary>
@@ -1122,6 +1127,9 @@ namespace Gurux.Serial
 		/// <summary>
 		/// Opens a new serial port connection.
 		/// </summary>
+        /// <remarks>
+        /// Remember to set <see cref="DtrEnable "/> and <see cref="RtsEnable"/> to True before start communicate.
+        /// </remarks>
         public void Open()
         {
             Close();
@@ -1160,6 +1168,7 @@ namespace Gurux.Serial
                     m_ReceiverThread.Start();
                 }
                 NotifyMediaStateChange(MediaState.Open);
+                this.DtrEnable = this.RtsEnable = true;                
             }
             catch
             {

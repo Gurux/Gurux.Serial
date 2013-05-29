@@ -45,7 +45,7 @@ namespace Gurux.Serial
 	/// <summary>
 	/// Settings dialog.
 	/// </summary>
-    public partial class Settings : Form, Gurux.Common.IGXPropertyPage
+    partial class Settings : Form, Gurux.Common.IGXPropertyPage
     {
         GXSerial Target;
 		/// <summary>

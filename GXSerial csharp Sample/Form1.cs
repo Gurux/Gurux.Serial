@@ -142,7 +142,7 @@ namespace GXSerialSample
         /// Update UI when media state changes.
         /// </summary>
         /// <param name="sender"></param>
-        /// <param name="State"></param>
+        /// <param name="e"></param>
         private void gxSerial1_OnMediaStateChange(object sender, MediaStateEventArgs e)
         {
             try
@@ -263,6 +263,7 @@ namespace GXSerialSample
             try
             {
                 gxSerial1.Open();
+                gxSerial1.DtrEnable = gxSerial1.RtsEnable = true;
             }
             catch(Exception Ex)
             {
@@ -336,10 +337,10 @@ namespace GXSerialSample
                                 Eop = EOPText.Text,
                                 Count = Convert.ToInt32(MinSizeTB.Text)
                             };
-                            gxSerial1.Send(ASCIIEncoding.ASCII.GetBytes(SendText.Text));
+                            gxSerial1.Send(GXCommon.HexToBytes(SendText.Text, true));
                             if (gxSerial1.Receive(p))
                             {
-                                ReceivedText.Text = Convert.ToString(p.Reply);
+                                ReceivedText.Text = GXCommon.ToHex(p.Reply, true);
                             }
                         }                            
                     }
@@ -367,19 +368,12 @@ namespace GXSerialSample
                     if (HexCB.Checked)
                     {
                         // Sends data as byte array.
-                        gxSerial1.Send(ASCIIEncoding.ASCII.GetBytes(SendText.Text));
+                        gxSerial1.Send(GXCommon.HexToBytes(SendText.Text, true));
                     }
                     else
                     {
                         // Sends data as ASCII string.
-                        if (SendText.Text != "+++")
-                        {
-                            gxSerial1.Send(SendText.Text + "\r");
-                        }
-                        else
-                        {
-                            gxSerial1.Send(SendText.Text);
-                        }
+                        gxSerial1.Send(SendText.Text);
                     }
                 }
 			}

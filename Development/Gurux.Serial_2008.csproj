@@ -54,6 +54,7 @@
     <Compile Include="AvailableMediaSettings.cs" />
     <Compile Include="GXSerial.cs">
     </Compile>
+    <Compile Include="NamespaceDoc.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Resources.Designer.cs">
       <AutoGen>True</AutoGen>
