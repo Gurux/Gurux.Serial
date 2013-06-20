@@ -1167,8 +1167,8 @@ namespace Gurux.Serial
                     m_ReceiverThread.IsBackground = true;
                     m_ReceiverThread.Start();
                 }
-                NotifyMediaStateChange(MediaState.Open);
                 this.DtrEnable = this.RtsEnable = true;                
+                NotifyMediaStateChange(MediaState.Open);                
             }
             catch
             {
