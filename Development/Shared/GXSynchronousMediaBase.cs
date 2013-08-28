@@ -145,6 +145,13 @@ namespace Gurux.Shared
                     {
                         received = m_ReceivedEvent.WaitOne(waitTime);
                     }
+                    if (!received && args.Eop == null)
+                    {
+                        lock (m_ReceivedSync)
+                        {
+                            received = !(LastBuffSize == m_ReceivedSize || m_ReceivedSize < nMinSize);
+                        }
+                    }
                 }
                 if (this.Exception != null)
                 {

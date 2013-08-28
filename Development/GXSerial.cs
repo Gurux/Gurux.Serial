@@ -325,7 +325,7 @@ namespace Gurux.Serial
                     {
                         int totalCount = 0;
                         index = m_syncBase.m_ReceivedSize;
-                        while (this.IsOpen && (count = this.BytesToRead) != 0)
+                        while (m_base.IsOpen && (count = m_base.BytesToRead) != 0)
                         {
                             totalCount += count;                            
                             buff = new byte[count];                            
@@ -355,10 +355,10 @@ namespace Gurux.Serial
                         {
                             if (totalCount != 0 && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
                             {
-                                arg = new TraceEventArgs(TraceTypes.Received, m_syncBase.m_Received, 0, totalCount + 1);
-                            }
-                            m_syncBase.m_ReceivedEvent.Set();                            
+                                arg = new TraceEventArgs(TraceTypes.Received, m_syncBase.m_Received, index, totalCount + 1);
+                            }                            
                         }
+                        m_syncBase.m_ReceivedEvent.Set();
                     }
                     if (arg != null)
                     {
@@ -368,7 +368,7 @@ namespace Gurux.Serial
                 else if (this.m_OnReceived != null)
                 {
                     int totalCount = 0;
-                    while (this.IsOpen && (count = this.BytesToRead) != 0)
+                    while (m_base.IsOpen && (count = m_base.BytesToRead) != 0)
                     {
                         index = m_syncBase.m_ReceivedSize;
                         buff = new byte[count];
@@ -382,7 +382,7 @@ namespace Gurux.Serial
                             {
                                 foreach (object eop in (Array)Eop)
                                 {
-                                    totalCount = GXCommon.IndexOf(m_syncBase.m_Received, GXCommon.GetAsByteArray(Eop), index, m_syncBase.m_ReceivedSize);
+                                    totalCount = GXCommon.IndexOf(m_syncBase.m_Received, GXCommon.GetAsByteArray(eop), index, m_syncBase.m_ReceivedSize);
                                     if (totalCount != -1)
                                     {
                                         break;
