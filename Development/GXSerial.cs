@@ -418,14 +418,17 @@ namespace Gurux.Serial
             }
             catch (Exception ex)
             {
-                if (this.IsSynchronous)
+                if (m_base.IsOpen)
                 {
-                    m_syncBase.Exception = ex;
-                    m_syncBase.m_ReceivedEvent.Set();
-                }
-                else
-                {
-                    NotifyError(ex);
+                    if (this.IsSynchronous)
+                    {
+                        m_syncBase.Exception = ex;
+                        m_syncBase.m_ReceivedEvent.Set();
+                    }
+                    else
+                    {
+                        NotifyError(ex);
+                    }
                 }
             }
         }

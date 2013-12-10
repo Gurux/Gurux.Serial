@@ -72,14 +72,14 @@ namespace Gurux.Shared
                 Array.Copy(data, index, m_Received, m_ReceivedSize, count);
                 m_ReceivedSize += count - index;
             }
-        }       
+        }
 
         public bool Receive<T>(ReceiveParameters<T> args)
         {
-			if (args.Eop == null && args.Count == 0)
-			{
-				throw new ArgumentException("Either Count or Eop must be set.");
-			}
+            if (args.Eop == null && args.Count == 0)
+            {
+                throw new ArgumentException("Either Count or Eop must be set.");
+            }
             int nSize = 0;
             byte[] terminator = null;
             if (args.Eop != null)
@@ -107,19 +107,19 @@ namespace Gurux.Shared
             int nFound = -1;
             int LastBuffSize = 0;
             DateTime StartTime = DateTime.Now;
-			bool retValue = true;
+            bool retValue = true;
             do
             {
-				if (waitTime == 0)
-				{
-					//If we do not want to read all data.
-					if (!args.AllData)
-					{
-						return false;
-					}
-					retValue = false;
-					break;
-				}
+                if (waitTime == 0)
+                {
+                    //If we do not want to read all data.
+                    if (!args.AllData)
+                    {
+                        return false;
+                    }
+                    retValue = false;
+                    break;
+                }
                 if (waitTime != -1)
                 {
                     waitTime -= (int)(DateTime.Now - StartTime).TotalMilliseconds;
@@ -158,7 +158,7 @@ namespace Gurux.Shared
                     Exception ex = this.Exception;
                     this.Exception = null;
                     throw ex;
-                } 
+                }
                 //If timeout occured.
                 if (!received)
                 {
@@ -188,29 +188,37 @@ namespace Gurux.Shared
                         int index = m_LastPosition != 0 && m_LastPosition < m_ReceivedSize ? m_LastPosition : args.Count;
                         //If terminator found.
                         if (args.Eop is Array)
-                        {                            
+                        {
                             foreach (object it in args.Eop as Array)
                             {
-                                nFound = GXCommon.IndexOf(m_Received, GXCommon.GetAsByteArray(it), index, m_ReceivedSize);
+                                byte[] term = GXCommon.GetAsByteArray(it);
+                                if (term.Length != 1 && m_ReceivedSize - index < term.Length)
+                                {
+                                    index = m_ReceivedSize - term.Length;
+                                }
+                                nFound = GXCommon.IndexOf(m_Received, term, index, m_ReceivedSize);
                                 if (nFound != -1)
                                 {
                                     break;
                                 }
-                            }                            
+                            }
                         }
                         else
                         {
+                            if (terminator.Length != 1 && m_ReceivedSize - index < terminator.Length)
+                            {
+                                index = m_ReceivedSize - terminator.Length;
+                            }
                             nFound = GXCommon.IndexOf(m_Received, terminator, index, m_ReceivedSize);
                         }
                         m_LastPosition = m_ReceivedSize;
                         if (nFound != -1)
                         {
                             nFound += terminator.Length;
-                            //++nFound;
                         }
                     }
                 }
-            } 
+            }
             while (nFound == -1);
             if (nSize == 0) //If terminator is not given read only bytes that are needed.
             {
@@ -277,8 +285,8 @@ namespace Gurux.Shared
                     data = str;
                     args.Reply = (T)data;
                 }
-            }            
-			return retValue;
+            }
+            return retValue;
         }
     }
 }

@@ -65,7 +65,7 @@ namespace Gurux.Shared
             int h = 0;
             while(properties.Controls.Count != 0)
             {
-                Control ctr = properties.Controls[0];
+                Control ctr = properties.Controls[0];                
                 if (ctr is Panel)
                 {
                     if (ctr.Enabled)
@@ -80,7 +80,12 @@ namespace Gurux.Shared
                 }
                 ctr.Enabled = !open;
                 FormPanel.Controls.Add(ctr);
-            }            
+            }
+            this.LocationChanged += new EventHandler(PropertiesForm_LocationChanged);
+            properties.TopLevel = false;
+            properties.TopMost = false;
+            properties.FormBorderStyle = FormBorderStyle.None;            
+            this.Controls.Add(properties);
             if (h == 0)
             {
                 h = properties.Height;
@@ -88,6 +93,11 @@ namespace Gurux.Shared
             h += panel1.Height;
             //Set client size.
             this.ClientSize = new Size(properties.Width, h);
+        }
+
+        void PropertiesForm_LocationChanged(object sender, EventArgs e)
+        {
+            (Properties as Form).Location = this.Location;
         }
 
         private void OKBtn_Click(object sender, EventArgs e)
@@ -101,10 +111,8 @@ namespace Gurux.Shared
                 MessageBox.Show(ex.Message);
             }
         }
-
         private void PropertiesForm_Load(object sender, EventArgs e)
         {
-
         }
     }
 }
