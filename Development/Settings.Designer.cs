@@ -165,7 +165,7 @@
             // PortNameLbl
             // 
             this.PortNameLbl.AutoSize = true;
-            this.PortNameLbl.Location = new System.Drawing.Point(8, 8);
+            this.PortNameLbl.Location = new System.Drawing.Point(4, 8);
             this.PortNameLbl.Name = "PortNameLbl";
             this.PortNameLbl.Size = new System.Drawing.Size(26, 13);
             this.PortNameLbl.TabIndex = 12;

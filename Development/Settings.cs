@@ -39,6 +39,7 @@ using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using Gurux.Common;
+using Gurux.Serial.Properties;
 
 namespace Gurux.Serial
 {
@@ -99,14 +100,14 @@ namespace Gurux.Serial
         }
 
         void IGXPropertyPage.Initialize()
-        {
+        {            
             //Update texts.
-            this.Text = Gurux.Serial.Resources.SettingsTxt;
-            this.PortNameLbl.Text = Gurux.Serial.Resources.PortNameTxt;
-            this.BaudRateLbl.Text = Gurux.Serial.Resources.BaudRateTxt;
-            this.DataBitsLbl.Text = Gurux.Serial.Resources.DataBitsTxt;
-            this.ParityLbl.Text = Gurux.Serial.Resources.ParityTxt;
-            this.StopBitsLbl.Text = Gurux.Serial.Resources.StopBitsTxt;
+            this.Text = Resources.SettingsTxt;
+            this.PortNameLbl.Text = Resources.PortNameTxt;
+            this.BaudRateLbl.Text = Resources.BaudRateTxt;
+            this.DataBitsLbl.Text = Resources.DataBitsTxt;
+            this.ParityLbl.Text = Resources.ParityTxt;
+            this.StopBitsLbl.Text = Resources.StopBitsTxt;
             //Hide controls which user do not want to show.
             PortNamePanel.Enabled = (Target.ConfigurableSettings & AvailableMediaSettings.PortName) != 0;
             if (PortNamePanel.Enabled)

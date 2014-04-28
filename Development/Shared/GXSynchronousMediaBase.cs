@@ -75,8 +75,8 @@ namespace Gurux.Shared
         }
 
         public bool Receive<T>(ReceiveParameters<T> args)
-        {
-            if (args.Eop == null && args.Count == 0)
+        {            
+            if (args.Eop == null && args.Count == 0 && !args.AllData)
             {
                 throw new ArgumentException("Either Count or Eop must be set.");
             }
@@ -97,6 +97,10 @@ namespace Gurux.Shared
             }
 
             int nMinSize = (int)Math.Max(args.Count, nSize);
+            if (nMinSize == 0)
+            {
+                nMinSize = 1;
+            }
             int waitTime = args.WaitTime;
             if (waitTime <= 0)
             {

@@ -44,6 +44,7 @@ using System.Diagnostics;
 using System.IO.Ports;
 using System.Reflection;
 using System.Threading;
+using Gurux.Serial.Properties;
 
 namespace Gurux.Serial
 {
@@ -333,6 +334,11 @@ namespace Gurux.Serial
                             m_syncBase.AppendData(buff, 0, count);                                                        
                             m_BytesReceived += (uint)count;
                         }
+                        if (totalCount != 0 && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
+                        {
+                            arg = new TraceEventArgs(TraceTypes.Received, m_syncBase.m_Received, index, totalCount);
+                            m_OnTrace(this, arg);
+                        }
                         if (totalCount != 0 && Eop != null) //Search Eop if given.
                         {
                             if (Eop is Array)
@@ -353,16 +359,8 @@ namespace Gurux.Serial
                         }
                         if (totalCount != -1)
                         {
-                            if (totalCount != 0 && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
-                            {
-                                arg = new TraceEventArgs(TraceTypes.Received, m_syncBase.m_Received, index, totalCount + 1);
-                            }                            
-                        }
-                        m_syncBase.m_ReceivedEvent.Set();
-                    }
-                    if (arg != null)
-                    {
-                        m_OnTrace(this, arg);
+                            m_syncBase.m_ReceivedEvent.Set();
+                        }                        
                     }
                 }
                 else if (this.m_OnReceived != null)
@@ -374,7 +372,11 @@ namespace Gurux.Serial
                         buff = new byte[count];
                         totalCount += count;
                         m_base.Read(buff, 0, count);
-                        m_BytesReceived += (uint)count;                        
+                        m_BytesReceived += (uint)count;
+                        if (buff != null && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
+                        {
+                            m_OnTrace(this, new TraceEventArgs(TraceTypes.Received, buff));
+                        }
                         if (Eop != null) //Search Eop if given.
                         {                            
                             m_syncBase.AppendData(buff, 0, count);
@@ -399,19 +401,11 @@ namespace Gurux.Serial
                                 Array.Copy(m_syncBase.m_Received, buff, m_syncBase.m_ReceivedSize);
                                 m_syncBase.m_ReceivedSize = 0;
                                 m_OnReceived(this, new ReceiveEventArgs(buff, this.PortName));
-                                if (buff != null && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
-                                {
-                                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Received, buff, index, totalCount - index));
-                                }
                             }
                         }
                         else
                         {
                             m_OnReceived(this, new ReceiveEventArgs(buff, this.PortName));
-                            if (buff != null && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
-                            {
-                                m_OnTrace(this, new TraceEventArgs(TraceTypes.Received, buff));
-                            }
                         }
                     }
                 }
@@ -1075,7 +1069,7 @@ namespace Gurux.Serial
                         if (m_ReceiverThread != null && m_ReceiverThread.IsAlive)
                         {
                             m_ReceiverThread.Join();
-                        }                        
+                        }
                     }
                     catch
                     {
@@ -1154,14 +1148,26 @@ namespace Gurux.Serial
                     {
                         eop = Eop.ToString();
                     }
-                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, "Settings: Port: " + this.PortName + 
-                                " Baud Rate: " + BaudRate + " Data Bits: " + DataBits.ToString() + " Parity: " 
-                                + Parity.ToString() + " Stop Bits: " + StopBits.ToString() + " Eop:" + eop));
+                    string str = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}", 
+                        "Settings:",
+                        Resources.PortNameTxt,
+                        this.PortName,
+                        Resources.BaudRateTxt,
+                        BaudRate,
+                        Resources.DataBitsTxt,
+                        DataBits.ToString(),
+                        Resources.ParityTxt,
+                        Parity.ToString(),
+                        Resources.StopBitsTxt,
+                        StopBits.ToString(),
+                        "Eop",
+                        eop);
+                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, str));
                 }
-				lock(m_baseLock)
-				{
-                	m_base.Open();
-				}
+                lock (m_baseLock)
+                {
+                    m_base.Open();
+                }
                 //Events are not currently implemented in Mono's serial port.
                 if (Environment.OSVersion.Platform == PlatformID.Unix)
                 {
@@ -1323,7 +1329,6 @@ namespace Gurux.Serial
                 ((IGXMedia)this).ConfigurableSettings = (int)value;
             }
         }
-
 
         /// <inheritdoc cref="IGXMedia.Synchronous"/>
         public object Synchronous
@@ -1545,7 +1550,7 @@ namespace Gurux.Serial
         /// <seealso href="PropertiesDialog.html">Properties Dialog</seealso>
         public bool Properties(Form parent)
         {            
-            return new Gurux.Shared.PropertiesForm(this.PropertiesForm, Gurux.Serial.Resources.SettingsTxt, IsOpen).ShowDialog(parent) == DialogResult.OK;
+            return new Gurux.Shared.PropertiesForm(this.PropertiesForm, Resources.SettingsTxt, IsOpen).ShowDialog(parent) == DialogResult.OK;
         }
 
 		/// <summary>
@@ -1651,6 +1656,6 @@ namespace Gurux.Serial
             }            
         }
 
-        #endregion
+        #endregion       
     }
 }
