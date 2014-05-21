@@ -57,6 +57,7 @@ namespace Gurux.Shared
             Properties = (IGXPropertyPage)properties;
             InitializeComponent();
             Properties.Initialize();
+            this.Icon = System.Drawing.Icon.ExtractAssociatedIcon(GetType().Assembly.Location);
             this.OKBtn.Enabled = !open;
             this.Text = title;                                   
             this.OKBtn.Text = DialogResult.OK.ToString();

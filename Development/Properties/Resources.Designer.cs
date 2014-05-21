@@ -61,7 +61,7 @@ namespace Gurux.Serial.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Baud Rate.
+        ///   Looks up a localized string similar to Baud Rate:.
         /// </summary>
         internal static string BaudRateTxt {
             get {
@@ -70,7 +70,7 @@ namespace Gurux.Serial.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Data Bits.
+        ///   Looks up a localized string similar to Data Bits:.
         /// </summary>
         internal static string DataBitsTxt {
             get {
@@ -79,7 +79,16 @@ namespace Gurux.Serial.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Parity.
+        ///   Looks up a localized string similar to Eop:.
+        /// </summary>
+        internal static string EopTxt {
+            get {
+                return ResourceManager.GetString("EopTxt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Parity:.
         /// </summary>
         internal static string ParityTxt {
             get {
@@ -88,7 +97,7 @@ namespace Gurux.Serial.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Port Name.
+        ///   Looks up a localized string similar to Port Name:.
         /// </summary>
         internal static string PortNameTxt {
             get {
@@ -97,7 +106,7 @@ namespace Gurux.Serial.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Serial Port Settings.
+        ///   Looks up a localized string similar to Serial Port Settings:.
         /// </summary>
         internal static string SettingsTxt {
             get {
@@ -106,7 +115,7 @@ namespace Gurux.Serial.Properties {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Stop Bits.
+        ///   Looks up a localized string similar to Stop Bits:.
         /// </summary>
         internal static string StopBitsTxt {
             get {

@@ -123,6 +123,9 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Databitit:</value>
   </data>
+  <data name="EopTxt" xml:space="preserve">
+    <value>Eop:</value>
+  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Pariteetti:</value>
   </data>

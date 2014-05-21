@@ -72,7 +72,7 @@ namespace Gurux.Serial
                 }
                 else
                 {
-                    foreach (int it in GXSerial.GetAvailableBaudRates(PortNameCB.Text))
+                    foreach (int it in Target.GetAvailableBaudRates(PortNameCB.Text))
                     {
                         if (it == 0)
                         {
@@ -93,10 +93,22 @@ namespace Gurux.Serial
         void IGXPropertyPage.Apply()
         {
             Target.PortName = this.PortNameCB.Text;
-            Target.BaudRate = Convert.ToInt32(this.BaudRateCB.Text);
-            Target.DataBits = Convert.ToInt32(this.DataBitsCB.Text);
-            Target.Parity = (System.IO.Ports.Parity)this.ParityCB.SelectedItem;
-            Target.StopBits = (System.IO.Ports.StopBits)this.StopBitsCB.SelectedItem;
+            if (this.BaudRateCB.Enabled)
+            {
+                Target.BaudRate = Convert.ToInt32(this.BaudRateCB.Text);
+            }
+            if (this.DataBitsCB.Enabled)
+            {
+                Target.DataBits = Convert.ToInt32(this.DataBitsCB.Text);
+            }
+            if (this.ParityCB.Enabled)
+            {
+                Target.Parity = (System.IO.Ports.Parity)this.ParityCB.SelectedItem;
+            }
+            if (this.StopBitsCB.Enabled)
+            {
+                Target.StopBits = (System.IO.Ports.StopBits)this.StopBitsCB.SelectedItem;
+            }                                   
         }
 
         void IGXPropertyPage.Initialize()

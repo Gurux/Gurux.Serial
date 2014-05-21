@@ -118,21 +118,24 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=2.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BaudRateTxt" xml:space="preserve">
-    <value>Baud Rate</value>
+    <value>Baud Rate:</value>
   </data>
   <data name="DataBitsTxt" xml:space="preserve">
-    <value>Data Bits</value>
+    <value>Data Bits:</value>
+  </data>
+  <data name="EopTxt" xml:space="preserve">
+    <value>Eop:</value>
   </data>
   <data name="ParityTxt" xml:space="preserve">
-    <value>Parity</value>
+    <value>Parity:</value>
   </data>
   <data name="PortNameTxt" xml:space="preserve">
-    <value>Port Name</value>
+    <value>Port Name:</value>
   </data>
   <data name="SettingsTxt" xml:space="preserve">
-    <value>Serial Port Settings</value>
+    <value>Serial Port Settings:</value>
   </data>
   <data name="StopBitsTxt" xml:space="preserve">
-    <value>Stop Bits</value>
+    <value>Stop Bits:</value>
   </data>
 </root>

@@ -32,7 +32,6 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.ComponentModel;
 using Gurux.Common;
@@ -48,52 +47,13 @@ using Gurux.Serial.Properties;
 
 namespace Gurux.Serial
 {
-    class ReceiveThread
-    {
-        public ManualResetEvent Closing;
-        GXSerial m_Parent;
-        public ReceiveThread(GXSerial parent)
-        {
-            Closing = new ManualResetEvent(false);            
-            m_Parent = parent;
-        }
-
-        /// <summary>
-        /// Receive data from the server using the established socket connection
-        /// </summary>
-        /// <returns>The data received from the server</returns>
-        public void Receive()
-        {
-            try
-            {                				
-                while (!Closing.WaitOne(1))
-                {		
-                    if (m_Parent.BytesToRead > 0)
-                    {									
-                        m_Parent.GXSerial_DataReceived(m_Parent, null);                        
-                    }
-                    else
-                    {
-                        Closing.WaitOne(100);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                m_Parent.NotifyError(ex);
-                if (!Closing.WaitOne(1))
-                {
-                    m_Parent.Close();
-                }
-            }            
-        }
-    }
-
 	/// <summary>
 	/// A media component that enables communication of serial port.
 	/// </summary>
-    public class GXSerial : Gurux.Common.IGXMedia, INotifyPropertyChanged, IDisposable
+    public class GXSerial : IGXMedia, IGXVirtualMedia, INotifyPropertyChanged, IDisposable
     {
+        int LastEopPos = 0;
+        bool IsVirtual, VirtualOpen;
         TraceLevel m_Trace;
         static Dictionary<string, List<int>> BaudRates = new Dictionary<string, List<int>>();
         object m_Eop;
@@ -102,20 +62,21 @@ namespace Gurux.Serial
         readonly object m_Synchronous = new object();        
 		readonly object m_baseLock = new object();        
         internal System.IO.Ports.SerialPort m_base = new System.IO.Ports.SerialPort();
-        ReceiveThread m_Receiver;
+        GXReceiveThread m_Receiver;
         Thread m_ReceiverThread;
+        byte m_EofChar, m_ErrorChar, m_EventChar, m_XonChar, m_XoffChar;
 
 		/// <summary>
 		/// Get baud rates supported by given serial port.
 		/// </summary>
-        static public int[] GetAvailableBaudRates(string portName)
+        public int[] GetAvailableBaudRates(string portName)
         {
+            List<int> items = new List<int>();
             if (BaudRates.ContainsKey(portName.ToLower()))
             {
                 return BaudRates[portName.ToLower()].ToArray();
             }
-            List<int> items = new List<int>();
-            if (string.IsNullOrEmpty(portName))
+            if (!IsVirtual && string.IsNullOrEmpty(portName))
             {
                 string[] ports = GXSerial.GetPortNames();
                 if (ports.Length != 0)
@@ -127,7 +88,7 @@ namespace Gurux.Serial
                     portName = null;
                 }
             }
-            if (portName != null)
+            if (!IsVirtual && portName != null)
             {
                 BaudRates[portName.ToLower()] = items;
                 try
@@ -239,6 +200,10 @@ namespace Gurux.Serial
                 items.Add(9600);
                 items.Add(19200);
                 items.Add(38400);
+                items.Add(56000);
+                items.Add(57600);
+                items.Add(115200);
+                items.Add(128000);
                 items.Add(0); //Programmable baud rate.	
 			}
             return items.ToArray();
@@ -252,10 +217,26 @@ namespace Gurux.Serial
             ConfigurableSettings = AvailableMediaSettings.All;
             m_syncBase = new GXSynchronousMediaBase(1024);            
             //Events are not currently implemented in Mono's serial port.
-            if (Environment.OSVersion.Platform != PlatformID.Unix)
+            if (Environment.OSVersion.Platform != PlatformID.Unix && !IsVirtual)
             {
                 m_base.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(GXSerial_DataReceived);
             }         
+        }
+
+        /// <summary>
+        /// Constructor
+        /// </summary>
+        /// <param name="portName">Used serial port.</param>
+        public GXSerial(string portName)
+        {
+            ConfigurableSettings = AvailableMediaSettings.All;
+            m_syncBase = new GXSynchronousMediaBase(1024);
+            //Events are not currently implemented in Mono's serial port.
+            if (Environment.OSVersion.Platform != PlatformID.Unix && !IsVirtual)
+            {
+                m_base.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(GXSerial_DataReceived);
+            }
+            this.PortName = portName;
         }
 
         internal void NotifyError(Exception ex)
@@ -266,7 +247,7 @@ namespace Gurux.Serial
             }
             if (m_Trace >= TraceLevel.Error && m_OnTrace != null)
             {
-                m_OnTrace(this, new TraceEventArgs(TraceTypes.Error, ex));
+                m_OnTrace(this, new TraceEventArgs(TraceTypes.Error, ex, null));
             }
         }
 
@@ -274,7 +255,7 @@ namespace Gurux.Serial
         {
             if (m_Trace >= TraceLevel.Info && m_OnTrace != null)
             {
-                m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, state));
+                m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, state, null));
             }
             if (m_OnMediaStateChange != null)
             {
@@ -317,97 +298,21 @@ namespace Gurux.Serial
         {
             try
             {
-                int count = 0, index = 0;
+                int count = 0;
+                int index = m_syncBase.m_ReceivedSize;
                 byte[] buff = null;
-                if (this.IsSynchronous)
+                int totalCount = 0;                
+                while (IsOpen && (count = m_base.BytesToRead) != 0)
                 {
-                    TraceEventArgs arg = null;                    
-                    lock (m_syncBase.m_ReceivedSync)
-                    {
-                        int totalCount = 0;
-                        index = m_syncBase.m_ReceivedSize;
-                        while (m_base.IsOpen && (count = m_base.BytesToRead) != 0)
-                        {
-                            totalCount += count;                            
-                            buff = new byte[count];                            
-                            m_base.Read(buff, 0, count);
-                            m_syncBase.AppendData(buff, 0, count);                                                        
-                            m_BytesReceived += (uint)count;
-                        }
-                        if (totalCount != 0 && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
-                        {
-                            arg = new TraceEventArgs(TraceTypes.Received, m_syncBase.m_Received, index, totalCount);
-                            m_OnTrace(this, arg);
-                        }
-                        if (totalCount != 0 && Eop != null) //Search Eop if given.
-                        {
-                            if (Eop is Array)
-                            {                                
-                                foreach (object eop in (Array)Eop)
-                                {
-                                    totalCount = GXCommon.IndexOf(m_syncBase.m_Received, GXCommon.GetAsByteArray(eop), index, m_syncBase.m_ReceivedSize);
-                                    if (totalCount != -1)
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                totalCount = GXCommon.IndexOf(m_syncBase.m_Received, GXCommon.GetAsByteArray(Eop), index, m_syncBase.m_ReceivedSize);
-                            }
-                        }
-                        if (totalCount != -1)
-                        {
-                            m_syncBase.m_ReceivedEvent.Set();
-                        }                        
-                    }
+                    totalCount += count;
+                    buff = new byte[count];
+                    m_base.Read(buff, 0, count);
+                    m_syncBase.AppendData(buff, 0, count);
+                    m_BytesReceived += (uint)count;
                 }
-                else if (this.m_OnReceived != null)
+                if (totalCount != 0)
                 {
-                    int totalCount = 0;
-                    while (m_base.IsOpen && (count = m_base.BytesToRead) != 0)
-                    {
-                        index = m_syncBase.m_ReceivedSize;
-                        buff = new byte[count];
-                        totalCount += count;
-                        m_base.Read(buff, 0, count);
-                        m_BytesReceived += (uint)count;
-                        if (buff != null && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
-                        {
-                            m_OnTrace(this, new TraceEventArgs(TraceTypes.Received, buff));
-                        }
-                        if (Eop != null) //Search Eop if given.
-                        {                            
-                            m_syncBase.AppendData(buff, 0, count);
-                            if (Eop is Array)
-                            {
-                                foreach (object eop in (Array)Eop)
-                                {
-                                    totalCount = GXCommon.IndexOf(m_syncBase.m_Received, GXCommon.GetAsByteArray(eop), index, m_syncBase.m_ReceivedSize);
-                                    if (totalCount != -1)
-                                    {
-                                        break;
-                                    }
-                                }
-                            }
-                            else
-                            {
-                                totalCount = GXCommon.IndexOf(m_syncBase.m_Received, GXCommon.GetAsByteArray(Eop), index, m_syncBase.m_ReceivedSize);
-                            }
-                            if (totalCount != -1)
-                            {
-                                buff = new byte[m_syncBase.m_ReceivedSize];
-                                Array.Copy(m_syncBase.m_Received, buff, m_syncBase.m_ReceivedSize);
-                                m_syncBase.m_ReceivedSize = 0;
-                                m_OnReceived(this, new ReceiveEventArgs(buff, this.PortName));
-                            }
-                        }
-                        else
-                        {
-                            m_OnReceived(this, new ReceiveEventArgs(buff, this.PortName));
-                        }
-                    }
+                    HandleReceivedData(index, buff, totalCount);
                 }
             }
             catch (Exception ex)
@@ -427,6 +332,85 @@ namespace Gurux.Serial
             }
         }
 
+        private void HandleReceivedData(int index, byte[] buff, int totalCount)
+        {            
+            lock (m_syncBase.m_ReceivedSync)
+            {
+                if (totalCount != 0 && Eop != null) //Search Eop if given.
+                {
+                    byte[] eop = null;
+                    if (Eop is Array)
+                    {
+                        foreach (object it in (Array)Eop)
+                        {
+                            eop = GXCommon.GetAsByteArray(it);
+                            totalCount = GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.m_ReceivedSize);
+                            if (totalCount != -1)
+                            {
+                                break;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        eop = GXCommon.GetAsByteArray(Eop);
+                        totalCount = GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.m_ReceivedSize);
+                    }
+                    if (totalCount != -1)
+                    {
+                        totalCount += eop.Length;
+                    }
+                }                
+            }
+            if (totalCount != -1 && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
+            {
+                int pos;
+                //If sync data is not read.
+                if (index + totalCount >= LastEopPos)
+                {
+                    pos = LastEopPos;
+                }
+                else //If sync data is read.
+                {
+                    pos = index;
+                }
+                int count;
+                if (totalCount > LastEopPos)
+                {
+                    count = totalCount - LastEopPos;
+                }
+                else
+                {
+                    count = totalCount;
+                }
+                TraceEventArgs arg = new TraceEventArgs(TraceTypes.Received, 
+                                    m_syncBase.m_Received, pos, count, null);
+                LastEopPos = index + totalCount;
+                if (LastEopPos != 0)
+                {
+                    --LastEopPos;
+                }
+                m_OnTrace(this, arg);
+            }
+            if (this.IsSynchronous)
+            {
+                if (totalCount != -1)
+                {
+                    m_syncBase.m_ReceivedEvent.Set();
+                }
+            }
+            else if (this.m_OnReceived != null)
+            {
+                if (totalCount != -1)
+                {
+                    buff = new byte[m_syncBase.m_ReceivedSize];
+                    Array.Copy(m_syncBase.m_Received, buff, m_syncBase.m_ReceivedSize);
+                    m_syncBase.m_ReceivedSize = 0;
+                    m_OnReceived(this, new ReceiveEventArgs(buff, m_base.PortName));
+                }
+            }
+        }
+
 		/// <summary>
 		/// Used baud rate for communication.
 		/// </summary>
@@ -438,6 +422,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("BaudRate");
+                    if (value != null)
+                    {
+                        return int.Parse(value);
+                    }
+                }
                 lock (m_baseLock)
                 {
                     return m_base.BaudRate;
@@ -466,6 +458,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("BreakState");
+                    if (value != null)
+                    {
+                        return bool.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
 	                return m_base.BreakState;
@@ -549,6 +549,136 @@ namespace Gurux.Serial
 				}
             }
         }
+        
+        /// <summary>
+        /// Eof Char.
+        /// </summary>
+        public byte EofChar
+        {
+            get
+            {
+                if (IsOpen)
+                {
+                    return GXSerialPortExtension.GetChar(this, "EofChar");
+                }
+                return m_EofChar;
+            }
+            set
+            {
+                if (IsOpen)
+                {
+                    GXSerialPortExtension.SetChar(this, "EofChar", value);
+                }
+                else
+                {
+                    m_EofChar = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Error Char.
+        /// </summary>
+        public byte ErrorChar
+        {
+            get
+            {
+                if (IsOpen)
+                {
+                    return GXSerialPortExtension.GetChar(this, "ErrorChar");
+                }
+                return m_ErrorChar;
+            }
+            set
+            {
+                if (IsOpen)
+                {
+                    GXSerialPortExtension.SetChar(this, "ErrorChar", value);
+                }
+                else
+                {
+                    m_ErrorChar = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Event Char of serial port.
+        /// </summary>
+        public byte EventChar
+        {
+            get
+            {
+                if (IsOpen)
+                {
+                    return GXSerialPortExtension.GetChar(this, "EvtChar");
+                }
+                return m_EventChar;
+            }
+            set
+            {
+                if (IsOpen)
+                {
+                    GXSerialPortExtension.SetChar(this, "EvtChar", value);
+                }
+                else
+                {
+                    m_EventChar = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Xon Char of serial port.
+        /// </summary>
+        public byte XonChar
+        {
+            get
+            {
+                if (IsOpen)
+                {
+                    return GXSerialPortExtension.GetChar(this, "XonChar");
+                }
+                return m_XonChar;
+            }
+            set
+            {
+                if (IsOpen)
+                {
+                    GXSerialPortExtension.SetChar(this, "XonChar", value);
+                }
+                else
+                {
+                    m_XonChar = value;
+                }
+            }
+        }
+
+        /// <summary>
+        /// Xoff Char of serial port.
+        /// </summary>
+        public byte XoffChar
+        {
+            get
+            {
+                if (IsOpen)
+                {
+                    return GXSerialPortExtension.GetChar(this, "XoffChar");
+                }
+                return m_XoffChar;
+            }
+            set
+            {
+                if (IsOpen)
+                {
+                    GXSerialPortExtension.SetChar(this, "XoffChar", value);
+                }
+                else
+                {
+                    m_XoffChar = value;
+                }
+            }
+        }
 
 		/// <summary>
 		/// Gets or sets the standard length of data bits per byte.
@@ -560,6 +690,15 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("DataBits");
+                    if (value != null)
+                    {
+                        return int.Parse(value);
+                    }
+                }
+
 				lock(m_baseLock)
 				{
                 	return m_base.DataBits;
@@ -590,6 +729,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("DiscardNull");
+                    if (value != null)
+                    {
+                        return bool.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.DiscardNull;
@@ -636,6 +783,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("DtrEnable");
+                    if (value != null)
+                    {
+                        return bool.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.DtrEnable;
@@ -665,7 +820,7 @@ namespace Gurux.Serial
         public Encoding Encoding
         {
             get
-            {
+            {                
 				lock(m_baseLock)
 				{
                 	return m_base.Encoding;
@@ -695,6 +850,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("Handshake");
+                    if (value != null)
+                    {
+                        return (Handshake)int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.Handshake;
@@ -739,6 +902,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("Parity");
+                    if (value != null)
+                    {
+                        return (Parity)int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.Parity;
@@ -769,6 +940,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("ParityReplace");
+                    if (value != null)
+                    {
+                        return byte.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.ParityReplace;
@@ -799,6 +978,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("PortName");
+                    if (value != null)
+                    {
+                        return value;
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.PortName;
@@ -829,6 +1016,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("ReadBufferSize");
+                    if (value != null)
+                    {
+                        return int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.ReadBufferSize;
@@ -859,6 +1054,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("ReadTimeout");
+                    if (value != null)
+                    {
+                        return int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.ReadTimeout;
@@ -889,6 +1092,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("ReceivedBytesThreshold");
+                    if (value != null)
+                    {
+                        return int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.ReceivedBytesThreshold;
@@ -909,6 +1120,10 @@ namespace Gurux.Serial
             }
         }
 
+        /// <summary>
+        ///  Reads all immediately available bytes asn returns them as string.
+        /// </summary>
+        /// <returns>Content as string.</returns>
         public string ReadExisting()
         {
             return m_base.ReadExisting();
@@ -924,6 +1139,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("RtsEnable");
+                    if (value != null)
+                    {
+                        return bool.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.RtsEnable;
@@ -953,6 +1176,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("StopBits");
+                    if (value != null)
+                    {
+                        return (StopBits)int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.StopBits;
@@ -983,6 +1214,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("WriteBufferSize");
+                    if (value != null)
+                    {
+                        return int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.WriteBufferSize;
@@ -1013,6 +1252,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("WriteTimeout");
+                    if (value != null)
+                    {
+                        return int.Parse(value);
+                    }
+                }
 				lock(m_baseLock)
 				{
                 	return m_base.WriteTimeout;
@@ -1038,11 +1285,14 @@ namespace Gurux.Serial
 		/// </summary>
         public void Close()
         {
-			bool bOpen;
-			lock(m_baseLock)
-			{
-				bOpen = m_base.IsOpen;
-			}
+            bool bOpen = VirtualOpen;
+            if (!IsVirtual)
+            {
+                lock (m_baseLock)
+                {
+                    bOpen = m_base.IsOpen;
+                }
+            }
             if (bOpen)
             {
                 try
@@ -1056,27 +1306,31 @@ namespace Gurux.Serial
                 }
                 finally
                 {
-                    try
+                    if (!IsVirtual)
                     {
-                        if (m_Receiver != null)
+                        try
                         {
-                            m_Receiver.Closing.Set();
+                            if (m_Receiver != null)
+                            {
+                                m_Receiver.Closing.Set();
+                            }
+                            lock (m_baseLock)
+                            {
+                                m_base.Close();
+                            }
+                            if (m_ReceiverThread != null && m_ReceiverThread.IsAlive)
+                            {
+                                m_ReceiverThread.Join();
+                            }
                         }
-                        lock (m_baseLock)
+                        catch
                         {
-                            m_base.Close();
-                        }
-                        if (m_ReceiverThread != null && m_ReceiverThread.IsAlive)
-                        {
-                            m_ReceiverThread.Join();
+                            //Ignore all errors on close.
                         }
                     }
-                    catch
-                    {
-                        //Ignore all errors on close.
-                    }
+                    VirtualOpen = false;
                     NotifyMediaStateChange(MediaState.Closed);
-                }
+                }                
             }
         }
 
@@ -1140,41 +1394,48 @@ namespace Gurux.Serial
                 if (m_Trace >= TraceLevel.Info && m_OnTrace != null)
                 {
                     string eop = "None";
-                    if (Eop is byte[])
+                    if (m_Eop is byte[])
                     {
-                        eop = BitConverter.ToString(Eop as byte[], 0);
+                        eop = BitConverter.ToString(m_Eop as byte[], 0);
                     }
-                    else if (Eop != null)
+                    else if (m_Eop != null)
                     {
-                        eop = Eop.ToString();
+                        eop = m_Eop.ToString();
                     }
-                    string str = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}", 
-                        "Settings:",
+                    string str = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}",
+                        Resources.SettingsTxt,
                         Resources.PortNameTxt,
-                        this.PortName,
+                        m_base.PortName,
                         Resources.BaudRateTxt,
-                        BaudRate,
+                        m_base.BaudRate,
                         Resources.DataBitsTxt,
-                        DataBits.ToString(),
+                        m_base.DataBits.ToString(),
                         Resources.ParityTxt,
-                        Parity.ToString(),
+                        m_base.Parity.ToString(),
                         Resources.StopBitsTxt,
-                        StopBits.ToString(),
-                        "Eop",
+                        m_base.StopBits.ToString(),
+                        Resources.EopTxt,
                         eop);
-                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, str));
+                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, str, null));
                 }
-                lock (m_baseLock)
+                if (!IsVirtual)
                 {
-                    m_base.Open();
+                    lock (m_baseLock)
+                    {
+                        m_base.Open();
+                    }
+                    //Events are not currently implemented in Mono's serial port.
+                    if (Environment.OSVersion.Platform == PlatformID.Unix)
+                    {
+                        m_Receiver = new GXReceiveThread(this);
+                        m_ReceiverThread = new Thread(new ThreadStart(m_Receiver.Receive));
+                        m_ReceiverThread.IsBackground = true;
+                        m_ReceiverThread.Start();
+                    }
                 }
-                //Events are not currently implemented in Mono's serial port.
-                if (Environment.OSVersion.Platform == PlatformID.Unix)
+                else
                 {
-                    m_Receiver = new ReceiveThread(this);
-                    m_ReceiverThread = new Thread(new ThreadStart(m_Receiver.Receive));
-                    m_ReceiverThread.IsBackground = true;
-                    m_ReceiverThread.Start();
+                    VirtualOpen = true;
                 }
                 this.DtrEnable = this.RtsEnable = true;                
                 NotifyMediaStateChange(MediaState.Open);                
@@ -1314,6 +1575,8 @@ namespace Gurux.Serial
         ClientDisconnectedEventHandler m_OnClientDisconnected;
         internal Gurux.Common.ErrorEventHandler m_OnError;
         ReceivedEventHandler m_OnReceived;
+        GetPropertyValueEventHandler m_OnGetPropertyValue;
+        ReceivedEventHandler m_OnDataSend;
 
         #endregion //Events
 
@@ -1330,6 +1593,91 @@ namespace Gurux.Serial
             }
         }
 
+        /// <inheritdoc cref="IGXMedia.Tag"/>
+        public object Tag
+        {
+            get;
+            set;
+        }
+
+        /// <inheritdoc cref="IGXMedia.MediaContainer"/>
+        IGXMediaContainer IGXMedia.MediaContainer
+        {
+            get;
+            set;
+        }
+
+        /// <inheritdoc cref="IGXVirtualMedia.Virtual"/>
+        bool IGXVirtualMedia.Virtual
+        {
+            get
+            {
+                return IsVirtual;
+            }
+            set
+            {
+                IsVirtual = value;
+            }
+        }
+
+        /// <summary>
+        /// Occurs when a property value is asked.
+        /// </summary>
+        event GetPropertyValueEventHandler IGXVirtualMedia.OnGetPropertyValue
+        {
+            add
+            {
+                m_OnGetPropertyValue += value;
+            }
+            remove
+            {
+                m_OnGetPropertyValue -= value;
+            }
+        }
+
+        /// <summary>
+        /// Occurs when data is sent on virtual mode.
+        /// </summary>
+        event ReceivedEventHandler IGXVirtualMedia.OnDataSend
+        {
+            add
+            {
+                m_OnDataSend += value;
+            }
+            remove
+            {
+                m_OnDataSend -= value;
+            }
+        }
+
+        /// <summary>
+        /// Occurs when serial port PIN changed.
+        /// </summary>
+        public event SerialPinChangedEventHandler OnPinChanged
+        {
+            add
+            {
+                m_base.PinChanged += value;                
+            }
+            remove
+            {
+                m_base.PinChanged -= value;
+            }
+        }
+
+        /// <summary>
+        /// Called when new data is received to the virtual media.
+        /// </summary>
+        /// <param name="data">received data</param>
+        /// <param name="sender">Data sender.</param>
+        void IGXVirtualMedia.DataReceived(byte[] data, string sender)
+        {
+            int index = m_syncBase.m_ReceivedSize;
+            m_syncBase.AppendData(data, 0, data.Length);
+            m_BytesReceived += (uint)data.Length;
+            HandleReceivedData(index, data, data.Length);
+        }
+        
         /// <inheritdoc cref="IGXMedia.Synchronous"/>
         public object Synchronous
         {
@@ -1405,10 +1753,10 @@ namespace Gurux.Serial
         void Gurux.Common.IGXMedia.Copy(object target)
         {
             GXSerial Target = (GXSerial)target;
-            BaudRate = Target.BaudRate;
-            StopBits = Target.StopBits;
-            Parity = Target.Parity;
-            DataBits = Target.DataBits;
+            m_base.BaudRate = Target.m_base.BaudRate;
+            m_base.StopBits = Target.m_base.StopBits;
+            m_base.Parity = Target.m_base.Parity;
+            m_base.DataBits = Target.m_base.DataBits;
         }
 
         /// <inheritdoc cref="IGXMedia.Eop"/>
@@ -1416,6 +1764,14 @@ namespace Gurux.Serial
         {
             get
             {
+                if (IsVirtual && m_OnGetPropertyValue != null)
+                {
+                    string value = m_OnGetPropertyValue("Eop");
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return int.Parse(value);
+                    }
+                }
                 return m_Eop;
             }
             set
@@ -1437,25 +1793,25 @@ namespace Gurux.Serial
             get
             {
                 string tmp = "";
-                if (!string.IsNullOrEmpty(PortName))
+                if (!string.IsNullOrEmpty(m_base.PortName))
                 {
-                    tmp += "<Port>" + PortName + "</Port>";
+                    tmp += "<Port>" + m_base.PortName + "</Port>";
                 }
-                if (BaudRate != 9600)
+                if (m_base.BaudRate != 9600)
                 {
-                    tmp += "<Bps>" + BaudRate + "</Bps>";
+                    tmp += "<Bps>" + m_base.BaudRate + "</Bps>";
                 }
-                if (this.StopBits != System.IO.Ports.StopBits.None)
+                if (m_base.StopBits != System.IO.Ports.StopBits.None)
                 {
-                    tmp += "<StopBits>" + (int)StopBits + "</StopBits>";
+                    tmp += "<StopBits>" + (int)m_base.StopBits + "</StopBits>";
                 }
-                if (this.Parity != System.IO.Ports.Parity.None)
+                if (m_base.Parity != System.IO.Ports.Parity.None)
                 {
-                    tmp += "<Parity>" + (int)Parity + "</Parity>";
+                    tmp += "<Parity>" + (int)m_base.Parity + "</Parity>";
                 }
-                if (this.DataBits != 8)
+                if (m_base.DataBits != 8)
                 {
-                    tmp += "<ByteSize>" + DataBits + "</ByteSize>";
+                    tmp += "<ByteSize>" + m_base.DataBits + "</ByteSize>";
                 }
                 return tmp;
             }
@@ -1467,6 +1823,11 @@ namespace Gurux.Serial
                     settings.ConformanceLevel = ConformanceLevel.Fragment;
                     string str;
                     int result;
+                    //Set default settings.
+                    m_base.BaudRate = 9600;
+                    m_base.DataBits = 8;
+                    m_base.Parity = System.IO.Ports.Parity.None;
+                    bool setStopBits = false;
                     using (XmlReader xmlReader = XmlReader.Create(new System.IO.StringReader(value), settings))
                     {
                         while (xmlReader.Read())
@@ -1476,20 +1837,21 @@ namespace Gurux.Serial
                                 switch (xmlReader.Name)
                                 {
                                     case "Port":
-                                        PortName = xmlReader.ReadString();
+                                        m_base.PortName = xmlReader.ReadString();
                                         break;
                                     case "Bps":
-                                        BaudRate = Convert.ToInt32(xmlReader.ReadString());
+                                        m_base.BaudRate = Convert.ToInt32(xmlReader.ReadString());
                                         break;
                                     case "StopBits":
+                                        setStopBits = true;
                                         str = xmlReader.ReadString();
                                         if (int.TryParse(str, out result))
                                         {
-                                            StopBits = (StopBits)result;
+                                            m_base.StopBits = (StopBits)result;
                                         }
                                         else
                                         {
-                                            StopBits = (StopBits)Enum.Parse(typeof(StopBits), str);
+                                            m_base.StopBits = (StopBits)Enum.Parse(typeof(StopBits), str);
                                         }
 
                                         break;
@@ -1497,19 +1859,23 @@ namespace Gurux.Serial
                                         str = xmlReader.ReadString();
                                         if (int.TryParse(str, out result))
                                         {
-                                            Parity = (Parity)result;
+                                            m_base.Parity = (Parity)result;
                                         }
                                         else
                                         {
-                                            Parity = (Parity)Enum.Parse(typeof(System.IO.Ports.Parity), str);
+                                            m_base.Parity = (Parity)Enum.Parse(typeof(System.IO.Ports.Parity), str);
                                         }
                                         break;
                                     case "ByteSize":
-                                        DataBits = Convert.ToInt32(xmlReader.ReadString());
+                                        m_base.DataBits = Convert.ToInt32(xmlReader.ReadString());
                                         break;
                                 }
                             }
                         }
+                    }
+                    if (!setStopBits)
+                    {
+                        m_base.StopBits = System.IO.Ports.StopBits.None;
                     }
                 }
             }
@@ -1535,7 +1901,7 @@ namespace Gurux.Serial
         {
             get 
             {
-                return this.PortName;
+                return m_base.PortName;
             }
         }
 
@@ -1616,9 +1982,10 @@ namespace Gurux.Serial
             byte[] value = GXCommon.GetAsByteArray(data);			
 			lock(m_baseLock)
 			{
+                LastEopPos = 0;
                 if (m_Trace == TraceLevel.Verbose && m_OnTrace != null)
                 {
-                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Sent, value));
+                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Sent, value, null));
                 }
             	m_BytesSent += (uint) value.Length;
                 //Reset last position if Eop is used.
@@ -1626,11 +1993,19 @@ namespace Gurux.Serial
                 {
                     m_syncBase.m_LastPosition = 0;
                 }
-            	m_base.Write(value, 0, value.Length);
+                if (!IsVirtual)
+                {
+                    m_base.Write(value, 0, value.Length);
+                }
+                else
+                {
+                    m_OnDataSend(this, new ReceiveEventArgs(data, receiver));
+                }
 			}
         }
 
-        void Gurux.Common.IGXMedia.Validate()
+        /// <inheritdoc cref="IGXMedia.Validate"/>
+        public void Validate()
         {
             
         }
