@@ -49,9 +49,11 @@ namespace Gurux.Serial
 {
 	/// <summary>
 	/// A media component that enables communication of serial port.
+    /// See help in http://www.gurux.org/index.php?q=Gurux.Net
 	/// </summary>
     public class GXSerial : IGXMedia, IGXVirtualMedia, INotifyPropertyChanged, IDisposable
     {
+        private object m_sync = new object();
         int LastEopPos = 0;
         bool IsVirtual, VirtualOpen;
         TraceLevel m_Trace;
@@ -1607,6 +1609,22 @@ namespace Gurux.Serial
             set;
         }
 
+        /// <inheritdoc cref="IGXMedia.SyncRoot"/>
+        [Browsable(false), ReadOnly(true)]
+        public object SyncRoot
+        {
+            get
+            {
+                //In some special cases when binary serialization is used this might be null
+                //after deserialize. Just set it.
+                if (m_sync == null)
+                {
+                    m_sync = new object();
+                }
+                return m_sync;
+            }
+        }
+
         /// <inheritdoc cref="IGXVirtualMedia.Virtual"/>
         bool IGXVirtualMedia.Virtual
         {
@@ -1940,43 +1958,12 @@ namespace Gurux.Serial
         }
 
         /// <inheritdoc cref="IGXMedia.Receive"/>
-        /// <example>
-        /// <code>
-        /// 'Send long and wait until OK reply is received or 5 seconds.
-        /// 'Data is returned as string.
-        /// lock (GXSerial11.Synchronous)
-        /// {        
-        ///     dim params as new Receiveparameters
-        ///     params.Eop = "OK"
-        ///     params.WaitTime = 10000
-        ///     params.Type = typeof(string)
-        ///     GXSerial11.Send((byte) 0x13)
-        ///     GXSerial11.Receive(params)
-        ///     ' While all data is not received read more data.
-        ///     ' This is done because reply data might include "OK" but all data is not read yet.
-        ///     'While PacketIsNotCompleted
-        ///         GXSerial11.Receive(params)
-        ///     'Wend
-        /// }
-        /// 
-        /// 'Send data and wait until 4 bytes is received.
-        /// 'Received data is received as long (Int32)
-        /// lock (GXSerial11.Synchronous)
-        /// {           
-        ///     dim params as new Receiveparameters
-        ///     params.Count = 4
-        ///     params.WaitTime = 10000
-        ///     params.Type = typeof(string)
-        ///     GXSerial11.Send((byte) 0x13)
-        ///     GXSerial11.Receive(params)
-        /// }
-        /// </code>
-        /// </example>
         public bool Receive<T>(Gurux.Common.ReceiveParameters<T> args)
         {
             return m_syncBase.Receive(args);
         }
 
+        /// <inheritdoc cref="IGXMedia.Send"/>
         void Gurux.Common.IGXMedia.Send(object data, string receiver)
         {			
             byte[] value = GXCommon.GetAsByteArray(data);			
