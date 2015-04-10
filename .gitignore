@@ -18,6 +18,9 @@ local.properties
 
 # External tool builders
 .externalToolBuilders/
+packages/
+nuget/
+Gurux.Common.XML
 
 # Locally stored "Eclipse launch configurations"
 *.launch

@@ -177,7 +177,7 @@ namespace Gurux.Shared
                 lock (m_ReceivedSync)
                 {
                     LastBuffSize = m_ReceivedSize;
-                    //Read more data, if not enought
+                    //Read more data, if not enough
                     if (m_ReceivedSize < nMinSize)
                     {
                         continue;
