@@ -68,7 +68,6 @@ Gurux.Common.XML
 
 ## TODO: If you have NuGet Package Restore enabled, uncomment this
 #packages/
-Gurux.Serial.CSharp.Example/
 .svn/
 *.nupkg
 

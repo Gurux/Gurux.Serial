@@ -107,7 +107,7 @@ namespace Gurux.Shared
                 waitTime = -1;
             }
 
-            //Wait until reply occured.		
+            //Wait until reply occurred.		
             int nFound = -1;
             int LastBuffSize = 0;
             DateTime StartTime = DateTime.Now;
@@ -163,7 +163,7 @@ namespace Gurux.Shared
                     this.Exception = null;
                     throw ex;
                 }
-                //If timeout occured.
+                //If timeout occurred.
                 if (!received)
                 {
                     //If we do not want to read all data.
@@ -189,7 +189,7 @@ namespace Gurux.Shared
                     }
                     else
                     {
-                        int index = m_LastPosition != 0 && m_LastPosition < m_ReceivedSize ? m_LastPosition : args.Count;
+                        int index = 0;//  m_LastPosition != 0 && m_LastPosition < m_ReceivedSize ? m_LastPosition : args.Count;
                         //If terminator found.
                         if (args.Eop is Array)
                         {
@@ -214,6 +214,7 @@ namespace Gurux.Shared
                                 index = m_ReceivedSize - terminator.Length;
                             }
                             nFound = GXCommon.IndexOf(m_Received, terminator, index, m_ReceivedSize);
+                            System.Diagnostics.Debug.WriteLine("B " + nFound);
                         }
                         m_LastPosition = m_ReceivedSize;
                         if (nFound != -1)
@@ -241,6 +242,13 @@ namespace Gurux.Shared
             int readBytes = 0;
             object data = GXCommon.ByteArrayToObject(tmp, typeof(T), out readBytes);
             //Remove read data.
+            //Mikko
+            if (m_ReceivedSize - nFound > 0)
+            {
+                byte[] tmp2 = new byte[m_ReceivedSize];
+                Array.Copy(m_Received, 0, tmp2, 0, m_ReceivedSize);                
+                System.Diagnostics.Debug.WriteLine("A" + GXCommon.ToHex(tmp2, true));
+            }
             m_ReceivedSize -= nFound;
             //Received size can go less than zero if we have received data and we try to read more.
             if (m_ReceivedSize < 0)
@@ -253,6 +261,10 @@ namespace Gurux.Shared
                 {
                     Array.Copy(m_Received, nFound, m_Received, 0, m_ReceivedSize);
                 }
+            }
+            else
+            {
+                m_LastPosition = 0;
             }
             //Reset count after read.
             args.Count = 0;
