@@ -43,10 +43,10 @@ namespace Gurux.Shared
     {
         internal Exception Exception;
         internal byte[] m_Received = null;
-        internal AutoResetEvent m_ReceivedEvent = new AutoResetEvent(false);
-        internal readonly object m_ReceivedSync = new object();
-        internal int m_ReceivedSize;
-        internal int m_LastPosition;
+        internal AutoResetEvent receivedEvent = new AutoResetEvent(false);
+        internal readonly object receivedSync = new object();
+        internal int receivedSize;
+        internal int lastPosition;
         /// <summary>
         /// Trace level.
         /// </summary>
@@ -55,22 +55,22 @@ namespace Gurux.Shared
         public GXSynchronousMediaBase(int bufferSize)
         {
             m_Received = new byte[bufferSize];
-            m_LastPosition = 0;
+            lastPosition = 0;
         }
 
         public void AppendData(byte[] data, int index, int count)
         {
-            lock (m_ReceivedSync)
+            lock (receivedSync)
             {
                 //Alocate new buffer.
-                if (m_ReceivedSize + count > m_Received.Length)
+                if (receivedSize + count > m_Received.Length)
                 {
                     byte[] tmp = new byte[2 * m_Received.Length];
-                    Array.Copy(m_Received, 0, tmp, 0, m_ReceivedSize);
+                    Array.Copy(m_Received, 0, tmp, 0, receivedSize);
                     m_Received = tmp;
                 }
-                Array.Copy(data, index, m_Received, m_ReceivedSize, count);
-                m_ReceivedSize += count - index;
+                Array.Copy(data, index, m_Received, receivedSize, count);
+                receivedSize += count - index;
             }
         }
 
@@ -134,26 +134,26 @@ namespace Gurux.Shared
                     }
                 }
                 bool received;
-                lock (m_ReceivedSync)
+                lock (receivedSync)
                 {
-                    received = !(LastBuffSize == m_ReceivedSize || m_ReceivedSize < nMinSize);
+                    received = !(LastBuffSize == receivedSize || receivedSize < nMinSize);
                 }
                 //Do not wait if there is data on the buffer...
                 if (!received)
                 {
                     if (waitTime == -1)
                     {
-                        received = m_ReceivedEvent.WaitOne();
+                        received = receivedEvent.WaitOne();
                     }
                     else
                     {
-                        received = m_ReceivedEvent.WaitOne(waitTime);
+                        received = receivedEvent.WaitOne(waitTime);
                     }
                     if (!received && args.Eop == null)
                     {
-                        lock (m_ReceivedSync)
+                        lock (receivedSync)
                         {
-                            received = !(LastBuffSize == m_ReceivedSize || m_ReceivedSize < nMinSize);
+                            received = !(LastBuffSize == receivedSize || receivedSize < nMinSize);
                         }
                     }
                 }
@@ -174,11 +174,11 @@ namespace Gurux.Shared
                     retValue = false;
                     break;
                 }
-                lock (m_ReceivedSync)
+                lock (receivedSync)
                 {
-                    LastBuffSize = m_ReceivedSize;
+                    LastBuffSize = receivedSize;
                     //Read more data, if not enough
-                    if (m_ReceivedSize < nMinSize)
+                    if (receivedSize < nMinSize)
                     {
                         continue;
                     }
@@ -189,18 +189,18 @@ namespace Gurux.Shared
                     }
                     else
                     {
-                        int index = 0;//  m_LastPosition != 0 && m_LastPosition < m_ReceivedSize ? m_LastPosition : args.Count;
+                        int index = lastPosition != 0 && lastPosition < receivedSize ? lastPosition : args.Count;
                         //If terminator found.
                         if (args.Eop is Array)
                         {
                             foreach (object it in args.Eop as Array)
                             {
                                 byte[] term = GXCommon.GetAsByteArray(it);
-                                if (term.Length != 1 && m_ReceivedSize - index < term.Length)
+                                if (term.Length != 1 && receivedSize - index < term.Length)
                                 {
-                                    index = m_ReceivedSize - term.Length;
+                                    index = receivedSize - term.Length;
                                 }
-                                nFound = GXCommon.IndexOf(m_Received, term, index, m_ReceivedSize);
+                                nFound = GXCommon.IndexOf(m_Received, term, index, receivedSize);
                                 if (nFound != -1)
                                 {
                                     break;
@@ -209,14 +209,13 @@ namespace Gurux.Shared
                         }
                         else
                         {
-                            if (terminator.Length != 1 && m_ReceivedSize - index < terminator.Length)
+                            if (terminator.Length != 1 && receivedSize - index < terminator.Length)
                             {
-                                index = m_ReceivedSize - terminator.Length;
+                                index = receivedSize - terminator.Length;
                             }
-                            nFound = GXCommon.IndexOf(m_Received, terminator, index, m_ReceivedSize);
-                            System.Diagnostics.Debug.WriteLine("B " + nFound);
+                            nFound = GXCommon.IndexOf(m_Received, terminator, index, receivedSize);
                         }
-                        m_LastPosition = m_ReceivedSize;
+                        lastPosition = receivedSize;
                         if (nFound != -1)
                         {
                             nFound += terminator.Length;
@@ -231,40 +230,37 @@ namespace Gurux.Shared
             }
             if (args.AllData) //If all data is copied.
             {
-                nFound = m_ReceivedSize;
+                nFound = receivedSize;
+            }
+            if (nFound == 0)
+            {
+                retValue = false;
             }
             //Convert bytes to object.
             byte[] tmp = new byte[nFound];
-            lock (m_ReceivedSync)
+            lock (receivedSync)
             {
                 Array.Copy(m_Received, tmp, nFound);
             }
             int readBytes = 0;
             object data = GXCommon.ByteArrayToObject(tmp, typeof(T), out readBytes);
             //Remove read data.
-            //Mikko
-            if (m_ReceivedSize - nFound > 0)
-            {
-                byte[] tmp2 = new byte[m_ReceivedSize];
-                Array.Copy(m_Received, 0, tmp2, 0, m_ReceivedSize);                
-                System.Diagnostics.Debug.WriteLine("A" + GXCommon.ToHex(tmp2, true));
-            }
-            m_ReceivedSize -= nFound;
+            receivedSize -= nFound;
             //Received size can go less than zero if we have received data and we try to read more.
-            if (m_ReceivedSize < 0)
+            if (receivedSize < 0)
             {
-                m_ReceivedSize = 0;
+                receivedSize = 0;
             }
-            if (m_ReceivedSize != 0)
+            if (receivedSize != 0)
             {
-                lock (m_ReceivedSync)
+                lock (receivedSync)
                 {
-                    Array.Copy(m_Received, nFound, m_Received, 0, m_ReceivedSize);
+                    Array.Copy(m_Received, nFound, m_Received, 0, receivedSize);
                 }
             }
             else
             {
-                m_LastPosition = 0;
+                lastPosition = 0;
             }
             //Reset count after read.
             args.Count = 0;

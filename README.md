@@ -11,6 +11,12 @@ We are updating documentation on Gurux web page.
 
 If you have problems you can ask your questions in Gurux [Forum](http://www.gurux.org/forum).
 
+Build
+=========================== 
+If you want to build example you need Nuget package manager for Visual Studio.
+You can get it here:
+https://visualstudiogallery.msdn.microsoft.com/27077b70-9dad-4c64-adcf-c7cf6bc9970c
+
 Simple example
 =========================== 
 Before use you must set following settings:
