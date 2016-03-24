@@ -74,7 +74,7 @@ namespace Gurux.Serial
         public int[] GetAvailableBaudRates(string portName)
         {
             List<int> items = new List<int>();
-            if (BaudRates.ContainsKey(portName.ToLower()))
+            if (portName != null && BaudRates.ContainsKey(portName.ToLower()))
             {
                 return BaudRates[portName.ToLower()].ToArray();
             }
