@@ -61,10 +61,12 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Gurux.Common, Version=7.0.2.1, Culture=neutral, PublicKeyToken=00bee6c3930228bf, processorArchitecture=MSIL">
-      <HintPath>packages\Gurux.Common.7.0.32.1\lib\net35\Gurux.Common.dll</HintPath>
+      <HintPath>packages\Gurux.Common.7.0.34.1\lib\net35\Gurux.Common.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="ICSharpCode.SharpZipLib, Version=0.85.4.369, Culture=neutral, PublicKeyToken=1b03e6acf1164f73, processorArchitecture=MSIL">
       <HintPath>packages\ICSharpCode.SharpZipLib.dll.0.85.4.369\lib\net20\ICSharpCode.SharpZipLib.dll</HintPath>
+      <Private>True</Private>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core">
@@ -145,6 +147,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Gurux.Common.XML" />
     <Content Include="GXSerial.ico" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
