@@ -15,11 +15,12 @@
         <language>en-US</language>
         <tags>Gurux Device Framework serial port RS-232</tags>
         <dependencies>
-            <dependency id="Gurux.Common" version="7.0.27.1" />
+            <dependency id="Gurux.Common" version="8.0" />
         </dependencies>
     </metadata>
     <files>
-        <file src="bin\Release\**" target="lib\portable-win+net35" />
-        <file src="**\*.cs" exclude="**\obj\**\*.*" target="src" />
-    </files>
+        <file src="bin\Release\Gurux.Serial.dll" target="lib\portable-win+net35" />
+        <file src="bin\Release\Gurux.Serial.XML" target="lib\portable-win+net35" />
+        <file src="bin\Release\Gurux.Serial.pdb" target="lib\portable-win+net35" />
+     </files>
 </package>

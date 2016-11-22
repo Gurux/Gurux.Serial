@@ -1,6 +1,0 @@
-Name: Gurux.Serial
-Description: Gurux.Serial
-Version: 0.1
-
-Requires: 
-Libs: -r:@expanded_libdir@/@PACKAGE@/Gurux.Serial.dll
