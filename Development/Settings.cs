@@ -1,7 +1,7 @@
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd
-// 
+//
 //
 //
 // Filename:        $HeadURL$
@@ -19,14 +19,14 @@
 // This file is a part of Gurux Device Framework.
 //
 // Gurux Device Framework is Open Source software; you can redistribute it
-// and/or modify it under the terms of the GNU General Public License 
+// and/or modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; version 2 of the License.
 // Gurux Device Framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-// This code is licensed under the GNU General Public License v2. 
+// This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
@@ -43,19 +43,43 @@ using Gurux.Serial.Properties;
 
 namespace Gurux.Serial
 {
-	/// <summary>
-	/// Settings dialog.
-	/// </summary>
-    partial class Settings : Form, Gurux.Common.IGXPropertyPage
+    /// <summary>
+    /// Settings dialog.
+    /// </summary>
+    partial class Settings : Form, IGXPropertyPage, INotifyPropertyChanged
     {
-        GXSerial Target;
-		/// <summary>
-		/// Constructor.
-		/// </summary>
+        GXSerial target;
+
+        PropertyChangedEventHandler propertyChanged;
+
+        public bool Dirty
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// Occurs when a property value changes.
+        /// </summary>
+        public event PropertyChangedEventHandler PropertyChanged
+        {
+            add
+            {
+                propertyChanged += value;
+            }
+            remove
+            {
+                propertyChanged -= value;
+            }
+        }
+
+        /// <summary>
+        /// Constructor.
+        /// </summary>
         public Settings(GXSerial target)
         {
             InitializeComponent();
-            Target = target;
+            this.target = target;
         }
 
         private void PortNameCB_SelectedIndexChanged(object sender, EventArgs e)
@@ -65,14 +89,14 @@ namespace Gurux.Serial
                 this.BaudRateCB.Items.Clear();
                 BaudRateCB.DropDownStyle = ComboBoxStyle.DropDownList;
                 //User can't change values when connection is open.
-                if (Target.IsOpen)
+                if (target.IsOpen)
                 {
-                    BaudRateCB.Items.Add(Target.BaudRate);
+                    BaudRateCB.Items.Add(target.BaudRate);
                     this.BaudRateCB.SelectedItem = 0;
                 }
                 else
                 {
-                    foreach (int it in Target.GetAvailableBaudRates(PortNameCB.Text))
+                    foreach (int it in target.GetAvailableBaudRates(PortNameCB.Text))
                     {
                         if (it == 0)
                         {
@@ -83,8 +107,13 @@ namespace Gurux.Serial
                             this.BaudRateCB.Items.Add(it);
                         }
                     }
-                    this.BaudRateCB.SelectedItem = Target.BaudRate;
+                    this.BaudRateCB.SelectedItem = target.BaudRate;
                 }
+            }
+            Dirty = true;
+            if (propertyChanged != null)
+            {
+                propertyChanged(this, new PropertyChangedEventArgs("PortName"));
             }
         }
 
@@ -92,27 +121,28 @@ namespace Gurux.Serial
 
         void IGXPropertyPage.Apply()
         {
-            Target.PortName = this.PortNameCB.Text;
+            target.PortName = this.PortNameCB.Text;
             if (this.BaudRateCB.Enabled)
             {
-                Target.BaudRate = Convert.ToInt32(this.BaudRateCB.Text);
+                target.BaudRate = Convert.ToInt32(this.BaudRateCB.Text);
             }
             if (this.DataBitsCB.Enabled)
             {
-                Target.DataBits = Convert.ToInt32(this.DataBitsCB.Text);
+                target.DataBits = Convert.ToInt32(this.DataBitsCB.Text);
             }
             if (this.ParityCB.Enabled)
             {
-                Target.Parity = (System.IO.Ports.Parity)this.ParityCB.SelectedItem;
+                target.Parity = (System.IO.Ports.Parity)this.ParityCB.SelectedItem;
             }
             if (this.StopBitsCB.Enabled)
             {
-                Target.StopBits = (System.IO.Ports.StopBits)this.StopBitsCB.SelectedItem;
-            }                                   
+                target.StopBits = (System.IO.Ports.StopBits)this.StopBitsCB.SelectedItem;
+            }
+            Dirty = false;
         }
 
         void IGXPropertyPage.Initialize()
-        {            
+        {
             //Update texts.
             this.Text = Resources.SettingsTxt;
             this.PortNameLbl.Text = Resources.PortNameTxt;
@@ -121,23 +151,23 @@ namespace Gurux.Serial
             this.ParityLbl.Text = Resources.ParityTxt;
             this.StopBitsLbl.Text = Resources.StopBitsTxt;
             //Hide controls which user do not want to show.
-            PortNamePanel.Enabled = (Target.ConfigurableSettings & AvailableMediaSettings.PortName) != 0;
+            PortNamePanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.PortName) != 0;
             if (PortNamePanel.Enabled)
             {
-				if (Target.AvailablePorts != null)
-				{
-					PortNameCB.Items.AddRange(Target.AvailablePorts);
-				}
-				else
-				{
-					PortNameCB.Items.AddRange(GXSerial.GetPortNames());
-				}
-				if (this.PortNameCB.Items.Contains(Target.PortName))
-				{
-					this.PortNameCB.SelectedItem = Target.PortName;
-				}
-				else
-				{
+                if (target.AvailablePorts != null)
+                {
+                    PortNameCB.Items.AddRange(target.AvailablePorts);
+                }
+                else
+                {
+                    PortNameCB.Items.AddRange(GXSerial.GetPortNames());
+                }
+                if (this.PortNameCB.Items.Contains(target.PortName))
+                {
+                    this.PortNameCB.SelectedItem = target.PortName;
+                }
+                else
+                {
                     if (PortNameCB.Items.Count != 0)
                     {
                         this.PortNameCB.SelectedIndex = 0;
@@ -147,23 +177,23 @@ namespace Gurux.Serial
                         StopBitsPanel.Enabled = ParityPanel.Enabled = DataBitsPanel.Enabled = BaudRatePanel.Enabled = this.PortNameCB.Enabled = false;
                         return;
                     }
-				}
+                }
             }
-            BaudRatePanel.Enabled = (Target.ConfigurableSettings & AvailableMediaSettings.BaudRate) != 0;
+            BaudRatePanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.BaudRate) != 0;
             if (BaudRatePanel.Enabled)
             {
                 PortNameCB_SelectedIndexChanged(null, null);
-                this.BaudRateCB.SelectedItem = Target.BaudRate;
+                this.BaudRateCB.SelectedItem = target.BaudRate;
             }
-            DataBitsPanel.Enabled = (Target.ConfigurableSettings & AvailableMediaSettings.DataBits) != 0;
+            DataBitsPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.DataBits) != 0;
             if (DataBitsPanel.Enabled)
             {
                 this.DataBitsCB.Items.Add(7);
                 this.DataBitsCB.Items.Add(8);
-                this.DataBitsCB.SelectedItem = Target.DataBits;
+                this.DataBitsCB.SelectedItem = target.DataBits;
             }
 
-            ParityPanel.Enabled = (Target.ConfigurableSettings & AvailableMediaSettings.Parity) != 0;
+            ParityPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.Parity) != 0;
             if (ParityPanel.Enabled)
             {
                 this.ParityCB.Items.Add(System.IO.Ports.Parity.None);
@@ -171,21 +201,57 @@ namespace Gurux.Serial
                 this.ParityCB.Items.Add(System.IO.Ports.Parity.Even);
                 this.ParityCB.Items.Add(System.IO.Ports.Parity.Mark);
                 this.ParityCB.Items.Add(System.IO.Ports.Parity.Space);
-                this.ParityCB.SelectedItem = Target.Parity;
+                this.ParityCB.SelectedItem = target.Parity;
             }
 
-            StopBitsPanel.Enabled = (Target.ConfigurableSettings & AvailableMediaSettings.StopBits) != 0;
+            StopBitsPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.StopBits) != 0;
             if (StopBitsPanel.Enabled)
             {
                 this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.None);
                 this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.One);
                 this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.OnePointFive);
                 this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.Two);
-                this.StopBitsCB.SelectedItem = Target.StopBits;
+                this.StopBitsCB.SelectedItem = target.StopBits;
             }
-        }       
+            Dirty = false;
+        }
 
         #endregion
-        
+
+        private void BaudRateCB_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Dirty = true;
+            if (propertyChanged != null)
+            {
+                propertyChanged(this, new PropertyChangedEventArgs("BaudRate"));
+            }
+        }
+
+        private void DataBitsCB_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Dirty = true;
+            if (propertyChanged != null)
+            {
+                propertyChanged(this, new PropertyChangedEventArgs("DataBits"));
+            }
+        }
+
+        private void ParityCB_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Dirty = true;
+            if (propertyChanged != null)
+            {
+                propertyChanged(this, new PropertyChangedEventArgs("Parity"));
+            }
+        }
+
+        private void StopBitsCB_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Dirty = true;
+            if (propertyChanged != null)
+            {
+                propertyChanged(this, new PropertyChangedEventArgs("StopBits"));
+            }
+        }
     }
 }

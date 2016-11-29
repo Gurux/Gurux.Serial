@@ -1,26 +1,26 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
-    <metadata>
-        <id>Gurux.Serial</id>
-        <version>$version$</version>
-        <title>Gurux.Serial</title>
-        <authors>Gurux Ltd</authors>
-        <owners>Gurux Ltd</owners>
-        <licenseUrl>http://www.gnu.org/licenses/gpl-2.0.txt</licenseUrl>
-        <projectUrl>http://www.gurux.fi/index.php?q=GXMedia</projectUrl>
-        <iconUrl>http://www.gurux.org/gurux.ico</iconUrl>
-        <requireLicenseAcceptance>true</requireLicenseAcceptance>
-        <description>Open Source GXSerial media component, made by Gurux Ltd, is a part of GXMedias set of media components, which programming interfaces help you implement communication by chosen connection type. GXSerial offers you an easy way to build multithreaded, serial communication applications. GXSerial is made easy to use. Our media components also support the following connection types: network, terminal.</description>
-        <copyright>Copyright (c) 1998-2016 Gurux Ltd. All rights reserved.</copyright>
-        <language>en-US</language>
-        <tags>Gurux Device Framework serial port RS-232</tags>
-        <dependencies>
-            <dependency id="Gurux.Common" version="8.0" />
-        </dependencies>
-    </metadata>
-    <files>
-        <file src="bin\Release\Gurux.Serial.dll" target="lib\portable-win+net35" />
-        <file src="bin\Release\Gurux.Serial.XML" target="lib\portable-win+net35" />
-        <file src="bin\Release\Gurux.Serial.pdb" target="lib\portable-win+net35" />
-     </files>
+  <metadata>
+    <id>Gurux.Serial</id>
+    <version>$version$</version>
+    <title>Gurux.Serial</title>
+    <authors>Gurux Ltd</authors>
+    <owners>Gurux Ltd</owners>
+    <licenseUrl>http://www.gnu.org/licenses/gpl-2.0.txt</licenseUrl>
+    <projectUrl>http://www.gurux.fi/index.php?q=GXMedia</projectUrl>
+    <iconUrl>http://www.gurux.org/gurux.ico</iconUrl>
+    <requireLicenseAcceptance>true</requireLicenseAcceptance>
+    <description>Open Source GXSerial media component, made by Gurux Ltd, is a part of GXMedias set of media components, which programming interfaces help you implement communication by chosen connection type. GXSerial offers you an easy way to build multithreaded, serial communication applications. GXSerial is made easy to use. Our media components also support the following connection types: network, terminal.</description>
+    <copyright>Copyright (c) 1998-2016 Gurux Ltd. All rights reserved.</copyright>
+    <language>en-US</language>
+    <tags>Gurux Device Framework serial port RS-232</tags>
+    <dependencies>
+      <dependency id="Gurux.Common" version="8.1" />
+    </dependencies>
+  </metadata>
+  <files>
+    <file src="bin\Release\Gurux.Serial.dll" target="lib\portable-win+net35" />
+    <file src="bin\Release\Gurux.Serial.XML" target="lib\portable-win+net35" />
+    <file src="bin\Release\Gurux.Serial.pdb" target="lib\portable-win+net35" />
+  </files>
 </package>
