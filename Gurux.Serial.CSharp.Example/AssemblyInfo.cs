@@ -52,13 +52,13 @@ using System.Runtime.InteropServices;
 // TODO: Review the values of the assembly attributes
 
 
-[assembly:AssemblyTitle("")]
-[assembly:AssemblyDescription("")]
-[assembly:AssemblyCompany("Gurux")]
-[assembly:AssemblyProduct("")]
-[assembly: AssemblyCopyright("Copyright © 1998-2014 Gurux Ltd. All rights reserved.")]
-[assembly:AssemblyTrademark("")]
-[assembly:AssemblyCulture("")]
+[assembly: AssemblyTitle("")]
+[assembly: AssemblyDescription("")]
+[assembly: AssemblyCompany("Gurux")]
+[assembly: AssemblyProduct("")]
+[assembly: AssemblyCopyright("Copyright (c) 1998-2017 Gurux Ltd. All rights reserved.")]
+[assembly: AssemblyTrademark("")]
+[assembly: AssemblyCulture("")]
 
 // Version information for an assembly consists of the following four values:
 
@@ -70,7 +70,7 @@ using System.Runtime.InteropServices;
 // You can specify all the values or you can default the Build and Revision Numbers
 // by using the '*' as shown below:
 
-[assembly:AssemblyVersion("1.0.*")]
+[assembly: AssemblyVersion("1.0.*")]
 
 
 

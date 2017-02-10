@@ -42,7 +42,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Gurux Ltd")]
 [assembly: AssemblyProduct("Gurux.Serial")]
-[assembly: AssemblyCopyright("Copyright (c) 1998-2016 Gurux Ltd. All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright (c) 1998-2017 Gurux Ltd. All rights reserved.")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
