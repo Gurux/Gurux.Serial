@@ -40,8 +40,8 @@ using System.Diagnostics;
 
 namespace GXSerialSample
 {
-	internal partial class Form1 : System.Windows.Forms.Form
-	{
+    internal partial class Form1 : System.Windows.Forms.Form
+    {
         StatusDlg m_StatusDlg;
 
         #region Close
@@ -69,9 +69,9 @@ namespace GXSerialSample
 		/// <param name="eventSender"></param>
 		/// <param name="eventArgs"></param>
 		private void Form1_Load(System.Object eventSender, System.EventArgs eventArgs)
-		{
-			try
-			{
+        {
+            try
+            {
                 gxSerial1 = new Gurux.Serial.GXSerial();
                 gxSerial1.Settings = GXSerialSample.Properties.Settings.Default.MediaSetting;
                 gxSerial1.Trace = TraceLevel.Verbose;
@@ -79,16 +79,16 @@ namespace GXSerialSample
                 gxSerial1.OnError += new ErrorEventHandler(gxSerial1_OnError);
                 gxSerial1.OnReceived += new ReceivedEventHandler(gxSerial1_OnReceived);
                 gxSerial1.OnMediaStateChange += new MediaStateChangeEventHandler(gxSerial1_OnMediaStateChange);
-				PropertiesBtn.Enabled = true;
-				if (gxSerial1.IsOpen)
-				{
+                PropertiesBtn.Enabled = true;
+                if (gxSerial1.IsOpen)
+                {
                     gxSerial1_OnMediaStateChange(this, new MediaStateEventArgs(MediaState.Open));
-				}
-				else
-				{
+                }
+                else
+                {
                     gxSerial1_OnMediaStateChange(this, new MediaStateEventArgs(MediaState.Closed));
-				}               
-			}
+                }
+            }
             catch (Exception Ex)
             {
                 MessageBox.Show(Ex.Message);
@@ -117,7 +117,7 @@ namespace GXSerialSample
             {
                 System.Diagnostics.Debug.WriteLine("-> " + e.ToString());
             }
-        } 
+        }
 
         #region OnError
         /// <summary>
@@ -154,18 +154,6 @@ namespace GXSerialSample
                 CloseBtn.Enabled = bOpen;
                 ReceivedText.Enabled = bOpen;
                 PacketCounterTimer.Enabled = bOpen;
-                // Close interval timer if media is closed.
-                if (!bOpen)
-                {
-                    IntervalTB.Enabled = false;
-                    IntervalTimer.Enabled = false;
-                    IntervalBtn.Enabled = false;
-                }
-                else
-                {
-                    IntervalTB.Enabled = true;
-                    IntervalBtn.Enabled = true;
-                }
             }
             catch (Exception Ex)
             {
@@ -204,7 +192,7 @@ namespace GXSerialSample
                     else
                     {
                         ReceivedText.Text += System.Text.Encoding.ASCII.GetString((byte[])e.Data);
-                    }                                        
+                    }
                 }
                 if (EchoCB.Checked)
                 {
@@ -218,9 +206,9 @@ namespace GXSerialSample
         }
 
         private void gxSerial1_OnReceived(object sender, ReceiveEventArgs e)
-		{
-			try
-			{
+        {
+            try
+            {
                 if (this.InvokeRequired)
                 {
                     this.BeginInvoke(new ReceivedEventHandler(OnReceived), sender, e);
@@ -229,7 +217,7 @@ namespace GXSerialSample
                 {
                     OnReceived(sender, e);
                 }
-			}
+            }
             catch (Exception Ex)
             {
                 MessageBox.Show(Ex.Message);
@@ -237,46 +225,11 @@ namespace GXSerialSample
         }
         #endregion //OnReceived
 
-        /// <summary>
-        /// Starts to read items with selected interval (ms).
-		/// </summary>
-		/// <param name="eventSender"></param>
-		/// <param name="eventArgs"></param>
-		private void IntervalBtn_Click(System.Object eventSender, System.EventArgs eventArgs)
-		{
-			try
-			{
-				IntervalTimer.Interval = int.Parse(IntervalTB.Text);
-				IntervalTB.Enabled = IntervalTimer.Enabled;
-				IntervalTimer.Enabled = !IntervalTimer.Enabled;
-			}
-            catch (Exception Ex)
-            {
-                MessageBox.Show(Ex.Message);
-            }
-		}
-		
-		/// <summary>
-        /// Reads the selected item.
-		/// </summary>
-		/// <param name="eventSender"></param>
-		/// <param name="eventArgs"></param>
-		private void IntervalTimer_Tick(System.Object eventSender, System.EventArgs eventArgs)
-		{
-			try
-            {
-                SendBtn_Click(SendBtn, new System.EventArgs());
-            }
-            catch (Exception Ex)
-            {
-                MessageBox.Show(Ex.Message);
-            }
-        }
 
         #region Open
         /// <summary>
         /// Opens serial port connection.
-		/// </summary>
+        /// </summary>
         private void OpenBtn_Click(System.Object eventSender, System.EventArgs eventArgs)
         {
             try
@@ -284,7 +237,7 @@ namespace GXSerialSample
                 gxSerial1.Open();
                 gxSerial1.DtrEnable = gxSerial1.RtsEnable = true;
             }
-            catch(Exception Ex)
+            catch (Exception Ex)
             {
                 MessageBox.Show(Ex.Message);
             }
@@ -297,7 +250,7 @@ namespace GXSerialSample
         /// <param name="eventSender"></param>
         /// <param name="eventArgs"></param>
 		private void PacketCounterTimer_Tick(System.Object eventSender, System.EventArgs eventArgs)
-		{
+        {
             try
             {
                 ReceivedTB.Text = gxSerial1.BytesReceived.ToString();
@@ -315,16 +268,16 @@ namespace GXSerialSample
         /// Shows GXSerial media properties.
         /// </summary>
 		private void PropertiesBtn_Click(System.Object eventSender, System.EventArgs eventArgs)
-		{
-			try
-			{
+        {
+            try
+            {
                 if (gxSerial1.Properties(this))
                 {
                     //Save settings.
                     GXSerialSample.Properties.Settings.Default.MediaSetting = gxSerial1.Settings;
                     GXSerialSample.Properties.Settings.Default.Save();
                 }
-			}
+            }
             catch (Exception Ex)
             {
                 MessageBox.Show(Ex.Message);
@@ -339,17 +292,17 @@ namespace GXSerialSample
         /// <param name="eventSender"></param>
         /// <param name="eventArgs"></param>
 		private void SendBtn_Click(System.Object eventSender, System.EventArgs eventArgs)
-		{
-			try
-			{
-                ReceivedText.Text = string.Empty;				
+        {
+            try
+            {
+                ReceivedText.Text = string.Empty;
                 if (SyncBtn.Checked) // Sends data synchronously.
                 {
                     if (HexCB.Checked)
                     {
                         // Sends data as byte array.                        
-                        lock(gxSerial1.Synchronous)
-                        {                            
+                        lock (gxSerial1.Synchronous)
+                        {
                             Gurux.Common.ReceiveParameters<byte[]> p = new Gurux.Common.ReceiveParameters<byte[]>()
                             {
                                 WaitTime = Convert.ToInt32(WaitTimeTB.Text),
@@ -361,7 +314,7 @@ namespace GXSerialSample
                             {
                                 ReceivedText.Text = GXCommon.ToHex(p.Reply, true);
                             }
-                        }                            
+                        }
                     }
                     else
                     {
@@ -374,12 +327,12 @@ namespace GXSerialSample
                                 Eop = EOPText.Text,
                                 Count = Convert.ToInt32(MinSizeTB.Text)
                             };
-                            gxSerial1.Send(SendText.Text + "\r");
+                            gxSerial1.Send(SendText.Text);
                             if (gxSerial1.Receive(p))
                             {
                                 ReceivedText.Text = Convert.ToString(p.Reply);
                             }
-                        }                        
+                        }
                     }
                 }
                 else // Sends data asynchronously.
@@ -391,11 +344,24 @@ namespace GXSerialSample
                     }
                     else
                     {
+                        string data = SendText.Text;
                         // Sends data as ASCII string.
-                        gxSerial1.Send(SendText.Text);
+                        if (EOPText.Text == "\\r")
+                        {
+                            data += '\r';
+                        }
+                        if (EOPText.Text == "\\n")
+                        {
+                            data += '\n';
+                        }
+                        if (EOPText.Text == "\\r\\n")
+                        {
+                            data += '\r' + '\n';
+                        }
+                        gxSerial1.Send(data);
                     }
                 }
-			}
+            }
             catch (Exception Ex)
             {
                 MessageBox.Show(Ex.Message);
@@ -404,13 +370,13 @@ namespace GXSerialSample
         #endregion //Send
 
         private void StatusBtn_Click(System.Object eventSender, System.EventArgs eventArgs)
-		{
+        {
             try
             {
                 if (m_StatusDlg == null || !m_StatusDlg.Created)
                 {
                     m_StatusDlg = new StatusDlg(gxSerial1);
-                } 
+                }
                 if (!m_StatusDlg.Visible)// Shows dialog.
                 {
                     m_StatusDlg.Show(this);
@@ -424,10 +390,10 @@ namespace GXSerialSample
             {
                 MessageBox.Show(Ex.Message);
             }
-		}
-		
-		private void Timer1_Timer()
-		{
+        }
+
+        private void Timer1_Timer()
+        {
             try
             {
                 SendBtn_Click(SendBtn, new System.EventArgs());
@@ -436,7 +402,7 @@ namespace GXSerialSample
             {
                 MessageBox.Show(Ex.Message);
             }
-		}
+        }
 
         /// <summary>
         /// End of Packet used only, when data is sent synchronously.
@@ -449,7 +415,7 @@ namespace GXSerialSample
             {
                 // If True, no more data is expected to be received synchronously. 
                 // If False, asynchronous data is not received.
-                MinSizeTB.Enabled = WaitTimeTB.Enabled = EOPText.Enabled = SyncBtn.Checked;
+                MinSizeTB.Enabled = WaitTimeTB.Enabled = SyncBtn.Checked;
             }
             catch (Exception Ex)
             {

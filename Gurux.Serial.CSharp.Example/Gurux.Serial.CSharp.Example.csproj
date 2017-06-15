@@ -163,8 +163,6 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="Gurux.Common.XML" />
-    <Content Include="Gurux.Serial.XML" />
     <Content Include="GXSerial.ico" />
   </ItemGroup>
   <PropertyGroup>

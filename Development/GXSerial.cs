@@ -47,10 +47,10 @@ using Gurux.Serial.Properties;
 
 namespace Gurux.Serial
 {
-	/// <summary>
-	/// A media component that enables communication of serial port.
+    /// <summary>
+    /// A media component that enables communication of serial port.
     /// See help in http://www.gurux.org/index.php?q=Gurux.Net
-	/// </summary>
+    /// </summary>
     public class GXSerial : IGXMedia, IGXVirtualMedia, INotifyPropertyChanged, IDisposable
     {
         private object m_sync = new object();
@@ -61,16 +61,16 @@ namespace Gurux.Serial
         object m_Eop;
         GXSynchronousMediaBase m_syncBase;
         UInt64 m_BytesSent, m_BytesReceived;
-        readonly object m_Synchronous = new object();        
-		readonly object m_baseLock = new object();        
+        readonly object m_Synchronous = new object();
+        readonly object m_baseLock = new object();
         internal System.IO.Ports.SerialPort m_base = new System.IO.Ports.SerialPort();
         GXReceiveThread m_Receiver;
         Thread m_ReceiverThread;
         byte m_EofChar, m_ErrorChar, m_EventChar, m_XonChar, m_XoffChar;
 
-		/// <summary>
-		/// Get baud rates supported by given serial port.
-		/// </summary>
+        /// <summary>
+        /// Get baud rates supported by given serial port.
+        /// </summary>
         public int[] GetAvailableBaudRates(string portName)
         {
             List<int> items = new List<int>();
@@ -191,10 +191,10 @@ namespace Gurux.Serial
                     items.Clear();
                 }
             }
-			//Add default baud rates.
-			if (items.Count == 0)
-			{
-				items.Add(300);
+            //Add default baud rates.
+            if (items.Count == 0)
+            {
+                items.Add(300);
                 items.Add(600);
                 items.Add(1800);
                 items.Add(2400);
@@ -207,7 +207,7 @@ namespace Gurux.Serial
                 items.Add(115200);
                 items.Add(128000);
                 items.Add(0); //Programmable baud rate.	
-			}
+            }
             return items.ToArray();
         }
 
@@ -217,12 +217,12 @@ namespace Gurux.Serial
         public GXSerial()
         {
             ConfigurableSettings = AvailableMediaSettings.All;
-            m_syncBase = new GXSynchronousMediaBase(1024);            
+            m_syncBase = new GXSynchronousMediaBase(1024);
             //Events are not currently implemented in Mono's serial port.
             if (Environment.OSVersion.Platform != PlatformID.Unix && !IsVirtual)
             {
                 m_base.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(GXSerial_DataReceived);
-            }         
+            }
         }
 
         /// <summary>
@@ -265,11 +265,11 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// What level of tracing is used.
-		/// </summary>
-		public TraceLevel Trace
-		{
+        /// <summary>
+        /// What level of tracing is used.
+        /// </summary>
+        public TraceLevel Trace
+        {
             get
             {
                 return m_Trace;
@@ -278,7 +278,7 @@ namespace Gurux.Serial
             {
                 m_Trace = m_syncBase.Trace = value;
             }
-		}
+        }
 
         /// <summary>
         /// Gets the underlying System.IO.Stream object for a System.IO.Ports.SerialPort object.
@@ -303,7 +303,7 @@ namespace Gurux.Serial
                 int count = 0;
                 int index = m_syncBase.receivedSize;
                 byte[] buff = null;
-                int totalCount = 0;                
+                int totalCount = 0;
                 while (IsOpen && (count = m_base.BytesToRead) != 0)
                 {
                     totalCount += count;
@@ -335,7 +335,7 @@ namespace Gurux.Serial
         }
 
         private void HandleReceivedData(int index, byte[] buff, int totalCount)
-        {            
+        {
             lock (m_syncBase.receivedSync)
             {
                 if (totalCount != 0 && Eop != null) //Search Eop if given.
@@ -362,7 +362,7 @@ namespace Gurux.Serial
                     {
                         totalCount += eop.Length;
                     }
-                }                
+                }
             }
             if (totalCount != -1 && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
             {
@@ -385,7 +385,7 @@ namespace Gurux.Serial
                 {
                     count = totalCount;
                 }
-                TraceEventArgs arg = new TraceEventArgs(TraceTypes.Received, 
+                TraceEventArgs arg = new TraceEventArgs(TraceTypes.Received,
                                     m_syncBase.m_Received, pos, count, null);
                 LastEopPos = index + totalCount;
                 if (LastEopPos != 0)
@@ -413,14 +413,14 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// Used baud rate for communication.
-		/// </summary>
-		/// <remarks>Can be changed without disconnecting.</remarks>
+        /// <summary>
+        /// Used baud rate for communication.
+        /// </summary>
+        /// <remarks>Can be changed without disconnecting.</remarks>
         [Browsable(true)]
         [DefaultValue(9600)]
         [MonitoringDescription("BaudRate")]
-        public int BaudRate 
+        public int BaudRate
         {
             get
             {
@@ -451,9 +451,9 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// True if the port is in a break state; otherwise, false.
-		/// </summary>
+        /// <summary>
+        /// True if the port is in a break state; otherwise, false.
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
         public bool BreakState
@@ -468,90 +468,90 @@ namespace Gurux.Serial
                         return bool.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-	                return m_base.BreakState;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.BreakState;
+                }
             }
             set
-            {                
-				bool change;
-				lock(m_baseLock)
-				{
-	                change = m_base.BreakState != value;
-	                m_base.BreakState = value;
-				}
-	            if (change)
+            {
+                bool change;
+                lock (m_baseLock)
+                {
+                    change = m_base.BreakState != value;
+                    m_base.BreakState = value;
+                }
+                if (change)
                 {
                     NotifyPropertyChanged("BreakState");
                 }
             }
         }
 
-		/// <summary>
-		/// Gets the number of bytes in the receive buffer.
-		/// </summary>
+        /// <summary>
+        /// Gets the number of bytes in the receive buffer.
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
         public int BytesToRead
         {
             get
             {
-				lock(m_baseLock)
-				{
-                	return m_base.BytesToRead;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.BytesToRead;
+                }
             }
         }
-       
-		/// <summary>
-		/// Gets the number of bytes in the send buffer.
-		/// </summary>
+
+        /// <summary>
+        /// Gets the number of bytes in the send buffer.
+        /// </summary>
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public int BytesToWrite
         {
             get
             {
-				lock(m_baseLock)
-				{
-	                return m_base.BytesToWrite;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.BytesToWrite;
+                }
             }
         }
 
-		/// <summary>
-		/// Gets the state of the Carrier Detect line for the port.
-		/// </summary>
+        /// <summary>
+        /// Gets the state of the Carrier Detect line for the port.
+        /// </summary>
         [Browsable(false)]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool CDHolding 
+        public bool CDHolding
         {
             get
             {
-				lock(m_baseLock)
-				{
-                	return m_base.CDHolding;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.CDHolding;
+                }
             }
         }
-       
-		/// <summary>
-		/// Gets the state of the Clear-to-Send line.
-		/// </summary>
+
+        /// <summary>
+        /// Gets the state of the Clear-to-Send line.
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
         public bool CtsHolding
         {
             get
             {
-				lock(m_baseLock)
-				{
-                	return m_base.CtsHolding;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.CtsHolding;
+                }
             }
         }
-        
+
         /// <summary>
         /// Eof Char.
         /// </summary>
@@ -682,9 +682,9 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// Gets or sets the standard length of data bits per byte.
-		/// </summary>
+        /// <summary>
+        /// Gets or sets the standard length of data bits per byte.
+        /// </summary>
         [MonitoringDescription("DataBits")]
         [DefaultValue(8)]
         [Browsable(true)]
@@ -701,29 +701,29 @@ namespace Gurux.Serial
                     }
                 }
 
-				lock(m_baseLock)
-				{
-                	return m_base.DataBits;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.DataBits;
+                }
             }
             set
             {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.DataBits != value;
-                	m_base.DataBits = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.DataBits != value;
+                    m_base.DataBits = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("DataBits");
                 }
             }
         }
-       
-		/// <summary>
-		/// Gets or sets a value indicating whether null bytes are ignored when transmitted between the port and the receive buffer.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets a value indicating whether null bytes are ignored when transmitted between the port and the receive buffer.
+        /// </summary>
         [Browsable(true)]
         [DefaultValue(false)]
         [MonitoringDescription("DiscardNull")]
@@ -739,19 +739,19 @@ namespace Gurux.Serial
                         return bool.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.DiscardNull;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.DiscardNull;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.DiscardNull != value;
-                	m_base.DiscardNull = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.DiscardNull != value;
+                    m_base.DiscardNull = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("DiscardNull");
@@ -759,25 +759,25 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// Gets the state of the Data Set Ready (DSR) signal.
-		/// </summary>
+        /// <summary>
+        /// Gets the state of the Data Set Ready (DSR) signal.
+        /// </summary>
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
         public bool DsrHolding
         {
             get
             {
-				lock(m_baseLock)
-				{
-                	return m_base.DsrHolding;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.DsrHolding;
+                }
             }
         }
-       
-		/// <summary>
-		/// Gets or sets a value that enables the Data Terminal Ready (DTR) signal during serial communication.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets a value that enables the Data Terminal Ready (DTR) signal during serial communication.
+        /// </summary>
         [DefaultValue(false)]
         [MonitoringDescription("DtrEnable")]
         [Browsable(true)]
@@ -793,59 +793,59 @@ namespace Gurux.Serial
                         return bool.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.DtrEnable;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.DtrEnable;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.DtrEnable != value;
-                	m_base.DtrEnable = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.DtrEnable != value;
+                    m_base.DtrEnable = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("DtrEnable");
                 }
             }
         }
-       
-		/// <summary>
-		/// Gets or sets the byte encoding for pre- and post-transmission conversion of text.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the byte encoding for pre- and post-transmission conversion of text.
+        /// </summary>
         [MonitoringDescription("Encoding")]
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         [Browsable(false)]
         public Encoding Encoding
         {
             get
-            {                
-				lock(m_baseLock)
-				{
-                	return m_base.Encoding;
-				}
+            {
+                lock (m_baseLock)
+                {
+                    return m_base.Encoding;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.Encoding != value;
-                	m_base.Encoding = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.Encoding != value;
+                    m_base.Encoding = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("Encoding");
                 }
             }
         }
-        
-		/// <summary>
-		/// Gets or sets the handshaking protocol for serial port transmission of data.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the handshaking protocol for serial port transmission of data.
+        /// </summary>
         [Browsable(true)]
         [MonitoringDescription("Handshake")]
         public Handshake Handshake
@@ -860,44 +860,44 @@ namespace Gurux.Serial
                         return (Handshake)int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.Handshake;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.Handshake;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.Handshake != value;
-                	m_base.Handshake = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.Handshake != value;
+                    m_base.Handshake = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("Handshake");
                 }
             }
         }
-        
-		/// <summary>
-		/// Gets a value indicating the open or closed status of the System.IO.Ports.SerialPort object.
-		/// </summary>
+
+        /// <summary>
+        /// Gets a value indicating the open or closed status of the System.IO.Ports.SerialPort object.
+        /// </summary>
         [Browsable(false)]
         public bool IsOpen
         {
             get
             {
-				lock(m_baseLock)
-				{
-                	return m_base.IsOpen;
-				}
-            }            
+                lock (m_baseLock)
+                {
+                    return m_base.IsOpen;
+                }
+            }
         }
 
-		/// <summary>
-		/// Gets or sets the parity-checking protocol.
-		/// </summary>
+        /// <summary>
+        /// Gets or sets the parity-checking protocol.
+        /// </summary>
         [Browsable(true)]
         [MonitoringDescription("Parity")]
         public Parity Parity
@@ -912,19 +912,19 @@ namespace Gurux.Serial
                         return (Parity)int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.Parity;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.Parity;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.Parity != value;
-                	m_base.Parity = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.Parity != value;
+                    m_base.Parity = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("Parity");
@@ -932,9 +932,9 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// Gets or sets the byte that replaces invalid bytes in a data stream when a parity error occurs.
-		/// </summary>
+        /// <summary>
+        /// Gets or sets the byte that replaces invalid bytes in a data stream when a parity error occurs.
+        /// </summary>
         [Browsable(true)]
         [MonitoringDescription("ParityReplace")]
         [DefaultValue(63)]
@@ -950,29 +950,29 @@ namespace Gurux.Serial
                         return byte.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.ParityReplace;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.ParityReplace;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.ParityReplace != value;
-                	m_base.ParityReplace = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.ParityReplace != value;
+                    m_base.ParityReplace = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("ParityReplace");
                 }
             }
         }
-       
-		/// <summary>
-		/// Gets or sets the port for communications, including but not limited to all available COM ports.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the port for communications, including but not limited to all available COM ports.
+        /// </summary>
         [MonitoringDescription("PortName")]
         [Browsable(true)]
         [DefaultValue("COM1")]
@@ -988,29 +988,29 @@ namespace Gurux.Serial
                         return value;
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.PortName;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.PortName;
+                }
             }
             set
-            {               
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.PortName != value;
-                	m_base.PortName = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.PortName != value;
+                    m_base.PortName = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("PortName");
                 }
             }
         }
-        
-		/// <summary>
-		/// Gets or sets the size of the System.IO.Ports.SerialPort input buffer.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the size of the System.IO.Ports.SerialPort input buffer.
+        /// </summary>
         [DefaultValue(4096)]
         [MonitoringDescription("ReadBufferSize")]
         [Browsable(true)]
@@ -1026,29 +1026,29 @@ namespace Gurux.Serial
                         return int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.ReadBufferSize;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.ReadBufferSize;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.ReadBufferSize != value;
-                	m_base.ReadBufferSize = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.ReadBufferSize != value;
+                    m_base.ReadBufferSize = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("ReadBufferSize");
                 }
             }
         }
-       
-		/// <summary>
-		/// Gets or sets the number of milliseconds before a time-out occurs when a read operation does not finish.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the number of milliseconds before a time-out occurs when a read operation does not finish.
+        /// </summary>
         [MonitoringDescription("ReadTimeout")]
         [Browsable(true)]
         [DefaultValue(-1)]
@@ -1064,19 +1064,19 @@ namespace Gurux.Serial
                         return int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.ReadTimeout;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.ReadTimeout;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.ReadTimeout != value;
-                	m_base.ReadTimeout = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.ReadTimeout != value;
+                    m_base.ReadTimeout = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("ReadTimeout");
@@ -1084,9 +1084,9 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// Gets or sets the number of bytes in the internal input buffer before a System.IO.Ports.SerialPort.DataReceived event occurs.
-		/// </summary>
+        /// <summary>
+        /// Gets or sets the number of bytes in the internal input buffer before a System.IO.Ports.SerialPort.DataReceived event occurs.
+        /// </summary>
         [MonitoringDescription("ReceivedBytesThreshold")]
         [DefaultValue(1)]
         [Browsable(true)]
@@ -1102,19 +1102,19 @@ namespace Gurux.Serial
                         return int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.ReceivedBytesThreshold;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.ReceivedBytesThreshold;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.ReceivedBytesThreshold != value;
-                	m_base.ReceivedBytesThreshold = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.ReceivedBytesThreshold != value;
+                    m_base.ReceivedBytesThreshold = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("ReceivedBytesThreshold");
@@ -1131,9 +1131,9 @@ namespace Gurux.Serial
             return m_base.ReadExisting();
         }
 
-		/// <summary>
-		/// Gets or sets a value indicating whether the Request to Send (RTS) signal is enabled during serial communication.
-		/// </summary>
+        /// <summary>
+        /// Gets or sets a value indicating whether the Request to Send (RTS) signal is enabled during serial communication.
+        /// </summary>
         [MonitoringDescription("RtsEnable")]
         [DefaultValue(false)]
         [Browsable(true)]
@@ -1149,29 +1149,29 @@ namespace Gurux.Serial
                         return bool.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.RtsEnable;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.RtsEnable;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.RtsEnable != value;
-                	m_base.RtsEnable = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.RtsEnable != value;
+                    m_base.RtsEnable = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("RtsEnable");
                 }
             }
         }
-       
-		/// <summary>
-		/// Gets or sets the standard number of stopbits per byte.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the standard number of stopbits per byte.
+        /// </summary>
         [MonitoringDescription("StopBits")]
         [Browsable(true)]
         public StopBits StopBits
@@ -1186,29 +1186,29 @@ namespace Gurux.Serial
                         return (StopBits)int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.StopBits;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.StopBits;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.StopBits != value;
-                	m_base.StopBits = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.StopBits != value;
+                    m_base.StopBits = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("StopBits");
                 }
             }
         }
-        
-		/// <summary>
-		/// Gets or sets the size of the serial port output buffer.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the size of the serial port output buffer.
+        /// </summary>
         [Browsable(true)]
         [DefaultValue(2048)]
         [MonitoringDescription("WriteBufferSize")]
@@ -1224,33 +1224,33 @@ namespace Gurux.Serial
                         return int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.WriteBufferSize;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.WriteBufferSize;
+                }
             }
             set
             {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.WriteBufferSize != value;
-                	m_base.WriteBufferSize = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.WriteBufferSize != value;
+                    m_base.WriteBufferSize = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("WriteBufferSize");
                 }
             }
         }
-        
-		/// <summary>
-		/// Gets or sets the number of milliseconds before a time-out occurs when a write operation does not finish.
-		/// </summary>
+
+        /// <summary>
+        /// Gets or sets the number of milliseconds before a time-out occurs when a write operation does not finish.
+        /// </summary>
         [MonitoringDescription("WriteTimeout")]
         [Browsable(true)]
         [DefaultValue(-1)]
-        public int WriteTimeout         
+        public int WriteTimeout
         {
             get
             {
@@ -1262,19 +1262,19 @@ namespace Gurux.Serial
                         return int.Parse(value);
                     }
                 }
-				lock(m_baseLock)
-				{
-                	return m_base.WriteTimeout;
-				}
+                lock (m_baseLock)
+                {
+                    return m_base.WriteTimeout;
+                }
             }
             set
-            {                
+            {
                 bool change;
-				lock(m_baseLock)
-				{
-					change = m_base.WriteTimeout != value;
-                	m_base.WriteTimeout = value;
-				}
+                lock (m_baseLock)
+                {
+                    change = m_base.WriteTimeout != value;
+                    m_base.WriteTimeout = value;
+                }
                 if (change)
                 {
                     NotifyPropertyChanged("WriteTimeout");
@@ -1282,9 +1282,9 @@ namespace Gurux.Serial
             }
         }
 
-		/// <summary>
-		/// Closes the port connection, sets the System.IO.Ports.SerialPort.IsOpen property to false, and disposes of the internal System.IO.Stream object.
-		/// </summary>
+        /// <summary>
+        /// Closes the port connection, sets the System.IO.Ports.SerialPort.IsOpen property to false, and disposes of the internal System.IO.Stream object.
+        /// </summary>
         public void Close()
         {
             bool bOpen = VirtualOpen;
@@ -1332,54 +1332,54 @@ namespace Gurux.Serial
                     }
                     VirtualOpen = false;
                     NotifyMediaStateChange(MediaState.Closed);
-                }                
+                }
             }
         }
 
-		/// <summary>
-		/// Discards data from the serial driver's receive buffer.
-		/// </summary>
+        /// <summary>
+        /// Discards data from the serial driver's receive buffer.
+        /// </summary>
         public void DiscardInBuffer()
         {
-			lock(m_baseLock)
-			{
-            	m_base.DiscardInBuffer();
-			}
-        }
-        
-		/// <summary>
-		/// Discards data from the serial driver's transmit buffer.
-		/// </summary>
-		public void DiscardOutBuffer()
-        {
-			lock(m_baseLock)
-			{
-            	m_base.DiscardOutBuffer();
-			}
+            lock (m_baseLock)
+            {
+                m_base.DiscardInBuffer();
+            }
         }
 
-		/// <summary>
-		/// Gets an array of serial port names for the current computer.
-		/// </summary>
-		/// <returns></returns>
+        /// <summary>
+        /// Discards data from the serial driver's transmit buffer.
+        /// </summary>
+        public void DiscardOutBuffer()
+        {
+            lock (m_baseLock)
+            {
+                m_base.DiscardOutBuffer();
+            }
+        }
+
+        /// <summary>
+        /// Gets an array of serial port names for the current computer.
+        /// </summary>
+        /// <returns></returns>
         public static string[] GetPortNames()
         {
-           	return System.IO.Ports.SerialPort.GetPortNames();
+            return System.IO.Ports.SerialPort.GetPortNames();
         }
 
-		/// <summary>
-		/// User defined available ports.
-		/// </summary>
-		/// <remarks>If this is not set ports are retrieved from current system.</remarks>
-		public string[] AvailablePorts
-		{
-			get;
-			set;
-		}
+        /// <summary>
+        /// User defined available ports.
+        /// </summary>
+        /// <remarks>If this is not set ports are retrieved from current system.</remarks>
+        public string[] AvailablePorts
+        {
+            get;
+            set;
+        }
 
-		/// <summary>
-		/// Opens a new serial port connection.
-		/// </summary>
+        /// <summary>
+        /// Opens a new serial port connection.
+        /// </summary>
         /// <remarks>
         /// Remember to set <see cref="DtrEnable "/> and <see cref="RtsEnable"/> to True before start communicate.
         /// </remarks>
@@ -1439,15 +1439,15 @@ namespace Gurux.Serial
                 {
                     VirtualOpen = true;
                 }
-                this.DtrEnable = this.RtsEnable = true;                
-                NotifyMediaStateChange(MediaState.Open);                
+                this.DtrEnable = this.RtsEnable = true;
+                NotifyMediaStateChange(MediaState.Open);
             }
             catch
             {
                 Close();
                 throw;
             }
-        }       
+        }
 
         #region Events
         /// <summary>
@@ -1545,7 +1545,7 @@ namespace Gurux.Serial
                 m_OnPropertyChanged -= value;
             }
         }
-        
+
         /// <inheritdoc cref="TraceEventHandler"/>
         [Description("Called when the Media is sending or receiving data.")]
         public event TraceEventHandler OnTrace
@@ -1558,7 +1558,7 @@ namespace Gurux.Serial
             {
                 m_OnTrace -= value;
             }
-        }        
+        }
 
         private void NotifyPropertyChanged(string info)
         {
@@ -1675,7 +1675,7 @@ namespace Gurux.Serial
         {
             add
             {
-                m_base.PinChanged += value;                
+                m_base.PinChanged += value;
             }
             remove
             {
@@ -1695,7 +1695,7 @@ namespace Gurux.Serial
             m_BytesReceived += (uint)data.Length;
             HandleReceivedData(index, data, data.Length);
         }
-        
+
         /// <inheritdoc cref="IGXMedia.Synchronous"/>
         public object Synchronous
         {
@@ -1766,7 +1766,7 @@ namespace Gurux.Serial
         public void ResetByteCounters()
         {
             m_BytesSent = m_BytesReceived = 0;
-        }   
+        }
 
         void Gurux.Common.IGXMedia.Copy(object target)
         {
@@ -1793,7 +1793,7 @@ namespace Gurux.Serial
                 return m_Eop;
             }
             set
-            {                 
+            {
                 bool change = m_Eop != value;
                 m_Eop = value;
                 if (change)
@@ -1897,7 +1897,24 @@ namespace Gurux.Serial
                     }
                 }
             }
-        }       
+        }
+
+        /// <summary>
+        /// Current Serial port settings as a string.
+        /// </summary>
+        /// <returns></returns>
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+            sb.Append(PortName);
+            sb.Append(' ');
+            sb.Append(BaudRate);
+            sb.Append(' ');
+            sb.Append(DataBits);
+            sb.Append(Parity);
+            sb.Append((int)StopBits);
+            return sb.ToString();
+        }
 
         string Gurux.Common.IGXMedia.MediaType
         {
@@ -1917,7 +1934,7 @@ namespace Gurux.Serial
 
         string Gurux.Common.IGXMedia.Name
         {
-            get 
+            get
             {
                 return m_base.PortName;
             }
@@ -1933,22 +1950,22 @@ namespace Gurux.Serial
         /// <seealso cref="DataBits">DataBits</seealso>
         /// <seealso href="PropertiesDialog.html">Properties Dialog</seealso>
         public bool Properties(Form parent)
-        {            
+        {
             return new Gurux.Shared.PropertiesForm(this.PropertiesForm, Resources.SettingsTxt, IsOpen).ShowDialog(parent) == DialogResult.OK;
         }
 
-		/// <summary>
-		/// Sends data asynchronously. <br/>
-		/// No reply from the receiver, whether or not the operation was successful, is expected.
-		/// </summary>
+        /// <summary>
+        /// Sends data asynchronously. <br/>
+        /// No reply from the receiver, whether or not the operation was successful, is expected.
+        /// </summary>
         public void Send(object data)
         {
             ((Gurux.Common.IGXMedia)this).Send(data, null);
         }
 
-		/// <summary>
-		/// Returns a new instance of the Settings form.
-		/// </summary>
+        /// <summary>
+        /// Returns a new instance of the Settings form.
+        /// </summary>
         public System.Windows.Forms.Form PropertiesForm
         {
             get
@@ -1965,16 +1982,16 @@ namespace Gurux.Serial
 
         /// <inheritdoc cref="IGXMedia.Send"/>
         void Gurux.Common.IGXMedia.Send(object data, string receiver)
-        {			
-            byte[] value = GXCommon.GetAsByteArray(data);			
-			lock(m_baseLock)
-			{
+        {
+            byte[] value = GXCommon.GetAsByteArray(data);
+            lock (m_baseLock)
+            {
                 LastEopPos = 0;
                 if (m_Trace == TraceLevel.Verbose && m_OnTrace != null)
                 {
                     m_OnTrace(this, new TraceEventArgs(TraceTypes.Sent, value, null));
                 }
-            	m_BytesSent += (uint) value.Length;
+                m_BytesSent += (uint)value.Length;
                 //Reset last position if Eop is used.
                 lock (m_syncBase.receivedSync)
                 {
@@ -1988,13 +2005,13 @@ namespace Gurux.Serial
                 {
                     m_OnDataSend(this, new ReceiveEventArgs(data, receiver));
                 }
-			}
+            }
         }
 
         /// <inheritdoc cref="IGXMedia.Validate"/>
         public void Validate()
         {
-            
+
         }
 
         int Gurux.Common.IGXMedia.ConfigurableSettings
@@ -2007,15 +2024,15 @@ namespace Gurux.Serial
 
         #region IDisposable Members
 
-		/// <summary>
-		/// Closes the connection.
-		/// </summary>
+        /// <summary>
+        /// Closes the connection.
+        /// </summary>
         public void Dispose()
         {
             if (this.IsOpen)
             {
                 Close();
-            }            
+            }
         }
 
         #endregion       

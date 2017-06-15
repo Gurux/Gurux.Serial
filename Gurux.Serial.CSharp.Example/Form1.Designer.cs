@@ -42,76 +42,64 @@ using System.Data;
 
 namespace GXSerialSample
 {
-	partial class Form1
-	{
-		[STAThread]
-		static void Main()
-		{
-			System.Windows.Forms.Application.Run(new Form1());
-		}
-		#region "Windows Form Designer generated code "
-		[System.Diagnostics.DebuggerNonUserCode()]public Form1()
-		{
-			//This call is required by the Windows Form Designer.
-			InitializeComponent();
-		}
-		//Form overrides dispose to clean up the component list.
-		[System.Diagnostics.DebuggerNonUserCode()]protected override void Dispose(bool Disposing)
-		{
-			if (Disposing)
-			{
-				if (components != null)
-				{
-					components.Dispose();
-				}
-			}
-			base.Dispose(Disposing);
-		}
-        //Required by the Windows Form Designer
-		public System.Windows.Forms.Button IntervalBtn;
-		public System.Windows.Forms.Timer IntervalTimer;
-		public System.Windows.Forms.TextBox IntervalTB;
-		public System.Windows.Forms.Label Label7;
-		public System.Windows.Forms.GroupBox Frame3;
-		public System.Windows.Forms.Timer PacketCounterTimer;
-		public System.Windows.Forms.TextBox ReceivedTB;
-		public System.Windows.Forms.TextBox SentTB;
-		public System.Windows.Forms.Label Label6;
-		public System.Windows.Forms.Label Label5;
-		public System.Windows.Forms.GroupBox Frame2;
-		public System.Windows.Forms.Button SendBtn;
-		public System.Windows.Forms.CheckBox SyncBtn;
+    partial class Form1
+    {
+        [STAThread]
+        static void Main()
+        {
+            System.Windows.Forms.Application.Run(new Form1());
+        }
+        #region "Windows Form Designer generated code "
+        [System.Diagnostics.DebuggerNonUserCode()]
+        public Form1()
+        {
+            //This call is required by the Windows Form Designer.
+            InitializeComponent();
+        }
+        //Form overrides dispose to clean up the component list.
+        [System.Diagnostics.DebuggerNonUserCode()]
+        protected override void Dispose(bool Disposing)
+        {
+            if (Disposing)
+            {
+                if (components != null)
+                {
+                    components.Dispose();
+                }
+            }
+            base.Dispose(Disposing);
+        }
+        public System.Windows.Forms.Timer PacketCounterTimer;
+        public System.Windows.Forms.TextBox ReceivedTB;
+        public System.Windows.Forms.TextBox SentTB;
+        public System.Windows.Forms.Label Label6;
+        public System.Windows.Forms.Label Label5;
+        public System.Windows.Forms.GroupBox Frame2;
+        public System.Windows.Forms.Button SendBtn;
+        public System.Windows.Forms.CheckBox SyncBtn;
         public System.Windows.Forms.CheckBox HexCB;
-		public System.Windows.Forms.GroupBox Frame4;
-		public System.Windows.Forms.Button StatusBtn;
-		public System.Windows.Forms.TextBox SendText;
-		public System.Windows.Forms.TextBox ReceivedText;
-		public System.Windows.Forms.Label _Label1_1;
-		public System.Windows.Forms.Label _Label1_0;
-		public System.Windows.Forms.GroupBox Frame1;
-		public System.Windows.Forms.Button OpenBtn;
-		public System.Windows.Forms.Button CloseBtn;
+        public System.Windows.Forms.Button StatusBtn;
+        public System.Windows.Forms.TextBox SendText;
+        public System.Windows.Forms.TextBox ReceivedText;
+        public System.Windows.Forms.Label _Label1_1;
+        public System.Windows.Forms.GroupBox Frame1;
+        public System.Windows.Forms.Button OpenBtn;
+        public System.Windows.Forms.Button CloseBtn;
         public System.Windows.Forms.Button PropertiesBtn;
-		//NOTE: The following procedure is required by the Windows Form Designer
-		//It can be modified using the Windows Form Designer.
-		//Do not modify it using the code editor.
-		[System.Diagnostics.DebuggerStepThrough()]private void InitializeComponent()
-		{
+        //NOTE: The following procedure is required by the Windows Form Designer
+        //It can be modified using the Windows Form Designer.
+        //Do not modify it using the code editor.
+        [System.Diagnostics.DebuggerStepThrough()]
+        private void InitializeComponent()
+        {
             this.components = new System.ComponentModel.Container();
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Form1));
-            this.Frame3 = new System.Windows.Forms.GroupBox();
-            this.AvailablePortsBtn = new System.Windows.Forms.Button();
-            this.IntervalBtn = new System.Windows.Forms.Button();
-            this.IntervalTB = new System.Windows.Forms.TextBox();
-            this.Label7 = new System.Windows.Forms.Label();
-            this.IntervalTimer = new System.Windows.Forms.Timer(this.components);
             this.Frame2 = new System.Windows.Forms.GroupBox();
             this.ReceivedTB = new System.Windows.Forms.TextBox();
             this.SentTB = new System.Windows.Forms.TextBox();
             this.Label6 = new System.Windows.Forms.Label();
             this.Label5 = new System.Windows.Forms.Label();
             this.PacketCounterTimer = new System.Windows.Forms.Timer(this.components);
-            this.Frame4 = new System.Windows.Forms.GroupBox();
             this.EchoCB = new System.Windows.Forms.CheckBox();
             this.SendBtn = new System.Windows.Forms.Button();
             this.SyncBtn = new System.Windows.Forms.CheckBox();
@@ -119,9 +107,8 @@ namespace GXSerialSample
             this.StatusBtn = new System.Windows.Forms.Button();
             this.Frame1 = new System.Windows.Forms.GroupBox();
             this.SendText = new System.Windows.Forms.TextBox();
-            this.ReceivedText = new System.Windows.Forms.TextBox();
             this._Label1_1 = new System.Windows.Forms.Label();
-            this._Label1_0 = new System.Windows.Forms.Label();
+            this.ReceivedText = new System.Windows.Forms.TextBox();
             this.OpenBtn = new System.Windows.Forms.Button();
             this.CloseBtn = new System.Windows.Forms.Button();
             this.PropertiesBtn = new System.Windows.Forms.Button();
@@ -132,99 +119,21 @@ namespace GXSerialSample
             this.WaitTimeTB = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.label2 = new System.Windows.Forms.Label();
-            this.Frame3.SuspendLayout();
             this.Frame2.SuspendLayout();
-            this.Frame4.SuspendLayout();
             this.Frame1.SuspendLayout();
             this.groupBox1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // Frame3
-            // 
-            this.Frame3.BackColor = System.Drawing.SystemColors.Control;
-            this.Frame3.Controls.Add(this.AvailablePortsBtn);
-            this.Frame3.Controls.Add(this.IntervalBtn);
-            this.Frame3.Controls.Add(this.IntervalTB);
-            this.Frame3.Controls.Add(this.Label7);
-            this.Frame3.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.Frame3.Location = new System.Drawing.Point(0, 295);
-            this.Frame3.Name = "Frame3";
-            this.Frame3.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.Frame3.Size = new System.Drawing.Size(393, 49);
-            this.Frame3.TabIndex = 17;
-            this.Frame3.TabStop = false;
-            this.Frame3.Text = "Tester";
-            // 
-            // AvailablePortsBtn
-            // 
-            this.AvailablePortsBtn.BackColor = System.Drawing.SystemColors.Control;
-            this.AvailablePortsBtn.Cursor = System.Windows.Forms.Cursors.Default;
-            this.AvailablePortsBtn.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.AvailablePortsBtn.Location = new System.Drawing.Point(320, 13);
-            this.AvailablePortsBtn.Name = "AvailablePortsBtn";
-            this.AvailablePortsBtn.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.AvailablePortsBtn.Size = new System.Drawing.Size(73, 25);
-            this.AvailablePortsBtn.TabIndex = 22;
-            this.AvailablePortsBtn.Text = "Ports...";
-            this.AvailablePortsBtn.UseVisualStyleBackColor = false;
-            this.AvailablePortsBtn.Click += new System.EventHandler(this.AvailablePortsBtn_Click);
-            // 
-            // IntervalBtn
-            // 
-            this.IntervalBtn.BackColor = System.Drawing.SystemColors.Control;
-            this.IntervalBtn.Cursor = System.Windows.Forms.Cursors.Default;
-            this.IntervalBtn.Enabled = false;
-            this.IntervalBtn.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.IntervalBtn.Location = new System.Drawing.Point(152, 16);
-            this.IntervalBtn.Name = "IntervalBtn";
-            this.IntervalBtn.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.IntervalBtn.Size = new System.Drawing.Size(73, 25);
-            this.IntervalBtn.TabIndex = 19;
-            this.IntervalBtn.Text = "Go/Stop";
-            this.IntervalBtn.UseVisualStyleBackColor = false;
-            this.IntervalBtn.Click += new System.EventHandler(this.IntervalBtn_Click);
-            // 
-            // IntervalTB
-            // 
-            this.IntervalTB.AcceptsReturn = true;
-            this.IntervalTB.BackColor = System.Drawing.SystemColors.Window;
-            this.IntervalTB.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.IntervalTB.Enabled = false;
-            this.IntervalTB.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.IntervalTB.Location = new System.Drawing.Point(56, 16);
-            this.IntervalTB.MaxLength = 0;
-            this.IntervalTB.Name = "IntervalTB";
-            this.IntervalTB.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.IntervalTB.Size = new System.Drawing.Size(89, 20);
-            this.IntervalTB.TabIndex = 18;
-            this.IntervalTB.Text = "10";
-            // 
-            // Label7
-            // 
-            this.Label7.BackColor = System.Drawing.SystemColors.Control;
-            this.Label7.Cursor = System.Windows.Forms.Cursors.Default;
-            this.Label7.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.Label7.Location = new System.Drawing.Point(8, 16);
-            this.Label7.Name = "Label7";
-            this.Label7.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.Label7.Size = new System.Drawing.Size(57, 17);
-            this.Label7.TabIndex = 20;
-            this.Label7.Text = "Interval";
-            // 
-            // IntervalTimer
-            // 
-            this.IntervalTimer.Interval = 1;
-            this.IntervalTimer.Tick += new System.EventHandler(this.IntervalTimer_Tick);
-            // 
             // Frame2
             // 
+            this.Frame2.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Left)));
             this.Frame2.BackColor = System.Drawing.SystemColors.Control;
             this.Frame2.Controls.Add(this.ReceivedTB);
             this.Frame2.Controls.Add(this.SentTB);
             this.Frame2.Controls.Add(this.Label6);
             this.Frame2.Controls.Add(this.Label5);
             this.Frame2.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.Frame2.Location = new System.Drawing.Point(0, 247);
+            this.Frame2.Location = new System.Drawing.Point(3, 305);
             this.Frame2.Name = "Frame2";
             this.Frame2.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.Frame2.Size = new System.Drawing.Size(393, 49);
@@ -293,28 +202,12 @@ namespace GXSerialSample
             this.PacketCounterTimer.Interval = 1000;
             this.PacketCounterTimer.Tick += new System.EventHandler(this.PacketCounterTimer_Tick);
             // 
-            // Frame4
-            // 
-            this.Frame4.BackColor = System.Drawing.SystemColors.Control;
-            this.Frame4.Controls.Add(this.EchoCB);
-            this.Frame4.Controls.Add(this.SendBtn);
-            this.Frame4.Controls.Add(this.SyncBtn);
-            this.Frame4.Controls.Add(this.HexCB);
-            this.Frame4.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.Frame4.Location = new System.Drawing.Point(0, 136);
-            this.Frame4.Name = "Frame4";
-            this.Frame4.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.Frame4.Size = new System.Drawing.Size(393, 49);
-            this.Frame4.TabIndex = 9;
-            this.Frame4.TabStop = false;
-            this.Frame4.Text = "Send";
-            // 
             // EchoCB
             // 
             this.EchoCB.BackColor = System.Drawing.SystemColors.Control;
             this.EchoCB.Cursor = System.Windows.Forms.Cursors.Default;
             this.EchoCB.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.EchoCB.Location = new System.Drawing.Point(248, 16);
+            this.EchoCB.Location = new System.Drawing.Point(134, 103);
             this.EchoCB.Name = "EchoCB";
             this.EchoCB.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.EchoCB.Size = new System.Drawing.Size(57, 25);
@@ -324,10 +217,11 @@ namespace GXSerialSample
             // 
             // SendBtn
             // 
+            this.SendBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.SendBtn.BackColor = System.Drawing.SystemColors.Control;
             this.SendBtn.Cursor = System.Windows.Forms.Cursors.Default;
             this.SendBtn.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.SendBtn.Location = new System.Drawing.Point(312, 16);
+            this.SendBtn.Location = new System.Drawing.Point(265, 102);
             this.SendBtn.Name = "SendBtn";
             this.SendBtn.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.SendBtn.Size = new System.Drawing.Size(73, 25);
@@ -341,7 +235,7 @@ namespace GXSerialSample
             this.SyncBtn.BackColor = System.Drawing.SystemColors.Control;
             this.SyncBtn.Cursor = System.Windows.Forms.Cursors.Default;
             this.SyncBtn.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.SyncBtn.Location = new System.Drawing.Point(167, 16);
+            this.SyncBtn.Location = new System.Drawing.Point(71, 103);
             this.SyncBtn.Name = "SyncBtn";
             this.SyncBtn.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.SyncBtn.Size = new System.Drawing.Size(57, 25);
@@ -355,7 +249,7 @@ namespace GXSerialSample
             this.HexCB.BackColor = System.Drawing.SystemColors.Control;
             this.HexCB.Cursor = System.Windows.Forms.Cursors.Default;
             this.HexCB.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.HexCB.Location = new System.Drawing.Point(46, 16);
+            this.HexCB.Location = new System.Drawing.Point(8, 103);
             this.HexCB.Name = "HexCB";
             this.HexCB.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.HexCB.Size = new System.Drawing.Size(57, 25);
@@ -365,6 +259,7 @@ namespace GXSerialSample
             // 
             // StatusBtn
             // 
+            this.StatusBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.StatusBtn.BackColor = System.Drawing.SystemColors.Control;
             this.StatusBtn.Cursor = System.Windows.Forms.Cursors.Default;
             this.StatusBtn.ForeColor = System.Drawing.SystemColors.ControlText;
@@ -380,10 +275,12 @@ namespace GXSerialSample
             // Frame1
             // 
             this.Frame1.BackColor = System.Drawing.SystemColors.Control;
+            this.Frame1.Controls.Add(this.EchoCB);
             this.Frame1.Controls.Add(this.SendText);
-            this.Frame1.Controls.Add(this.ReceivedText);
+            this.Frame1.Controls.Add(this.SyncBtn);
+            this.Frame1.Controls.Add(this.SendBtn);
+            this.Frame1.Controls.Add(this.HexCB);
             this.Frame1.Controls.Add(this._Label1_1);
-            this.Frame1.Controls.Add(this._Label1_0);
             this.Frame1.ForeColor = System.Drawing.SystemColors.ControlText;
             this.Frame1.Location = new System.Drawing.Point(0, 0);
             this.Frame1.Name = "Frame1";
@@ -395,6 +292,8 @@ namespace GXSerialSample
             // SendText
             // 
             this.SendText.AcceptsReturn = true;
+            this.SendText.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
             this.SendText.BackColor = System.Drawing.SystemColors.Window;
             this.SendText.Cursor = System.Windows.Forms.Cursors.IBeam;
             this.SendText.ForeColor = System.Drawing.SystemColors.WindowText;
@@ -405,21 +304,6 @@ namespace GXSerialSample
             this.SendText.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.SendText.Size = new System.Drawing.Size(321, 33);
             this.SendText.TabIndex = 4;
-            // 
-            // ReceivedText
-            // 
-            this.ReceivedText.AcceptsReturn = true;
-            this.ReceivedText.BackColor = System.Drawing.SystemColors.Window;
-            this.ReceivedText.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.ReceivedText.ForeColor = System.Drawing.SystemColors.WindowText;
-            this.ReceivedText.Location = new System.Drawing.Point(8, 88);
-            this.ReceivedText.MaxLength = 0;
-            this.ReceivedText.Multiline = true;
-            this.ReceivedText.Name = "ReceivedText";
-            this.ReceivedText.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this.ReceivedText.Size = new System.Drawing.Size(321, 41);
-            this.ReceivedText.TabIndex = 5;
-            this.ReceivedText.TabStop = false;
             // 
             // _Label1_1
             // 
@@ -433,20 +317,27 @@ namespace GXSerialSample
             this._Label1_1.TabIndex = 0;
             this._Label1_1.Text = "Send:";
             // 
-            // _Label1_0
+            // ReceivedText
             // 
-            this._Label1_0.BackColor = System.Drawing.SystemColors.Control;
-            this._Label1_0.Cursor = System.Windows.Forms.Cursors.Default;
-            this._Label1_0.ForeColor = System.Drawing.SystemColors.ControlText;
-            this._Label1_0.Location = new System.Drawing.Point(8, 72);
-            this._Label1_0.Name = "_Label1_0";
-            this._Label1_0.RightToLeft = System.Windows.Forms.RightToLeft.No;
-            this._Label1_0.Size = new System.Drawing.Size(89, 17);
-            this._Label1_0.TabIndex = 7;
-            this._Label1_0.Text = "Received:";
+            this.ReceivedText.AcceptsReturn = true;
+            this.ReceivedText.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom)
+            | System.Windows.Forms.AnchorStyles.Left)
+            | System.Windows.Forms.AnchorStyles.Right)));
+            this.ReceivedText.BackColor = System.Drawing.SystemColors.Window;
+            this.ReceivedText.Cursor = System.Windows.Forms.Cursors.IBeam;
+            this.ReceivedText.ForeColor = System.Drawing.SystemColors.WindowText;
+            this.ReceivedText.Location = new System.Drawing.Point(3, 189);
+            this.ReceivedText.MaxLength = 0;
+            this.ReceivedText.Multiline = true;
+            this.ReceivedText.Name = "ReceivedText";
+            this.ReceivedText.RightToLeft = System.Windows.Forms.RightToLeft.No;
+            this.ReceivedText.Size = new System.Drawing.Size(414, 97);
+            this.ReceivedText.TabIndex = 5;
+            this.ReceivedText.TabStop = false;
             // 
             // OpenBtn
             // 
+            this.OpenBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.OpenBtn.BackColor = System.Drawing.SystemColors.Control;
             this.OpenBtn.Cursor = System.Windows.Forms.Cursors.Default;
             this.OpenBtn.ForeColor = System.Drawing.SystemColors.ControlText;
@@ -461,6 +352,7 @@ namespace GXSerialSample
             // 
             // CloseBtn
             // 
+            this.CloseBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.CloseBtn.BackColor = System.Drawing.SystemColors.Control;
             this.CloseBtn.Cursor = System.Windows.Forms.Cursors.Default;
             this.CloseBtn.DialogResult = System.Windows.Forms.DialogResult.Cancel;
@@ -477,6 +369,7 @@ namespace GXSerialSample
             // 
             // PropertiesBtn
             // 
+            this.PropertiesBtn.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
             this.PropertiesBtn.BackColor = System.Drawing.SystemColors.Control;
             this.PropertiesBtn.Cursor = System.Windows.Forms.Cursors.Default;
             this.PropertiesBtn.ForeColor = System.Drawing.SystemColors.ControlText;
@@ -499,7 +392,7 @@ namespace GXSerialSample
             this.groupBox1.Controls.Add(this.label1);
             this.groupBox1.Controls.Add(this.label2);
             this.groupBox1.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.groupBox1.Location = new System.Drawing.Point(3, 190);
+            this.groupBox1.Location = new System.Drawing.Point(2, 134);
             this.groupBox1.Name = "groupBox1";
             this.groupBox1.RightToLeft = System.Windows.Forms.RightToLeft.No;
             this.groupBox1.Size = new System.Drawing.Size(393, 49);
@@ -537,10 +430,8 @@ namespace GXSerialSample
             // 
             // EOPText
             // 
-            this.EOPText.AcceptsReturn = true;
             this.EOPText.BackColor = System.Drawing.SystemColors.Window;
             this.EOPText.Cursor = System.Windows.Forms.Cursors.IBeam;
-            this.EOPText.Enabled = false;
             this.EOPText.ForeColor = System.Drawing.SystemColors.WindowText;
             this.EOPText.Location = new System.Drawing.Point(192, 15);
             this.EOPText.MaxLength = 0;
@@ -598,11 +489,10 @@ namespace GXSerialSample
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.SystemColors.Control;
             this.CancelButton = this.CloseBtn;
-            this.ClientSize = new System.Drawing.Size(425, 355);
+            this.ClientSize = new System.Drawing.Size(422, 355);
             this.Controls.Add(this.groupBox1);
-            this.Controls.Add(this.Frame3);
             this.Controls.Add(this.Frame2);
-            this.Controls.Add(this.Frame4);
+            this.Controls.Add(this.ReceivedText);
             this.Controls.Add(this.StatusBtn);
             this.Controls.Add(this.Frame1);
             this.Controls.Add(this.OpenBtn);
@@ -616,19 +506,17 @@ namespace GXSerialSample
             this.StartPosition = System.Windows.Forms.FormStartPosition.Manual;
             this.Text = "GXSerial Sample";
             this.Load += new System.EventHandler(this.Form1_Load);
-            this.Frame3.ResumeLayout(false);
-            this.Frame3.PerformLayout();
             this.Frame2.ResumeLayout(false);
             this.Frame2.PerformLayout();
-            this.Frame4.ResumeLayout(false);
             this.Frame1.ResumeLayout(false);
             this.Frame1.PerformLayout();
             this.groupBox1.ResumeLayout(false);
             this.groupBox1.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
-		}
-		#endregion
+        }
+        #endregion
 
         private System.ComponentModel.IContainer components;
         public GroupBox groupBox1;
@@ -638,8 +526,7 @@ namespace GXSerialSample
         public Label label2;
         public TextBox MinSizeTB;
         public Label label3;
-        public Button AvailablePortsBtn;
         private Gurux.Serial.GXSerial gxSerial1;
         public CheckBox EchoCB;
-	}
+    }
 }
