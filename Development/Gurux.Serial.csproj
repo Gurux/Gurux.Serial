@@ -61,7 +61,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Gurux.Common, Version=8.1.1708.2501, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\Gurux.Serial.CSharp.Example\packages\Gurux.Common.8.1.1708.2501\lib\portable-win+net35\Gurux.Common.dll</HintPath>
+      <HintPath>packages\Gurux.Common.8.1.1708.2501\lib\portable-win+net35\Gurux.Common.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System" />
