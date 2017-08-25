@@ -305,10 +305,27 @@ namespace GXSerialSample
                         {
                             Gurux.Common.ReceiveParameters<byte[]> p = new Gurux.Common.ReceiveParameters<byte[]>()
                             {
-                                WaitTime = Convert.ToInt32(WaitTimeTB.Text),
-                                Eop = EOPText.Text,
+                                WaitTime = Convert.ToInt32(WaitTimeTB.Text),                                
                                 Count = Convert.ToInt32(MinSizeTB.Text)
                             };
+                            // Sends data as ASCII string.
+                            if (EOPText.Text == "\\r")
+                            {
+                                p.Eop = '\r';
+                            }
+                            else if (EOPText.Text == "\\n")
+                            {
+                                p.Eop = '\n';
+                            }
+                            else if (EOPText.Text == "\\r\\n")
+                            {
+                                p.Eop = "\r\n";
+                            }
+                            else
+                            {
+                                p.Eop = EOPText.Text;
+                            }
+
                             gxSerial1.Send(GXCommon.HexToBytes(SendText.Text, true));
                             if (gxSerial1.Receive(p))
                             {
@@ -324,9 +341,26 @@ namespace GXSerialSample
                             Gurux.Common.ReceiveParameters<string> p = new Gurux.Common.ReceiveParameters<string>()
                             {
                                 WaitTime = Convert.ToInt32(WaitTimeTB.Text),
-                                Eop = EOPText.Text,
                                 Count = Convert.ToInt32(MinSizeTB.Text)
                             };
+                            // Sends data as ASCII string.
+                            if (EOPText.Text == "\\r")
+                            {
+                               p.Eop = '\r';
+                            }
+                            else if (EOPText.Text == "\\n")
+                            {
+                                p.Eop = '\n';
+                            }
+                            else if (EOPText.Text == "\\r\\n")
+                            {
+                                p.Eop = "\r\n";
+                            }
+                            else
+                            {
+                                p.Eop = EOPText.Text;
+                            }
+
                             gxSerial1.Send(SendText.Text);
                             if (gxSerial1.Receive(p))
                             {
@@ -345,20 +379,24 @@ namespace GXSerialSample
                     else
                     {
                         string data = SendText.Text;
-                        // Sends data as ASCII string.
-                        if (EOPText.Text == "\\r")
-                        {
-                            data += '\r';
-                        }
-                        if (EOPText.Text == "\\n")
-                        {
-                            data += '\n';
-                        }
-                        if (EOPText.Text == "\\r\\n")
-                        {
-                            data += '\r' + '\n';
-                        }
                         gxSerial1.Send(data);
+                    }
+                    // Sends data as ASCII string.
+                    if (EOPText.Text == "\\r")
+                    {
+                        gxSerial1.Send('\r');
+                    }
+                    else if (EOPText.Text == "\\n")
+                    {
+                        gxSerial1.Send('\n');
+                    }
+                    else if (EOPText.Text == "\\r\\n")
+                    {
+                        gxSerial1.Send("\r\n");
+                    }
+                    else if (EOPText.Text.Length != 0)
+                    {
+                        gxSerial1.Send(EOPText.Text);
                     }
                 }
             }
