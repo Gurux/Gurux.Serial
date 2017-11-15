@@ -19,8 +19,8 @@
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Release\Gurux.Serial.dll" target="lib\portable-win+net35" />
-    <file src="bin\Release\Gurux.Serial.XML" target="lib\portable-win+net35" />
-    <file src="bin\Release\Gurux.Serial.pdb" target="lib\portable-win+net35" />
+    <file src="bin\Release\Gurux.Serial.dll" target="lib\portable-win+net40" />
+    <file src="bin\Release\Gurux.Serial.XML" target="lib\portable-win+net40" />
+    <file src="bin\Release\Gurux.Serial.pdb" target="lib\portable-win+net40" />
   </files>
 </package>
