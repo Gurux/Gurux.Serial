@@ -175,11 +175,11 @@ namespace GXSerialSample
                     //Show only last data in echo.
                     if (EchoCB.Checked)
                     {
-                        ReceivedText.Text = BitConverter.ToString((byte[])e.Data);
+                        ReceivedText.Text = GXCommon.ToHex((byte[])e.Data);
                     }
                     else
                     {
-                        ReceivedText.Text += BitConverter.ToString((byte[])e.Data);
+                        ReceivedText.Text += GXCommon.ToHex((byte[])e.Data);
                     }
                 }
                 else // Gets received data as string.
@@ -326,7 +326,7 @@ namespace GXSerialSample
                                 p.Eop = EOPText.Text;
                             }
 
-                            gxSerial1.Send(GXCommon.HexToBytes(SendText.Text, true));
+                            gxSerial1.Send(GXCommon.HexToBytes(SendText.Text));
                             if (gxSerial1.Receive(p))
                             {
                                 ReceivedText.Text = GXCommon.ToHex(p.Reply, true);
@@ -374,7 +374,7 @@ namespace GXSerialSample
                     if (HexCB.Checked)
                     {
                         // Sends data as byte array.
-                        gxSerial1.Send(GXCommon.HexToBytes(SendText.Text, true));
+                        gxSerial1.Send(GXCommon.HexToBytes(SendText.Text));
                     }
                     else
                     {

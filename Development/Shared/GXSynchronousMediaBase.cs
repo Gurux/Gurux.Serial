@@ -31,9 +31,6 @@
 //---------------------------------------------------------------------------
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading;
 using Gurux.Common;
 
@@ -58,6 +55,30 @@ namespace Gurux.Shared
             lastPosition = 0;
         }
 
+        /// <summary>
+        /// Connection is closed.
+        /// </summary>
+        public void Close()
+        {
+            lock (receivedSync)
+            {
+                receivedSize = -1;
+                receivedEvent.Set();
+            }
+        }
+
+        /// <summary>
+        /// Connection is open.
+        /// </summary>
+        public void Open()
+        {
+            lock (receivedSync)
+            {
+                receivedEvent.Reset();
+                receivedSize = lastPosition = 0;
+            }
+        }
+
         public void AppendData(byte[] data, int index, int count)
         {
             lock (receivedSync)
@@ -75,7 +96,7 @@ namespace Gurux.Shared
         }
 
         public bool Receive<T>(ReceiveParameters<T> args)
-        {            
+        {
             if (args.Eop == null && args.Count == 0 && !args.AllData)
             {
                 throw new ArgumentException("Either Count or Eop must be set.");
@@ -154,6 +175,17 @@ namespace Gurux.Shared
                         lock (receivedSync)
                         {
                             received = !(LastBuffSize == receivedSize || receivedSize < nMinSize);
+                        }
+                    }
+                }
+                if (received)
+                {
+                    lock (receivedSync)
+                    {
+                        if (receivedSize == -1)
+                        {
+                            receivedSize = 0;
+                            return false;
                         }
                     }
                 }
