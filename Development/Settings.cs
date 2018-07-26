@@ -29,7 +29,7 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
-
+#if !NETCOREAPP2_0 && !NETSTANDARD2_0
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -117,7 +117,7 @@ namespace Gurux.Serial
             }
         }
 
-        #region IGXPropertyPage Members
+#region IGXPropertyPage Members
 
         void IGXPropertyPage.Apply()
         {
@@ -216,7 +216,7 @@ namespace Gurux.Serial
             Dirty = false;
         }
 
-        #endregion
+#endregion
 
         private void BaudRateCB_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -255,3 +255,4 @@ namespace Gurux.Serial
         }
     }
 }
+#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0

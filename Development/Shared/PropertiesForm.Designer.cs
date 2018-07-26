@@ -1,4 +1,5 @@
-﻿namespace Gurux.Shared
+﻿#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+namespace Gurux.Shared
 {
     partial class PropertiesForm
     {
@@ -20,7 +21,7 @@
             base.Dispose(disposing);
         }
 
-        #region Windows Form Designer generated code
+#region Windows Form Designer generated code
 
         /// <summary>
         /// Required method for Designer support - do not modify
@@ -98,7 +99,7 @@
 
         }
 
-        #endregion
+#endregion
 
         private System.Windows.Forms.Panel panel1;
         private System.Windows.Forms.Button OKBtn;
@@ -107,3 +108,4 @@
 
     }
 }
+#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0

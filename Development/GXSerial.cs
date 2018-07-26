@@ -37,10 +37,13 @@ using System.ComponentModel;
 using Gurux.Common;
 using System.IO;
 using Gurux.Shared;
+#if !NETCOREAPP2_0 && !NETSTANDARD2_0
 using System.Windows.Forms;
+#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
+
+using System.IO.Ports;
 using System.Xml;
 using System.Diagnostics;
-using System.IO.Ports;
 using System.Reflection;
 using System.Threading;
 using Gurux.Serial.Properties;
@@ -345,8 +348,8 @@ namespace Gurux.Serial
                     {
                         foreach (object it in (Array)Eop)
                         {
-                            eop = GXCommon.GetAsByteArray(it);
-                            totalCount = GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.receivedSize);
+                            eop = Gurux.Common.GXCommon.GetAsByteArray(it);
+                            totalCount = Gurux.Common.GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.receivedSize);
                             if (totalCount != -1)
                             {
                                 break;
@@ -355,8 +358,8 @@ namespace Gurux.Serial
                     }
                     else
                     {
-                        eop = GXCommon.GetAsByteArray(Eop);
-                        totalCount = GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.receivedSize);
+                        eop = Gurux.Common.GXCommon.GetAsByteArray(Eop);
+                        totalCount = Gurux.Common.GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.receivedSize);
                     }
                     if (totalCount != -1)
                     {
@@ -1938,6 +1941,7 @@ namespace Gurux.Serial
             }
         }
 
+#if !NETCOREAPP2_0 && !NETSTANDARD2_0
         /// <summary>
         /// Shows the serial port Properties dialog.
         /// </summary>
@@ -1953,15 +1957,6 @@ namespace Gurux.Serial
         }
 
         /// <summary>
-        /// Sends data asynchronously. <br/>
-        /// No reply from the receiver, whether or not the operation was successful, is expected.
-        /// </summary>
-        public void Send(object data)
-        {
-            ((Gurux.Common.IGXMedia)this).Send(data, null);
-        }
-
-        /// <summary>
         /// Returns a new instance of the Settings form.
         /// </summary>
         public System.Windows.Forms.Form PropertiesForm
@@ -1970,6 +1965,17 @@ namespace Gurux.Serial
             {
                 return new Settings(this);
             }
+        }
+
+#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
+
+        /// <summary>
+        /// Sends data asynchronously. <br/>
+        /// No reply from the receiver, whether or not the operation was successful, is expected.
+        /// </summary>
+        public void Send(object data)
+        {
+            ((Gurux.Common.IGXMedia)this).Send(data, null);
         }
 
         /// <inheritdoc cref="IGXMedia.Receive"/>
@@ -1985,7 +1991,7 @@ namespace Gurux.Serial
         /// <inheritdoc cref="IGXMedia.Send"/>
         void Gurux.Common.IGXMedia.Send(object data, string receiver)
         {
-            byte[] value = GXCommon.GetAsByteArray(data);
+            byte[] value = Gurux.Common.GXCommon.GetAsByteArray(data);
             lock (m_baseLock)
             {
                 LastEopPos = 0;
@@ -2037,6 +2043,6 @@ namespace Gurux.Serial
             }
         }
 
-        #endregion       
+        #endregion
     }
 }

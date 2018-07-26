@@ -1,4 +1,6 @@
-﻿namespace Gurux.Serial
+﻿#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+
+namespace Gurux.Serial
 {
 partial class Settings
 {
@@ -20,7 +22,7 @@ partial class Settings
         base.Dispose(disposing);
     }
 
-    #region Windows Form Designer generated code
+#region Windows Form Designer generated code
 
     /// <summary>
     /// Required method for Designer support - do not modify
@@ -237,7 +239,7 @@ partial class Settings
 
     }
 
-    #endregion
+#endregion
 
     private System.Windows.Forms.Label DataBitsLbl;
     private System.Windows.Forms.Panel ParityPanel;
@@ -256,3 +258,5 @@ partial class Settings
     private System.Windows.Forms.ComboBox StopBitsCB;
 }
 }
+
+#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
