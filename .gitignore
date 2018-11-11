@@ -168,5 +168,3 @@ pip-log.txt
 .DS_Store
 *.lock
 *.ide
-Gurux.Serial.CSharp.Example/.vs/Gurux.Serial.CSharp.Example/DesignTimeBuild/.dtbcache
-Development/.vs/Gurux.Serial/DesignTimeBuild/.dtbcache

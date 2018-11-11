@@ -1,4 +1,4 @@
-﻿#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+﻿#if !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETSTANDARD2_0
 namespace Gurux.Shared
 {
     partial class PropertiesForm
@@ -108,4 +108,4 @@ namespace Gurux.Shared
 
     }
 }
-#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
+#endif //!NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETSTANDARD2_0
