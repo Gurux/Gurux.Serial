@@ -1176,6 +1176,7 @@ namespace Gurux.Serial
         /// Gets or sets the standard number of stopbits per byte.
         /// </summary>
         [MonitoringDescription("StopBits")]
+        [DefaultValue(StopBits.One)]
         [Browsable(true)]
         public StopBits StopBits
         {
@@ -1822,7 +1823,7 @@ namespace Gurux.Serial
                 {
                     tmp += "<Bps>" + m_base.BaudRate + "</Bps>";
                 }
-                if (m_base.StopBits != System.IO.Ports.StopBits.None)
+                if (m_base.StopBits != System.IO.Ports.StopBits.One)
                 {
                     tmp += "<StopBits>" + (int)m_base.StopBits + "</StopBits>";
                 }
@@ -1874,7 +1875,6 @@ namespace Gurux.Serial
                                         {
                                             m_base.StopBits = (StopBits)Enum.Parse(typeof(StopBits), str);
                                         }
-
                                         break;
                                     case "Parity":
                                         str = xmlReader.ReadString();
@@ -1896,7 +1896,7 @@ namespace Gurux.Serial
                     }
                     if (!setStopBits)
                     {
-                        m_base.StopBits = System.IO.Ports.StopBits.None;
+                        m_base.StopBits = System.IO.Ports.StopBits.One;
                     }
                 }
             }
