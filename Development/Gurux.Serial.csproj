@@ -5,14 +5,14 @@
     <AssemblyName>Gurux.Serial</AssemblyName>
     <Company>Gurux Ltd</Company>
     <Authors>Gurux Ltd</Authors>
-    <Copyright>Copyright (c) 1998-2018 Gurux Ltd. All rights reserved.</Copyright>
+    <Copyright>Copyright (c) 1998-2019 Gurux Ltd. All rights reserved.</Copyright>
     <PackageProjectUrl>www.gurux.fi/index.php?q=GXMedia</PackageProjectUrl>
     <PackageLicenseUrl>http://www.gnu.org/licenses/gpl-2.0.txt</PackageLicenseUrl>
     <Description>Serial media component, for serial port connections.</Description>
   <Version Condition=" '$(BUILD_BUILDNUMBER)' == '' ">0.0.1-local</Version>
     <Version Condition=" '$(BUILD_BUILDNUMBER)' != '' ">$(BUILD_BUILDNUMBER)</Version>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <TargetFrameworks>net45;net40;net35</TargetFrameworks>
+    <TargetFrameworks>net45;net40;net35;netcoreapp2.1</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/gurux/Gurux.Serial</RepositoryUrl>
     <PackageTags>Gurux Device Framework Network Serial port</PackageTags>
@@ -37,7 +37,9 @@
  <ItemGroup>
     <PackageReference Include="Gurux.Common" Version="8.1.1811.1101" />
  </ItemGroup>
- 
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1'">
+    <PackageReference Include="System.IO.Ports" Version="4.5.0" />
+  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net35'">
     <Reference Include="System.Data.Linq" />
     <Reference Include="System.Windows.Forms" />

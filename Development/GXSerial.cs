@@ -1,7 +1,7 @@
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd
-// 
+//
 //
 //
 // Filename:        $HeadURL$
@@ -19,14 +19,14 @@
 // This file is a part of Gurux Device Framework.
 //
 // Gurux Device Framework is Open Source software; you can redistribute it
-// and/or modify it under the terms of the GNU General Public License 
+// and/or modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; version 2 of the License.
 // Gurux Device Framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-// This code is licensed under the GNU General Public License v2. 
+// This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
@@ -37,9 +37,9 @@ using System.ComponentModel;
 using Gurux.Common;
 using System.IO;
 using Gurux.Shared;
-#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+#if !NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 using System.Windows.Forms;
-#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
+#endif //!NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 
 using System.IO.Ports;
 using System.Xml;
@@ -209,7 +209,7 @@ namespace Gurux.Serial
                 items.Add(57600);
                 items.Add(115200);
                 items.Add(128000);
-                items.Add(0); //Programmable baud rate.	
+                items.Add(0); //Programmable baud rate.
             }
             return items.ToArray();
         }
@@ -1468,8 +1468,8 @@ namespace Gurux.Serial
         }
 
         /// <summary>
-        /// Errors that occur after the connection is established, are sent through this method. 
-        /// </summary>       
+        /// Errors that occur after the connection is established, are sent through this method.
+        /// </summary>
         [Description("Errors that occur after the connection is established, are sent through this method.")]
         public event Gurux.Common.ErrorEventHandler OnError
         {
@@ -1486,7 +1486,7 @@ namespace Gurux.Serial
 
         /// <summary>
         /// Media component sends notification, when its state changes.
-        /// </summary>       
+        /// </summary>
         [Description("Media component sends notification, when its state changes.")]
         public event MediaStateChangeEventHandler OnMediaStateChange
         {
@@ -1669,6 +1669,7 @@ namespace Gurux.Serial
             }
         }
 
+#if !NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
         /// <summary>
         /// Occurs when serial port PIN changed.
         /// </summary>
@@ -1683,6 +1684,7 @@ namespace Gurux.Serial
                 m_base.PinChanged -= value;
             }
         }
+#endif //!NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 
         /// <summary>
         /// Called when new data is received to the virtual media.
@@ -1941,7 +1943,7 @@ namespace Gurux.Serial
             }
         }
 
-#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+#if !NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
         /// <summary>
         /// Shows the serial port Properties dialog.
         /// </summary>
@@ -1967,7 +1969,7 @@ namespace Gurux.Serial
             }
         }
 
-#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
+#endif //!NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 
         /// <summary>
         /// Sends data asynchronously. <br/>
