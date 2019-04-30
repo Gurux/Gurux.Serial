@@ -1,7 +1,7 @@
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd
-// 
+//
 //
 //
 // Filename:        $HeadURL$
@@ -19,14 +19,14 @@
 // This file is a part of Gurux Device Framework.
 //
 // Gurux Device Framework is Open Source software; you can redistribute it
-// and/or modify it under the terms of the GNU General Public License 
+// and/or modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; version 2 of the License.
 // Gurux Device Framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-// This code is licensed under the GNU General Public License v2. 
+// This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
@@ -37,9 +37,9 @@ using System.ComponentModel;
 using Gurux.Common;
 using System.IO;
 using Gurux.Shared;
-#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+#if !NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 using System.Windows.Forms;
-#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
+#endif //!NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 
 using System.IO.Ports;
 using System.Xml;
@@ -54,15 +54,15 @@ namespace Gurux.Serial
     /// A media component that enables communication of serial port.
     /// See help in http://www.gurux.org/index.php?q=Gurux.Net
     /// </summary>
-    public class GXSerial : IGXMedia, IGXVirtualMedia, INotifyPropertyChanged, IDisposable
+    public class GXSerial : IGXMedia2, IGXVirtualMedia, INotifyPropertyChanged, IDisposable
     {
         private object m_sync = new object();
         int LastEopPos = 0;
         bool IsVirtual, VirtualOpen;
         TraceLevel m_Trace;
-        static Dictionary<string, List<int>> BaudRates = new Dictionary<string, List<int>>();
+        private readonly static Dictionary<string, List<int>> BaudRates = new Dictionary<string, List<int>>();
         object m_Eop;
-        GXSynchronousMediaBase m_syncBase;
+        private readonly GXSynchronousMediaBase m_syncBase;
         UInt64 m_BytesSent, m_BytesReceived;
         readonly object m_Synchronous = new object();
         readonly object m_baseLock = new object();
@@ -209,7 +209,7 @@ namespace Gurux.Serial
                 items.Add(57600);
                 items.Add(115200);
                 items.Add(128000);
-                items.Add(0); //Programmable baud rate.	
+                items.Add(0); //Programmable baud rate.
             }
             return items.ToArray();
         }
@@ -307,6 +307,7 @@ namespace Gurux.Serial
                 int index = m_syncBase.receivedSize;
                 byte[] buff = null;
                 int totalCount = 0;
+                Thread.Sleep((int) ReceiveDelay);
                 while (IsOpen && (count = m_base.BytesToRead) != 0)
                 {
                     totalCount += count;
@@ -1176,6 +1177,7 @@ namespace Gurux.Serial
         /// Gets or sets the standard number of stopbits per byte.
         /// </summary>
         [MonitoringDescription("StopBits")]
+        [DefaultValue(StopBits.One)]
         [Browsable(true)]
         public StopBits StopBits
         {
@@ -1468,8 +1470,8 @@ namespace Gurux.Serial
         }
 
         /// <summary>
-        /// Errors that occur after the connection is established, are sent through this method. 
-        /// </summary>       
+        /// Errors that occur after the connection is established, are sent through this method.
+        /// </summary>
         [Description("Errors that occur after the connection is established, are sent through this method.")]
         public event Gurux.Common.ErrorEventHandler OnError
         {
@@ -1486,7 +1488,7 @@ namespace Gurux.Serial
 
         /// <summary>
         /// Media component sends notification, when its state changes.
-        /// </summary>       
+        /// </summary>
         [Description("Media component sends notification, when its state changes.")]
         public event MediaStateChangeEventHandler OnMediaStateChange
         {
@@ -1669,6 +1671,7 @@ namespace Gurux.Serial
             }
         }
 
+#if !NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
         /// <summary>
         /// Occurs when serial port PIN changed.
         /// </summary>
@@ -1683,6 +1686,7 @@ namespace Gurux.Serial
                 m_base.PinChanged -= value;
             }
         }
+#endif //!NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 
         /// <summary>
         /// Called when new data is received to the virtual media.
@@ -1820,7 +1824,7 @@ namespace Gurux.Serial
                 {
                     tmp += "<Bps>" + m_base.BaudRate + "</Bps>";
                 }
-                if (m_base.StopBits != System.IO.Ports.StopBits.None)
+                if (m_base.StopBits != System.IO.Ports.StopBits.One)
                 {
                     tmp += "<StopBits>" + (int)m_base.StopBits + "</StopBits>";
                 }
@@ -1872,7 +1876,6 @@ namespace Gurux.Serial
                                         {
                                             m_base.StopBits = (StopBits)Enum.Parse(typeof(StopBits), str);
                                         }
-
                                         break;
                                     case "Parity":
                                         str = xmlReader.ReadString();
@@ -1894,7 +1897,7 @@ namespace Gurux.Serial
                     }
                     if (!setStopBits)
                     {
-                        m_base.StopBits = System.IO.Ports.StopBits.None;
+                        m_base.StopBits = System.IO.Ports.StopBits.One;
                     }
                 }
             }
@@ -1941,7 +1944,7 @@ namespace Gurux.Serial
             }
         }
 
-#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+#if !NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
         /// <summary>
         /// Shows the serial port Properties dialog.
         /// </summary>
@@ -1967,7 +1970,7 @@ namespace Gurux.Serial
             }
         }
 
-#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
+#endif //!NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 
         /// <summary>
         /// Sends data asynchronously. <br/>
@@ -2023,6 +2026,25 @@ namespace Gurux.Serial
         }
 
         int Gurux.Common.IGXMedia.ConfigurableSettings
+        {
+            get;
+            set;
+        }
+        uint IGXMedia2.AsyncWaitTime
+        {
+            get;
+            set;
+        }
+
+        EventWaitHandle IGXMedia2.AsyncWaitHandle
+        {
+            get
+            {
+                return null;
+            }
+        }
+
+        public uint ReceiveDelay
         {
             get;
             set;

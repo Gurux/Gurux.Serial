@@ -1,4 +1,4 @@
-﻿#if !NETCOREAPP2_0 && !NETSTANDARD2_0
+﻿#if !NETCOREAPP2_1 && !NETCOREAPP2_0 && !NETSTANDARD2_0
 
 namespace Gurux.Serial
 {
