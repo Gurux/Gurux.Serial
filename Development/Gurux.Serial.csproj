@@ -36,7 +36,7 @@
    </EmbeddedResource>
  </ItemGroup>
  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.1.1905.1301" />
+    <PackageReference Include="Gurux.Common" Version="8.1.1907.301" />
  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0'">
     <PackageReference Include="System.IO.Ports" Version="4.5.0" />

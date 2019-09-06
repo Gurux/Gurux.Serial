@@ -1,7 +1,7 @@
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd
-// 
+//
 //
 //
 // Filename:        $HeadURL: svn://utopia/projects/Old/GuruxSerial/GXSerial%20csharp%20Sample/Form1.cs $
@@ -19,16 +19,16 @@
 // This file is a part of Gurux Device Framework.
 //
 // Gurux Device Framework is Open Source software; you can redistribute it
-// and/or modify it under the terms of the GNU General Public License 
+// and/or modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; version 2 of the License.
 // Gurux Device Framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
-// 
+//
 // More information of Gurux Serial : http://www.gurux.org/GXSerial
 //
-// This code is licensed under the GNU General Public License v2. 
+// This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
@@ -300,12 +300,12 @@ namespace GXSerialSample
                 {
                     if (HexCB.Checked)
                     {
-                        // Sends data as byte array.                        
+                        // Sends data as byte array.
                         lock (gxSerial1.Synchronous)
                         {
                             Gurux.Common.ReceiveParameters<byte[]> p = new Gurux.Common.ReceiveParameters<byte[]>()
                             {
-                                WaitTime = Convert.ToInt32(WaitTimeTB.Text),                                
+                                WaitTime = Convert.ToInt32(WaitTimeTB.Text),
                                 Count = Convert.ToInt32(MinSizeTB.Text)
                             };
                             // Sends data as ASCII string.
@@ -451,7 +451,7 @@ namespace GXSerialSample
         {
             try
             {
-                // If True, no more data is expected to be received synchronously. 
+                // If True, no more data is expected to be received synchronously.
                 // If False, asynchronous data is not received.
                 MinSizeTB.Enabled = WaitTimeTB.Enabled = SyncBtn.Checked;
             }
