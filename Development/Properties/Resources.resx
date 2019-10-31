@@ -126,6 +126,9 @@
   <data name="EopTxt" xml:space="preserve">
     <value>Eop:</value>
   </data>
+  <data name="FlowControlTxt" xml:space="preserve">
+    <value>Flow Control:</value>
+  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Parity:</value>
   </data>

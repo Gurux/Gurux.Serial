@@ -307,7 +307,7 @@ namespace Gurux.Serial
                 int index = m_syncBase.receivedSize;
                 byte[] buff = null;
                 int totalCount = 0;
-                Thread.Sleep((int) ReceiveDelay);
+                Thread.Sleep((int)ReceiveDelay);
                 while (IsOpen && (count = m_base.BytesToRead) != 0)
                 {
                     totalCount += count;
@@ -1407,7 +1407,7 @@ namespace Gurux.Serial
                     {
                         eop = m_Eop.ToString();
                     }
-                    string str = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12}",
+                    string str = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14}",
                         Resources.SettingsTxt,
                         Resources.PortNameTxt,
                         m_base.PortName,
@@ -1419,6 +1419,8 @@ namespace Gurux.Serial
                         m_base.Parity.ToString(),
                         Resources.StopBitsTxt,
                         m_base.StopBits.ToString(),
+                        Resources.FlowControlTxt,
+                        m_base.Handshake.ToString(),
                         Resources.EopTxt,
                         eop);
                     m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, str, null));
@@ -1836,6 +1838,10 @@ namespace Gurux.Serial
                 {
                     tmp += "<ByteSize>" + m_base.DataBits + "</ByteSize>";
                 }
+                if (m_base.Handshake != Handshake.None)
+                {
+                    tmp += "<Handshake>" + (int)m_base.Handshake + "</Handshake>";
+                }
                 return tmp;
             }
             set
@@ -1891,6 +1897,9 @@ namespace Gurux.Serial
                                     case "ByteSize":
                                         m_base.DataBits = Convert.ToInt32(xmlReader.ReadString());
                                         break;
+                                    case "Handshake":
+                                        m_base.Handshake = (Handshake)Convert.ToInt32(xmlReader.ReadString());
+                                        break;
                                 }
                             }
                         }
@@ -1917,6 +1926,8 @@ namespace Gurux.Serial
             sb.Append(DataBits);
             sb.Append(Parity);
             sb.Append((int)StopBits);
+            sb.Append(' ');
+            sb.Append(Handshake);
             return sb.ToString();
         }
 

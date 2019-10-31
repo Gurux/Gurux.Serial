@@ -1,4 +1,4 @@
-//
+﻿//
 // --------------------------------------------------------------------------
 //  Gurux Ltd
 //
@@ -117,7 +117,7 @@ namespace Gurux.Serial
             }
         }
 
-#region IGXPropertyPage Members
+        #region IGXPropertyPage Members
 
         void IGXPropertyPage.Apply()
         {
@@ -138,6 +138,10 @@ namespace Gurux.Serial
             {
                 target.StopBits = (System.IO.Ports.StopBits)this.StopBitsCB.SelectedItem;
             }
+            if (this.FlowControlCb.Enabled)
+            {
+                target.Handshake = (System.IO.Ports.Handshake)this.FlowControlCb.SelectedItem;
+            }
             Dirty = false;
         }
 
@@ -150,6 +154,7 @@ namespace Gurux.Serial
             this.DataBitsLbl.Text = Resources.DataBitsTxt;
             this.ParityLbl.Text = Resources.ParityTxt;
             this.StopBitsLbl.Text = Resources.StopBitsTxt;
+            this.FlowControlLbl.Text = Resources.FlowControlTxt;
             //Hide controls which user do not want to show.
             PortNamePanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.PortName) != 0;
             if (PortNamePanel.Enabled)
@@ -174,7 +179,7 @@ namespace Gurux.Serial
                     }
                     else
                     {
-                        StopBitsPanel.Enabled = ParityPanel.Enabled = DataBitsPanel.Enabled = BaudRatePanel.Enabled = this.PortNameCB.Enabled = false;
+                        FlowControlPanel.Enabled = StopBitsPanel.Enabled = ParityPanel.Enabled = DataBitsPanel.Enabled = BaudRatePanel.Enabled = this.PortNameCB.Enabled = false;
                         return;
                     }
                 }
@@ -213,10 +218,20 @@ namespace Gurux.Serial
                 this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.Two);
                 this.StopBitsCB.SelectedItem = target.StopBits;
             }
+
+            FlowControlPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.Handshake) != 0;
+            if (FlowControlPanel.Enabled)
+            {
+                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.None);
+                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.XOnXOff);
+                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.RequestToSend);
+                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.RequestToSendXOnXOff);
+                this.FlowControlCb.SelectedItem = target.Handshake;
+            }
             Dirty = false;
         }
 
-#endregion
+        #endregion
 
         private void BaudRateCB_SelectedIndexChanged(object sender, EventArgs e)
         {
@@ -251,6 +266,15 @@ namespace Gurux.Serial
             if (propertyChanged != null)
             {
                 propertyChanged(this, new PropertyChangedEventArgs("StopBits"));
+            }
+        }
+
+        private void FlowControlCb_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            Dirty = true;
+            if (propertyChanged != null)
+            {
+                propertyChanged(this, new PropertyChangedEventArgs("FlowControl"));
             }
         }
     }

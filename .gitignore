@@ -21,6 +21,7 @@ local.properties
 packages/
 nuget/
 Gurux.Common.XML
+Gurux.Serial.CSharp.Example/.vs
 
 # Locally stored "Eclipse launch configurations"
 *.launch

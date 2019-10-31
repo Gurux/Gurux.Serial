@@ -1,7 +1,7 @@
 //
 // --------------------------------------------------------------------------
 //  Gurux Ltd
-// 
+//
 //
 //
 // Filename:        $HeadURL$
@@ -19,14 +19,14 @@
 // This file is a part of Gurux Device Framework.
 //
 // Gurux Device Framework is Open Source software; you can redistribute it
-// and/or modify it under the terms of the GNU General Public License 
+// and/or modify it under the terms of the GNU General Public License
 // as published by the Free Software Foundation; version 2 of the License.
 // Gurux Device Framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of 
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. 
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-// This code is licensed under the GNU General Public License v2. 
+// This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 #if !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETSTANDARD2_0
@@ -59,14 +59,14 @@ namespace Gurux.Shared
             Properties.Initialize();
             this.Icon = System.Drawing.Icon.ExtractAssociatedIcon(GetType().Assembly.Location);
             this.OKBtn.Enabled = !open;
-            this.Text = title;                                   
+            this.Text = title;
             this.OKBtn.Text = DialogResult.OK.ToString();
-            this.CancelBtn.Text = DialogResult.Cancel.ToString();           
-            //Settings can be change if connection is open.            
+            this.CancelBtn.Text = DialogResult.Cancel.ToString();
+            //Settings can be change if connection is open.
             int h = 0;
-            while(properties.Controls.Count != 0)
+            while (properties.Controls.Count != 0)
             {
-                Control ctr = properties.Controls[0];                
+                Control ctr = properties.Controls[0];
                 if (ctr is Panel)
                 {
                     if (ctr.Enabled)
@@ -85,7 +85,7 @@ namespace Gurux.Shared
             this.LocationChanged += new EventHandler(PropertiesForm_LocationChanged);
             properties.TopLevel = false;
             properties.TopMost = false;
-            properties.FormBorderStyle = FormBorderStyle.None;            
+            properties.FormBorderStyle = FormBorderStyle.None;
             this.Controls.Add(properties);
             if (h == 0)
             {
