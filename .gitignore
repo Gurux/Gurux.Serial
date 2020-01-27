@@ -15,6 +15,7 @@ local.properties
 .classpath
 .settings/
 .loadpath
+Development/.vs/
 
 # External tool builders
 .externalToolBuilders/
