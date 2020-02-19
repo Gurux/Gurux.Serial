@@ -76,8 +76,8 @@
     <ErrorReport>prompt</ErrorReport>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Gurux.Common, Version=8.1.1907.301, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>packages\Gurux.Common.8.1.1907.301\lib\net40\Gurux.Common.dll</HintPath>
+    <Reference Include="Gurux.Common, Version=8.1.2002.1903, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Gurux.Common.8.1.2002.1903\lib\net40\Gurux.Common.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System">

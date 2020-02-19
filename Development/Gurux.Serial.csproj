@@ -1,5 +1,4 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
  <PropertyGroup>
     <RootNamespace>Gurux.Serial</RootNamespace>
     <AssemblyName>Gurux.Serial</AssemblyName>
@@ -9,7 +8,7 @@
     <PackageProjectUrl>www.gurux.fi/index.php?q=GXMedia</PackageProjectUrl>
     <PackageLicenseUrl></PackageLicenseUrl>
     <Description>Serial media component, for serial port connections.</Description>
-  <Version Condition=" '$(BUILD_BUILDNUMBER)' == '' ">0.0.1-local</Version>
+    <Version Condition=" '$(BUILD_BUILDNUMBER)' == '' ">0.0.1-local</Version>
     <Version Condition=" '$(BUILD_BUILDNUMBER)' != '' ">$(BUILD_BUILDNUMBER)</Version>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <TargetFrameworks>net46;net40;net45;net35;netstandard2.1;netstandard2.0;netcoreapp3.1;netcoreapp2.0;netcoreapp2.1;</TargetFrameworks>
@@ -20,6 +19,10 @@
     <ApplicationIcon>GXSerial.ico</ApplicationIcon>
     <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
     <PackageIcon>GXSerial.png</PackageIcon>
+  </PropertyGroup>
+  <PropertyGroup>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
  
  <ItemGroup>
@@ -40,7 +43,7 @@
    </EmbeddedResource>
  </ItemGroup>
  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.1.2001.2404" />
+    <PackageReference Include="Gurux.Common" Version="8.1.2002.1903" />
  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
     <PackageReference Include="System.IO.Ports" Version="4.7.0" />
