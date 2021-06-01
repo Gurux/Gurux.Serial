@@ -70,6 +70,15 @@ namespace Gurux.Serial.Properties {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cancel.
+        /// </summary>
+        internal static string Cancel {
+            get {
+                return ResourceManager.GetString("Cancel", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Data Bits:.
         /// </summary>
         internal static string DataBitsTxt {
@@ -93,6 +102,15 @@ namespace Gurux.Serial.Properties {
         internal static string FlowControlTxt {
             get {
                 return ResourceManager.GetString("FlowControlTxt", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to OK.
+        /// </summary>
+        internal static string OK {
+            get {
+                return ResourceManager.GetString("OK", resourceCulture);
             }
         }
         

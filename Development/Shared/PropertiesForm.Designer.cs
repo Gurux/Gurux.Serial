@@ -1,5 +1,4 @@
-﻿#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
-namespace Gurux.Shared
+﻿namespace Gurux.Shared
 {
     partial class PropertiesForm
     {
@@ -87,13 +86,13 @@ namespace Gurux.Shared
             this.Controls.Add(this.FormPanel);
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.HelpButton = true;
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "PropertiesForm";
             this.ShowInTaskbar = false;
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "Properties";
-            this.Load += new System.EventHandler(this.PropertiesForm_Load);
             this.panel1.ResumeLayout(false);
             this.ResumeLayout(false);
 
@@ -108,4 +107,3 @@ namespace Gurux.Shared
 
     }
 }
-#endif //!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1

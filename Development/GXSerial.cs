@@ -1673,7 +1673,7 @@ namespace Gurux.Serial
             }
         }
 
-#if !!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
+#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
         /// <summary>
         /// Occurs when serial port PIN changed.
         /// </summary>
@@ -1967,7 +1967,7 @@ namespace Gurux.Serial
         /// <seealso href="PropertiesDialog.html">Properties Dialog</seealso>
         public bool Properties(Form parent)
         {
-            return new Gurux.Shared.PropertiesForm(this.PropertiesForm, Resources.SettingsTxt, IsOpen).ShowDialog(parent) == DialogResult.OK;
+            return new PropertiesForm(this.PropertiesForm, Resources.SettingsTxt, IsOpen, Resources.OK, Resources.Cancel, "https://www.gurux.fi/GXSerialProperties").ShowDialog(parent) == DialogResult.OK;
         }
 
         /// <summary>

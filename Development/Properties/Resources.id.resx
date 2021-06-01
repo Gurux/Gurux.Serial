@@ -118,33 +118,33 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BaudRateTxt" xml:space="preserve">
-    <value>Baud Rate:</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Tingkat Baud:</value>
   </data>
   <data name="DataBitsTxt" xml:space="preserve">
-    <value>Data Bits:</value>
+    <value>Bit Data:</value>
   </data>
   <data name="EopTxt" xml:space="preserve">
     <value>Eop:</value>
   </data>
   <data name="FlowControlTxt" xml:space="preserve">
-    <value>Flow Control:</value>
-  </data>
-  <data name="OK" xml:space="preserve">
-    <value>OK</value>
+    <value>Alur kontrol:</value>
   </data>
   <data name="ParityTxt" xml:space="preserve">
-    <value>Parity:</value>
+    <value>Keseimbangan:</value>
   </data>
   <data name="PortNameTxt" xml:space="preserve">
-    <value>Port Name:</value>
+    <value>Nama Port:</value>
   </data>
   <data name="SettingsTxt" xml:space="preserve">
-    <value>Serial Port Settings:</value>
+    <value>Pengaturan Port Serial:</value>
   </data>
   <data name="StopBitsTxt" xml:space="preserve">
-    <value>Stop Bits:</value>
+    <value>Hentikan Bit:</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Membatalkan</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>baik</value>
   </data>
 </root>

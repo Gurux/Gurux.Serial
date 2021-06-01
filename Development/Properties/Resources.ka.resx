@@ -118,33 +118,33 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BaudRateTxt" xml:space="preserve">
-    <value>Baud Rate:</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Baud შეფასება:</value>
   </data>
   <data name="DataBitsTxt" xml:space="preserve">
-    <value>Data Bits:</value>
+    <value>მონაცემთა ბიტი:</value>
   </data>
   <data name="EopTxt" xml:space="preserve">
     <value>Eop:</value>
   </data>
   <data name="FlowControlTxt" xml:space="preserve">
-    <value>Flow Control:</value>
-  </data>
-  <data name="OK" xml:space="preserve">
-    <value>OK</value>
+    <value>Ნაკადის კონტროლი:</value>
   </data>
   <data name="ParityTxt" xml:space="preserve">
-    <value>Parity:</value>
+    <value>პარიტეტი:</value>
   </data>
   <data name="PortNameTxt" xml:space="preserve">
-    <value>Port Name:</value>
+    <value>პორტის სახელი:</value>
   </data>
   <data name="SettingsTxt" xml:space="preserve">
-    <value>Serial Port Settings:</value>
+    <value>სერიული პორტის პარამეტრები:</value>
   </data>
   <data name="StopBitsTxt" xml:space="preserve">
-    <value>Stop Bits:</value>
+    <value>შეაჩერე ბიტი:</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>გაუქმება</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>კარგი</value>
   </data>
 </root>

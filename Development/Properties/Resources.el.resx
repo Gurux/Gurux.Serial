@@ -118,33 +118,33 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BaudRateTxt" xml:space="preserve">
-    <value>Baud Rate:</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Ποσοστό Baud:</value>
   </data>
   <data name="DataBitsTxt" xml:space="preserve">
-    <value>Data Bits:</value>
+    <value>Κομμάτια δεδομένων:</value>
   </data>
   <data name="EopTxt" xml:space="preserve">
     <value>Eop:</value>
   </data>
   <data name="FlowControlTxt" xml:space="preserve">
-    <value>Flow Control:</value>
-  </data>
-  <data name="OK" xml:space="preserve">
-    <value>OK</value>
+    <value>Έλεγχος ροής:</value>
   </data>
   <data name="ParityTxt" xml:space="preserve">
-    <value>Parity:</value>
+    <value>Ισοτιμία:</value>
   </data>
   <data name="PortNameTxt" xml:space="preserve">
-    <value>Port Name:</value>
+    <value>Όνομα θύρας:</value>
   </data>
   <data name="SettingsTxt" xml:space="preserve">
-    <value>Serial Port Settings:</value>
+    <value>Ρυθμίσεις σειριακής θύρας:</value>
   </data>
   <data name="StopBitsTxt" xml:space="preserve">
-    <value>Stop Bits:</value>
+    <value>Διακοπή Bits:</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Ματαίωση</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>Εντάξει</value>
   </data>
 </root>

@@ -118,33 +118,33 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BaudRateTxt" xml:space="preserve">
-    <value>Baud Rate:</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>Vlerësimi i Baud:</value>
   </data>
   <data name="DataBitsTxt" xml:space="preserve">
-    <value>Data Bits:</value>
+    <value>Pjesët e të dhënave:</value>
   </data>
   <data name="EopTxt" xml:space="preserve">
     <value>Eop:</value>
   </data>
   <data name="FlowControlTxt" xml:space="preserve">
-    <value>Flow Control:</value>
-  </data>
-  <data name="OK" xml:space="preserve">
-    <value>OK</value>
+    <value>Kontrolli i rrjedhjes:</value>
   </data>
   <data name="ParityTxt" xml:space="preserve">
-    <value>Parity:</value>
+    <value>Barazia:</value>
   </data>
   <data name="PortNameTxt" xml:space="preserve">
-    <value>Port Name:</value>
+    <value>Emri i Portit:</value>
   </data>
   <data name="SettingsTxt" xml:space="preserve">
-    <value>Serial Port Settings:</value>
+    <value>Cilësimet e Portës Seriale:</value>
   </data>
   <data name="StopBitsTxt" xml:space="preserve">
-    <value>Stop Bits:</value>
+    <value>Bitet e ndalimit:</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>Anulo</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>Ne rregull</value>
   </data>
 </root>

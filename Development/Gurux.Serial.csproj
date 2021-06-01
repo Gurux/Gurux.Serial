@@ -4,14 +4,14 @@
     <AssemblyName>Gurux.Serial</AssemblyName>
     <Company>Gurux Ltd</Company>
     <Authors>Gurux Ltd</Authors>
-    <Copyright>Copyright (c) 1998-2020 Gurux Ltd. All rights reserved.</Copyright>
+    <Copyright>Copyright (c) 1998-2021 Gurux Ltd. All rights reserved.</Copyright>
     <PackageProjectUrl>www.gurux.fi/index.php?q=GXMedia</PackageProjectUrl>
     <PackageLicenseUrl></PackageLicenseUrl>
     <Description>Serial media component, for serial port connections.</Description>
     <Version Condition=" '$(BUILD_BUILDNUMBER)' == '' ">0.0.1-local</Version>
     <Version Condition=" '$(BUILD_BUILDNUMBER)' != '' ">$(BUILD_BUILDNUMBER)</Version>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <TargetFrameworks>net46;net40;net45;net35;netstandard2.1;netstandard2.0;netcoreapp3.1;netcoreapp2.0;netcoreapp2.1;</TargetFrameworks>
+    <TargetFrameworks>net46;net40;net45;net35;netstandard2.1;netstandard2.0;netcoreapp3.1;netcoreapp2.1;</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/gurux/Gurux.Serial</RepositoryUrl>
     <PackageTags>Gurux Device Framework Network Serial port</PackageTags>
@@ -24,8 +24,8 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
   </PropertyGroup>
- 
- <ItemGroup>
+
+   <ItemGroup Condition="'$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net35'">
    <Compile Update="Properties\Resources.Designer.cs">
      <DesignTime>True</DesignTime>
      <AutoGen>True</AutoGen>
@@ -36,17 +36,25 @@
      <DependentUpon>SettingsDlg.cs</DependentUpon>
    </Compile>
  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
+     <Compile Remove="SettingsDlg.cs" />
+     <Compile Remove="Shared\PropertiesForm.cs" />
+     <Compile Remove="Shared\PropertiesForm.Designer.cs" />
+  </ItemGroup>
+
  <ItemGroup>
    <EmbeddedResource Update="Properties\Resources.resx">
      <Generator>ResXFileCodeGenerator</Generator>
      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
    </EmbeddedResource>
  </ItemGroup>
+
  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.1.2002.1903" />
+    <PackageReference Include="Gurux.Common" Version="8.1.2103.1001" />
  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
-    <PackageReference Include="System.IO.Ports" Version="4.7.0" />
+    <PackageReference Include="System.IO.Ports" Version="5.0.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net46' or '$(TargetFramework)' == 'net45' or '$(TargetFramework)' == 'net40' or '$(TargetFramework)' == 'net35'">
     <Reference Include="System.Data.Linq" />
@@ -54,5 +62,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="GXSerial.png" Pack="true" PackagePath="\" />
+    <None Include="GXSerialPortExtension.cs" />
   </ItemGroup>
 </Project>

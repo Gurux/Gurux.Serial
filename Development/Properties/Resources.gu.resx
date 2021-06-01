@@ -118,33 +118,33 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="BaudRateTxt" xml:space="preserve">
-    <value>Baud Rate:</value>
-  </data>
-  <data name="Cancel" xml:space="preserve">
-    <value>Cancel</value>
+    <value>બોડ દર:</value>
   </data>
   <data name="DataBitsTxt" xml:space="preserve">
-    <value>Data Bits:</value>
+    <value>ડેટા બિટ્સ:</value>
   </data>
   <data name="EopTxt" xml:space="preserve">
-    <value>Eop:</value>
+    <value>ઇપો:</value>
   </data>
   <data name="FlowControlTxt" xml:space="preserve">
-    <value>Flow Control:</value>
-  </data>
-  <data name="OK" xml:space="preserve">
-    <value>OK</value>
+    <value>પ્રવાહ નિયંત્રણ:</value>
   </data>
   <data name="ParityTxt" xml:space="preserve">
-    <value>Parity:</value>
+    <value>સમાનતા:</value>
   </data>
   <data name="PortNameTxt" xml:space="preserve">
-    <value>Port Name:</value>
+    <value>બંદર નામ:</value>
   </data>
   <data name="SettingsTxt" xml:space="preserve">
-    <value>Serial Port Settings:</value>
+    <value>સીરીયલ પોર્ટ સેટિંગ્સ:</value>
   </data>
   <data name="StopBitsTxt" xml:space="preserve">
-    <value>Stop Bits:</value>
+    <value>બિટ્સ રોકો:</value>
+  </data>
+  <data name="Cancel" xml:space="preserve">
+    <value>રદ કરો</value>
+  </data>
+  <data name="OK" xml:space="preserve">
+    <value>બરાબર</value>
   </data>
 </root>

@@ -29,14 +29,9 @@
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
-#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
 using System;
-using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
+using System.Diagnostics;
 using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using Gurux.Common;
 
@@ -45,23 +40,31 @@ namespace Gurux.Shared
     partial class PropertiesForm : Form
     {
         IGXPropertyPage Properties;
+        string HelpLink;
 
         /// <summary>
         /// Constructor.
         /// </summary>
-        /// <param name="properties"></param>
-        /// <param name="title"></param>
-        /// <param name="open"></param>
-        public PropertiesForm(Form properties, string title, bool open)
+        /// <param name="properties">Properties form.</param>
+        /// <param name="title">Window title.</param>
+        /// <param name="open">Is media opened.</param>
+        /// <param name="okBtnText">Localized OK button text.</param>
+        /// <param name="cancelBtnText">Localized cancel button text.</param>
+        public PropertiesForm(Form properties, string title, bool open, string okBtnText, string cancelBtnText, string helpLink)
         {
+            HelpLink = helpLink;
             Properties = (IGXPropertyPage)properties;
             InitializeComponent();
             Properties.Initialize();
+            if (string.IsNullOrEmpty(helpLink))
+            {
+                HelpButton = false;
+            }
             this.Icon = System.Drawing.Icon.ExtractAssociatedIcon(GetType().Assembly.Location);
             this.OKBtn.Enabled = !open;
             this.Text = title;
-            this.OKBtn.Text = DialogResult.OK.ToString();
-            this.CancelBtn.Text = DialogResult.Cancel.ToString();
+            this.OKBtn.Text = okBtnText;
+            this.CancelBtn.Text = cancelBtnText;
             //Settings can be change if connection is open.
             int h = 0;
             while (properties.Controls.Count != 0)
@@ -112,9 +115,24 @@ namespace Gurux.Shared
                 MessageBox.Show(ex.Message);
             }
         }
-        private void PropertiesForm_Load(object sender, EventArgs e)
+
+        /// <summary>
+        /// Show help not available message.
+        /// </summary>
+        /// <param name="hevent">A HelpEventArgs that contains the event data.</param>
+        protected override void OnHelpRequested(HelpEventArgs hevent)
         {
+            try
+            {
+                // Show online help.
+                Process.Start(HelpLink);
+                // Set flag to show that the Help event as been handled
+                hevent.Handled = true;
+            }
+            catch (Exception Ex)
+            {
+                MessageBox.Show(this, Ex.Message, Text, MessageBoxButtons.OK);
+            }
         }
     }
 }
-#endif //!!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
