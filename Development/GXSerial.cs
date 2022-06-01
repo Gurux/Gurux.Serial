@@ -37,9 +37,9 @@ using System.ComponentModel;
 using Gurux.Common;
 using System.IO;
 using Gurux.Shared;
-#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
+#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1 && !NET6_0
 using System.Windows.Forms;
-#endif //!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
+#endif //!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1 && !NET6_0
 
 using System.IO.Ports;
 using System.Xml;
@@ -1673,7 +1673,7 @@ namespace Gurux.Serial
             }
         }
 
-#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
+#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1 && !NET6_0
         /// <summary>
         /// Occurs when serial port PIN changed.
         /// </summary>
@@ -1688,7 +1688,7 @@ namespace Gurux.Serial
                 m_base.PinChanged -= value;
             }
         }
-#endif //!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
+#endif //!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1 && !NET6_0
 
         /// <summary>
         /// Called when new data is received to the virtual media.
@@ -1955,7 +1955,7 @@ namespace Gurux.Serial
             }
         }
 
-#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
+#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1 && !NET6_0
         /// <summary>
         /// Shows the serial port Properties dialog.
         /// </summary>
@@ -1981,7 +1981,7 @@ namespace Gurux.Serial
             }
         }
 
-#endif //!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
+#endif //!NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1 && !NET6_0
 
         /// <summary>
         /// Sends data asynchronously. <br/>

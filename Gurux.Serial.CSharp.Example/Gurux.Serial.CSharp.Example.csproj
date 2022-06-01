@@ -78,9 +78,8 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Gurux.Common, Version=8.1.2109.2401, Culture=neutral, PublicKeyToken=null">
-      <HintPath>packages\Gurux.Common.8.1.2109.2401\lib\net46\Gurux.Common.dll</HintPath>
-      <Private>True</Private>
+    <Reference Include="Gurux.Common, Version=8.4.2206.104, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>packages\Gurux.Common.8.4.2206.104\lib\net46\Gurux.Common.dll</HintPath>
     </Reference>
     <Reference Include="mscorlib" />
     <Reference Include="System">
