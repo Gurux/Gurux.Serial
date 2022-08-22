@@ -1,5 +1,4 @@
-﻿#if !NETSTANDARD2_0 && !NETSTANDARD2_1 && !NETCOREAPP2_0 && !NETCOREAPP2_1 && !NETCOREAPP3_1
-namespace Gurux.Serial
+﻿namespace Gurux.Serial
 {
     partial class Settings
     {
@@ -292,4 +291,3 @@ namespace Gurux.Serial
         private System.Windows.Forms.ComboBox FlowControlCb;
     }
 }
-#endif //!NETCOREAPP2_0 && !NETSTANDARD2_0
