@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+  <string name="app_name">Gurux Serial Example</string>
+  <string name="action_settings">Settings</string>
+  <string name="open">Open</string>
+  <string name="close">Close</string>
+  <string name="sendBtn">Send</string>
+  <string name="Hex">Hex</string>
+  <string name="refresh">Refresh</string>
+  <string name="port">Port</string>
+  <string name="baudrate">Baud Rate</string>
+  <string name="dataBits">Data Bits</string>
+  <string name="parity">Parity</string>
+  <string name="stopBits">Stop Bits</string>
+  <string name="clearBtn">Clear</string>
+  <string name="infoBtn">Info</string>
+  <string name="sendData">sendData</string>
+  <string name="ok">OK</string>
+</resources>
