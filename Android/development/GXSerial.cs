@@ -663,6 +663,7 @@ namespace Gurux.Serial
             {
                 if (totalCount != -1)
                 {
+                    _syncBase.AppendData(buffer, index, totalCount);
                     _syncBase.receivedEvent.Set();
                 }
             }
@@ -1131,9 +1132,12 @@ namespace Gurux.Serial
                                             break;
                                         }
                                     }
-                                    buff = tmp.ToArray();
+                                    HandleReceivedData(0, tmp.ToArray(), (int) tmp.Length);
                                 }
-                                HandleReceivedData(_syncBase.receivedSize, buff, len);
+                                else
+                                {
+                                    HandleReceivedData(0, buff, len);
+                                }
                             }
                         }
                         catch (System.Exception ex)
