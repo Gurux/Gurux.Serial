@@ -174,3 +174,6 @@ Development/.vs/Gurux.Serial/DesignTimeBuild/.dtbcache
 Gurux.Serial.CSharp.Example/.vs/Gurux.Serial.CSharp.Example/DesignTimeBuild/.dtbcache
 Gurux.Serial.CSharp.Example/.vs/Gurux.Serial.CSharp.Example/v15/Server/sqlite3/storage.ide-shm
 Gurux.Serial.CSharp.Example/.vs/Gurux.Serial.CSharp.Example/v15/Server/sqlite3/storage.ide-wal
+Android/development/.vs/
+Android/Gurux.Serial.Example/.vs/
+*.zip
