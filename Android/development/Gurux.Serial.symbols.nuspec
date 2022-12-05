@@ -13,7 +13,7 @@
     <tags>Gurux Device Framework Serial port</tags>
     <repository url="https://github.com/gurux/Gurux.Serial" />
     <dependencies>
-      <group targetFramework="MonoAndroid">
+      <group>
         <dependency id="Xamarin.AndroidX.AppCompat" version="1.2.0.5" exclude="Build,Analyzers" />
         <dependency id="Gurux.Common" version="8.4.2210.1201" exclude="Build,Analyzers" />
         <dependency id="System.IO.Ports" version="7.0.0" exclude="Build,Analyzers" />
