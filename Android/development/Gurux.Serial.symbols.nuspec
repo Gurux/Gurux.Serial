@@ -13,14 +13,29 @@
     <tags>Gurux Device Framework Serial port</tags>
     <repository url="https://github.com/gurux/Gurux.Serial" />
     <dependencies>
-      <group targetFramework="MonoAndroid">
+      <group targetFramework="MonoAndroid10.0">
+        <dependency id="Gurux.Common" version="8.4.2210.1201" exclude="Build,Analyzers" />
+        <dependency id="System.IO.Ports" version="7.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="MonoAndroid11.0">
+        <dependency id="Gurux.Common" version="8.4.2210.1201" exclude="Build,Analyzers" />
+        <dependency id="System.IO.Ports" version="7.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="MonoAndroid12.0">
+        <dependency id="Gurux.Common" version="8.4.2210.1201" exclude="Build,Analyzers" />
+        <dependency id="System.IO.Ports" version="7.0.0" exclude="Build,Analyzers" />
+      </group>
+      <group targetFramework="MonoAndroid13.0">
         <dependency id="Gurux.Common" version="8.4.2210.1201" exclude="Build,Analyzers" />
         <dependency id="System.IO.Ports" version="7.0.0" exclude="Build,Analyzers" />
       </group>
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Release\Gurux.Serial.Android.pdb" target="lib\MonoAndroid\Gurux.Serial.Android.pdb" />
+    <file src="bin\Release\Gurux.Serial.Android.pdb" target="lib\MonoAndroid10.0\Gurux.Serial.Android.pdb" />
+    <file src="bin\Release\Gurux.Serial.Android.pdb" target="lib\MonoAndroid11.0\Gurux.Serial.Android.pdb" />
+    <file src="bin\Release\Gurux.Serial.Android.pdb" target="lib\MonoAndroid12.0\Gurux.Serial.Android.pdb" />
+    <file src="bin\Release\Gurux.Serial.Android.pdb" target="lib\MonoAndroid13.0\Gurux.Serial.Android.pdb" />
     <file src="GXSerial.png" target="\GXSerial.png" />
   </files>
 </package>

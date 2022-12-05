@@ -30,7 +30,6 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 
-using Android.Content;
 using Android.OS;
 using Android.Views;
 using Android.Widget;

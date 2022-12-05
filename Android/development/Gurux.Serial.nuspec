@@ -13,15 +13,33 @@
     <tags>Gurux Device Framework Network Serial port</tags>
     <repository url="https://github.com/gurux/Gurux.Serial" />
     <dependencies>
-      <group targetFramework="MonoAndroid">
-        <dependency id="Gurux.Common" version="8.4.2211.501" exclude="Build,Analyzers" />
-        <dependency id="System.IO.Ports" version="7.0.0" exclude="Build,Analyzers" />
+      <group targetFramework="MonoAndroid10.0">
+        <dependency id="Gurux.Common" version="8.4.2211.501" />
+        <dependency id="System.IO.Ports" version="7.0.0" />
+      </group>
+      <group targetFramework="MonoAndroid11.0">
+        <dependency id="Gurux.Common" version="8.4.2211.501" />
+        <dependency id="System.IO.Ports" version="7.0.0" />
+      </group>
+      <group targetFramework="MonoAndroid12.0">
+        <dependency id="Gurux.Common" version="8.4.2211.501" />
+        <dependency id="System.IO.Ports" version="7.0.0" />
+      </group>
+      <group targetFramework="MonoAndroid13.0">
+        <dependency id="Gurux.Common" version="8.4.2211.501" />
+        <dependency id="System.IO.Ports" version="7.0.0" />
       </group>
     </dependencies>
   </metadata>
   <files>
-    <file src="bin\Release\Gurux.Serial.Android.dll" target="\lib\MonoAndroid\Gurux.Serial.Android.dll" />
-    <file src="bin\Release\Gurux.Serial.Android.xml" target="\lib\MonoAndroid\Gurux.Serial.Android.xml" />
+    <file src="bin\Release\Gurux.Serial.Android.dll" target="/lib/MonoAndroid10.0/Gurux.Serial.Android.dll" />
+    <file src="bin\Release\Gurux.Serial.Android.xml" target="/lib/MonoAndroid10.0/Gurux.Serial.Android.xml" />
+    <file src="bin\Release\Gurux.Serial.Android.dll" target="/lib/MonoAndroid11.0/Gurux.Serial.Android.dll" />
+    <file src="bin\Release\Gurux.Serial.Android.xml" target="/lib/MonoAndroid11.0/Gurux.Serial.Android.xml" />
+    <file src="bin\Release\Gurux.Serial.Android.dll" target="/lib/MonoAndroid12.0/Gurux.Serial.Android.dll" />
+    <file src="bin\Release\Gurux.Serial.Android.xml" target="/lib/MonoAndroid12.0/Gurux.Serial.Android.xml" />
+    <file src="bin\Release\Gurux.Serial.Android.dll" target="/lib/MonoAndroid13.0/Gurux.Serial.Android.dll" />
+    <file src="bin\Release\Gurux.Serial.Android.xml" target="/lib/MonoAndroid13.0/Gurux.Serial.Android.xml" />
     <file src="GXSerial.png" target="\GXSerial.png" />
   </files>
 </package>
