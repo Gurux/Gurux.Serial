@@ -39,11 +39,15 @@ using Java.Lang;
 
 namespace Gurux.Serial
 {
+    /// <summary>
+    /// Properties fragment.
+    /// </summary>
     public class GXPropertiesFragment : AndroidX.Fragment.App.Fragment
     {
         private GXPropertiesBase _base;
         private Button _showInfo;
 
+        /// <inheritdoc/>
         public override View OnCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState)
         {
             View view = base.OnCreateView(inflater, container, savedInstanceState);
@@ -66,13 +70,14 @@ namespace Gurux.Serial
                             .SetPositiveButton(Resource.String.ok, (senderAlert, args) => { })
                             .Show();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             };
             return view;
         }
 
+        /// <inheritdoc/>
         public override void OnDestroy()
         {
             if (_base != null)

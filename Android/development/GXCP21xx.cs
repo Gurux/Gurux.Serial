@@ -44,7 +44,7 @@ namespace Gurux.Serial
     class GXCP21xx : GXChipset
     {
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override Chipset Chipset
         {
             get
@@ -438,13 +438,13 @@ namespace Gurux.Serial
             throw new System.NotImplementedException();
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override bool GetRtsEnable(UsbDeviceConnection connection)
         {
             throw new System.NotImplementedException();
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override void SetRtsEnable(UsbDeviceConnection connection, bool value)
         {
             throw new System.NotImplementedException();

@@ -41,7 +41,7 @@ using System;
 
 namespace Gurux.Serial
 {
-    public class GXPropertiesBase
+    internal class GXPropertiesBase
     {
         private readonly Context activity;
         private readonly ListView listView;

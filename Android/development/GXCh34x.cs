@@ -44,7 +44,7 @@ namespace Gurux.Serial
      */
     class GXCh34x : GXChipset
     {
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override Chipset Chipset
         {
             get
@@ -53,10 +53,10 @@ namespace Gurux.Serial
             }
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public new static bool IsUsing(string manufacturer, int vendor, int product)
         {
-            /**QinHeng Electronics*/
+            //QinHeng Electronics.
             if ((vendor == 0x1a86))
             {
                 return true;
@@ -64,7 +64,7 @@ namespace Gurux.Serial
             return false;
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public void SetBaudRate(UsbDeviceConnection connection, int baudRate)
         {
             int a, b;

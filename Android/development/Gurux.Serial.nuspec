@@ -22,6 +22,7 @@
   </metadata>
   <files>
     <file src="bin\Release\Gurux.Serial.Android.dll" target="\lib\MonoAndroid\Gurux.Serial.Android.dll" />
+    <file src="bin\Release\Gurux.Serial.Android.xml" target="\lib\MonoAndroid\Gurux.Serial.Android.xml" />
     <file src="GXSerial.png" target="\GXSerial.png" />
   </files>
 </package>

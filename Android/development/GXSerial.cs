@@ -270,25 +270,25 @@ namespace Gurux.Serial
         /// <param name="vendor">Vendor ID.</param>
         /// <param name="productId">Product ID.</param>
         /// <returns>Chipset settings.</returns>
-        private static GXChipset GetChipSet(string stringManufacturer, int vendor, int productId)
+        private static GXChipset GetChipSet(string manufacturer, int vendor, int productId)
         {
-            if (GXCP21xx.IsUsing(stringManufacturer, vendor, productId))
+            if (GXCP21xx.IsUsing(manufacturer, vendor, productId))
             {
                 return new GXCP21xx();
             }
-            else if (GXProfilic.IsUsing(stringManufacturer, vendor, productId))
+            else if (GXProfilic.IsUsing(manufacturer, vendor, productId))
             {
                 return new GXProfilic();
             }
-            else if (GXFtdi.IsUsing(stringManufacturer, vendor, productId))
+            else if (GXFtdi.IsUsing(manufacturer, vendor, productId))
             {
                 return new GXFtdi();
             }
-            else if (GXFtdi.IsUsing(stringManufacturer, vendor, productId))
+            else if (GXFtdi.IsUsing(manufacturer, vendor, productId))
             {
                 return new GXFtdi();
             }
-            else if (GXCh34x.IsUsing(stringManufacturer, vendor, productId))
+            else if (GXCh34x.IsUsing(manufacturer, vendor, productId))
             {
                 return new GXCh34x();
             }
@@ -1559,9 +1559,9 @@ namespace Gurux.Serial
         /// <summary>
         /// Shows the serial port Properties dialog.
         /// </summary>
-        /// <param name="parent">Owner window of the Properties dialog.</param>
+        /// <param name="activity">Owner window of the Properties dialog.</param>
         /// <returns>True, if the user has accepted the changes.</returns>
-        /// <seealso cref="PortName">PortName</seealso>
+        /// <seealso cref="Port">Port</seealso>
         /// <seealso cref="BaudRate">BaudRate</seealso>
         /// <seealso cref="DataBits">DataBits</seealso>
         public bool Properties(Activity activity)

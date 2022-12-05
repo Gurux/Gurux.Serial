@@ -43,7 +43,7 @@ namespace Gurux.Serial
     class GXFtdi : GXChipset
     {
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override Chipset Chipset
         {
             get
@@ -150,13 +150,13 @@ namespace Gurux.Serial
             return true;
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override bool GetDtrEnable(UsbDeviceConnection connection)
         {
             return _DtrEnable;
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override void SetDtrEnable(UsbDeviceConnection connection, bool value)
         {
             int ret = connection.ControlTransfer(FTDI_SIO_SET_DATA_REQUEST_TYPE, FTDI_SIO_MODEM_CTRL,
@@ -168,13 +168,13 @@ namespace Gurux.Serial
             _DtrEnable = value;
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override bool GetRtsEnable(UsbDeviceConnection connection)
         {
             return _RtsEnable;
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override void SetRtsEnable(UsbDeviceConnection connection, bool value)
         {
             int ret = connection.ControlTransfer(FTDI_SIO_SET_DATA_REQUEST_TYPE, FTDI_SIO_MODEM_CTRL,
@@ -186,7 +186,7 @@ namespace Gurux.Serial
             _RtsEnable = value;
         }
 
-        /// <inheritdoc>
+        /// <inheritdoc />
         public override int RemoveStatus(byte[] data, int size, int maxPacketSize)
         {
             System.Array.Copy(data, STATUS_LENGTH, data, 0, size - STATUS_LENGTH);

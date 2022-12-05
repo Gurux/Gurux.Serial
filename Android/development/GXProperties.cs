@@ -37,12 +37,16 @@ using Java.Lang;
 
 namespace Gurux.Serial
 {
+    /// <summary>
+    /// Serial port properties.
+    /// </summary>
     [Android.App.Activity(Name = "Gurux.Serial.GXProperties")]
     public class GXProperties : AppCompatActivity
     {
-        GXPropertiesBase _base;
-        Button _showInfo;
+        private GXPropertiesBase _base;
+        private Button _showInfo;
 
+        /// <inheritdoc />
         protected override void OnCreate(Bundle savedInstanceState)
         {
             base.OnCreate(savedInstanceState);
@@ -66,12 +70,13 @@ namespace Gurux.Serial
                             .SetPositiveButton(Resource.String.ok, (senderAlert, args) => { })
                             .Show();
                 }
-                catch (Exception ex)
+                catch (Exception)
                 {
                 }
             };
         }
 
+        /// <inheritdoc />
         protected override void OnDestroy()
         {
             if (_base != null)

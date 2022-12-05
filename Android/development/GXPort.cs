@@ -36,6 +36,9 @@ using Java.Lang;
 
 namespace Gurux.Serial
 {
+    /// <summary>
+    /// Serial port information.
+    /// </summary>
     public class GXPort
     {
         /// <summary>
@@ -83,6 +86,7 @@ namespace Gurux.Serial
         /// </summary>
         public Chipset Chipset { get; set; }
 
+        /// <inheritdoc/>
         public override string ToString()
         {
             if (!string.IsNullOrEmpty(Product))
@@ -96,6 +100,10 @@ namespace Gurux.Serial
             return Port;
         }
 
+        /// <summary>
+        /// Serial port information.
+        /// </summary>
+        /// <returns></returns>
         public string GetInfo()
         {
             StringBuffer sb = new StringBuffer();
