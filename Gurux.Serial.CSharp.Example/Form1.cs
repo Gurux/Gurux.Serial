@@ -4,11 +4,11 @@
 //
 //
 //
-// Filename:        $HeadURL: svn://utopia/projects/Old/GuruxSerial/GXSerial%20csharp%20Sample/Form1.cs $
+// Filename:        $HeadURL$
 //
-// Version:         $Revision: 3104 $,
-//                  $Date: 2010-12-03 13:43:16 +0200 (pe, 03 joulu 2010) $
-//                  $Author: kurumi $
+// Version:         $Revision$,
+//                  $Date$
+//                  $Author$
 //
 // Copyright (c) Gurux Ltd
 //
@@ -25,8 +25,6 @@
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
-//
-// More information of Gurux Serial : http://www.gurux.org/GXSerial
 //
 // This code is licensed under the GNU General Public License v2.
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
