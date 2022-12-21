@@ -146,7 +146,11 @@ namespace Gurux.Serial
 
         private string GetChipset()
         {
-            return activity.GetString(Resource.String.chipset) + "\r\n" + serial._Chipset.Chipset.ToString();
+            if (serial._Chipset != null)
+            {
+                return activity.GetString(Resource.String.chipset) + "\r\n" + serial._Chipset.Chipset.ToString();
+            }
+            return "";
         }
 
 

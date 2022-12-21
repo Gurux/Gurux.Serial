@@ -375,7 +375,7 @@ namespace Gurux.Serial
             }
             byte[] buffer = new byte[255];
             string name = "Gurux.Serial";
-            PendingIntent permissionIntent = PendingIntent.GetBroadcast(_contect, 0, new Intent(name), 0);
+            PendingIntent permissionIntent = PendingIntent.GetBroadcast(_contect, 0, new Intent(name), PendingIntentFlags.Immutable | PendingIntentFlags.UpdateCurrent);
             UsbEndpoint inUsbEndpoint = null, outUsbEndpoint = null;
             if (!manager.HasPermission(device))
             {
@@ -651,7 +651,7 @@ namespace Gurux.Serial
                     count = totalCount;
                 }
                 TraceEventArgs arg = new TraceEventArgs(TraceTypes.Received,
-                                    _syncBase.m_Received, pos, count, null);
+                                    buffer, 0, count, null);
                 LastEopPos = index + totalCount;
                 if (LastEopPos != 0)
                 {

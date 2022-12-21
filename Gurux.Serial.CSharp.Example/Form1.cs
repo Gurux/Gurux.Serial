@@ -35,6 +35,7 @@ using System.Windows.Forms;
 using System.Text;
 using Gurux.Common;
 using System.Diagnostics;
+using System.Threading;
 
 namespace GXSerialSample
 {
@@ -194,7 +195,11 @@ namespace GXSerialSample
                 }
                 if (EchoCB.Checked)
                 {
-                    gxSerial1.Send(e.Data);
+                    foreach(var it in (byte[]) e.Data)
+                    {
+                        gxSerial1.Send(it);
+                        Thread.Sleep(200);
+                    }
                 }
             }
             catch (Exception Ex)
