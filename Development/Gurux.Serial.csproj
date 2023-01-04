@@ -38,7 +38,7 @@
   </ItemGroup>
 
  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.4.2301.401" />
+    <PackageReference Include="Gurux.Common" Version="8.4.2301.402" />
  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
     <PackageReference Include="System.IO.Ports" Version="5.0.1" />
