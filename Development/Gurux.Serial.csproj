@@ -4,14 +4,14 @@
     <AssemblyName>Gurux.Serial</AssemblyName>
     <Company>Gurux Ltd</Company>
     <Authors>Gurux Ltd</Authors>
-    <Copyright>Copyright (c) 1998-2022 Gurux Ltd. All rights reserved.</Copyright>
+    <Copyright>Copyright (c) 1998-2023 Gurux Ltd. All rights reserved.</Copyright>
     <PackageProjectUrl>www.gurux.fi/index.php?q=GXMedia</PackageProjectUrl>
     <PackageLicenseUrl></PackageLicenseUrl>
     <Description>Serial media component, for serial port connections.</Description>
     <Version Condition=" '$(BUILD_BUILDNUMBER)' == '' ">0.0.1-local</Version>
     <Version Condition=" '$(BUILD_BUILDNUMBER)' != '' ">$(BUILD_BUILDNUMBER)</Version>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <TargetFrameworks>net6.0-windows;net60;net46;netcoreapp3.1;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net6.0-windows;net60;net462;netcoreapp3.1;netstandard2.1;netstandard2.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/gurux/Gurux.Serial</RepositoryUrl>
     <PackageTags>Gurux Device Framework Network Serial port</PackageTags>
@@ -38,7 +38,7 @@
   </ItemGroup>
 
  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.4.2212.501" />
+    <PackageReference Include="Gurux.Common" Version="8.4.2301.401" />
  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
     <PackageReference Include="System.IO.Ports" Version="5.0.1" />

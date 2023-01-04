@@ -50,7 +50,13 @@ namespace Gurux.Shared
         /// <param name="open">Is media opened.</param>
         /// <param name="okBtnText">Localized OK button text.</param>
         /// <param name="cancelBtnText">Localized cancel button text.</param>
-        public PropertiesForm(Form properties, string title, bool open, string okBtnText, string cancelBtnText, string helpLink)
+        /// <param name="helpLink">Help link address.</param>
+        public PropertiesForm(Form properties, 
+            string title, 
+            bool open, 
+            string okBtnText, 
+            string cancelBtnText, 
+            string helpLink)
         {
             HelpLink = helpLink;
             Properties = (IGXPropertyPage)properties;

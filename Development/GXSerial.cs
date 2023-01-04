@@ -2030,23 +2030,27 @@ namespace Gurux.Serial
             }
         }
 
-        /// <inheritdoc cref="IGXMedia.Validate"/>
+        /// <inheritdoc />
         public void Validate()
         {
 
         }
 
+        /// <inheritdoc />
         int Gurux.Common.IGXMedia.ConfigurableSettings
         {
             get;
             set;
         }
+
+        /// <inheritdoc />
         uint IGXMedia2.AsyncWaitTime
         {
             get;
             set;
         }
 
+        /// <inheritdoc />
         EventWaitHandle IGXMedia2.AsyncWaitHandle
         {
             get
@@ -2055,6 +2059,7 @@ namespace Gurux.Serial
             }
         }
 
+        /// <inheritdoc />
         public uint ReceiveDelay
         {
             get;
