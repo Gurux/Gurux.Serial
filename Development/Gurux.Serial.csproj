@@ -38,13 +38,13 @@
   </ItemGroup>
 
  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.4.2301.402" />
+    <PackageReference Include="Gurux.Common" Version="8.4.2302.901" />
  </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
     <PackageReference Include="System.IO.Ports" Version="5.0.1" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net60' or '$(TargetFramework)' == 'net6.0-windows'">
-    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
+    <PackageReference Include="System.IO.Ports" Version="7.0.0" />
   </ItemGroup>
   <ItemGroup Condition="'$(TargetFramework)' == 'net462'">
     <Reference Include="System.Windows.Forms" />
