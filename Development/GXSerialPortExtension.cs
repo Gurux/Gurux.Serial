@@ -9,7 +9,6 @@ namespace Gurux.Serial
 {
     internal static class GXSerialPortExtension
     {
-        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public static byte GetChar(this Gurux.Serial.GXSerial port, string name)
         {
             if (port == null)
@@ -46,8 +45,6 @@ namespace Gurux.Serial
             }
         }
 
-
-        [SecurityPermission(SecurityAction.LinkDemand, Flags = SecurityPermissionFlag.UnmanagedCode)]
         public static void SetChar(Gurux.Serial.GXSerial port, string name, byte value)
         {
             if (port == null)

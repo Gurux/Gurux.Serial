@@ -56,22 +56,24 @@
             // 
             // PortNameCB
             // 
-            this.PortNameCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.PortNameCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.PortNameCB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.PortNameCB.FormattingEnabled = true;
-            this.PortNameCB.Location = new System.Drawing.Point(124, 5);
+            this.PortNameCB.Location = new System.Drawing.Point(145, 6);
+            this.PortNameCB.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.PortNameCB.Name = "PortNameCB";
-            this.PortNameCB.Size = new System.Drawing.Size(164, 21);
+            this.PortNameCB.Size = new System.Drawing.Size(191, 23);
             this.PortNameCB.TabIndex = 15;
             this.PortNameCB.SelectedIndexChanged += new System.EventHandler(this.PortNameCB_SelectedIndexChanged);
             // 
             // PortNameLbl
             // 
             this.PortNameLbl.AutoSize = true;
-            this.PortNameLbl.Location = new System.Drawing.Point(4, 8);
+            this.PortNameLbl.Location = new System.Drawing.Point(5, 9);
+            this.PortNameLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.PortNameLbl.Name = "PortNameLbl";
-            this.PortNameLbl.Size = new System.Drawing.Size(26, 13);
+            this.PortNameLbl.Size = new System.Drawing.Size(29, 15);
             this.PortNameLbl.TabIndex = 12;
             this.PortNameLbl.Text = "Port";
             // 
@@ -81,8 +83,9 @@
             this.PortNamePanel.Controls.Add(this.PortNameLbl);
             this.PortNamePanel.Dock = System.Windows.Forms.DockStyle.Top;
             this.PortNamePanel.Location = new System.Drawing.Point(0, 0);
+            this.PortNamePanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.PortNamePanel.Name = "PortNamePanel";
-            this.PortNamePanel.Size = new System.Drawing.Size(300, 30);
+            this.PortNamePanel.Size = new System.Drawing.Size(350, 35);
             this.PortNamePanel.TabIndex = 28;
             // 
             // BaudRatePanel
@@ -90,28 +93,32 @@
             this.BaudRatePanel.Controls.Add(this.BaudRateCB);
             this.BaudRatePanel.Controls.Add(this.BaudRateLbl);
             this.BaudRatePanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.BaudRatePanel.Location = new System.Drawing.Point(0, 30);
+            this.BaudRatePanel.Location = new System.Drawing.Point(0, 35);
+            this.BaudRatePanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.BaudRatePanel.Name = "BaudRatePanel";
-            this.BaudRatePanel.Size = new System.Drawing.Size(300, 30);
+            this.BaudRatePanel.Size = new System.Drawing.Size(350, 35);
             this.BaudRatePanel.TabIndex = 34;
             // 
             // BaudRateCB
             // 
-            this.BaudRateCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.BaudRateCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.BaudRateCB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.BaudRateCB.FormattingEnabled = true;
-            this.BaudRateCB.Location = new System.Drawing.Point(124, 5);
+            this.BaudRateCB.Location = new System.Drawing.Point(145, 6);
+            this.BaudRateCB.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.BaudRateCB.Name = "BaudRateCB";
-            this.BaudRateCB.Size = new System.Drawing.Size(164, 21);
+            this.BaudRateCB.Size = new System.Drawing.Size(191, 23);
             this.BaudRateCB.TabIndex = 16;
+            this.BaudRateCB.SelectedIndexChanged += new System.EventHandler(this.BaudRateCB_SelectedIndexChanged);
             // 
             // BaudRateLbl
             // 
             this.BaudRateLbl.AutoSize = true;
-            this.BaudRateLbl.Location = new System.Drawing.Point(4, 7);
+            this.BaudRateLbl.Location = new System.Drawing.Point(5, 8);
+            this.BaudRateLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.BaudRateLbl.Name = "BaudRateLbl";
-            this.BaudRateLbl.Size = new System.Drawing.Size(65, 13);
+            this.BaudRateLbl.Size = new System.Drawing.Size(67, 15);
             this.BaudRateLbl.TabIndex = 10;
             this.BaudRateLbl.Text = "Baud RateX";
             // 
@@ -120,28 +127,32 @@
             this.DataBitsPanel.Controls.Add(this.DataBitsCB);
             this.DataBitsPanel.Controls.Add(this.DataBitsLbl);
             this.DataBitsPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.DataBitsPanel.Location = new System.Drawing.Point(0, 60);
+            this.DataBitsPanel.Location = new System.Drawing.Point(0, 70);
+            this.DataBitsPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.DataBitsPanel.Name = "DataBitsPanel";
-            this.DataBitsPanel.Size = new System.Drawing.Size(300, 30);
+            this.DataBitsPanel.Size = new System.Drawing.Size(350, 35);
             this.DataBitsPanel.TabIndex = 35;
             // 
             // DataBitsCB
             // 
-            this.DataBitsCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.DataBitsCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.DataBitsCB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.DataBitsCB.FormattingEnabled = true;
-            this.DataBitsCB.Location = new System.Drawing.Point(124, 4);
+            this.DataBitsCB.Location = new System.Drawing.Point(145, 5);
+            this.DataBitsCB.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.DataBitsCB.Name = "DataBitsCB";
-            this.DataBitsCB.Size = new System.Drawing.Size(164, 21);
+            this.DataBitsCB.Size = new System.Drawing.Size(191, 23);
             this.DataBitsCB.TabIndex = 15;
+            this.DataBitsCB.SelectedIndexChanged += new System.EventHandler(this.DataBitsCB_SelectedIndexChanged);
             // 
             // DataBitsLbl
             // 
             this.DataBitsLbl.AutoSize = true;
-            this.DataBitsLbl.Location = new System.Drawing.Point(4, 7);
+            this.DataBitsLbl.Location = new System.Drawing.Point(5, 8);
+            this.DataBitsLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.DataBitsLbl.Name = "DataBitsLbl";
-            this.DataBitsLbl.Size = new System.Drawing.Size(57, 13);
+            this.DataBitsLbl.Size = new System.Drawing.Size(60, 15);
             this.DataBitsLbl.TabIndex = 12;
             this.DataBitsLbl.Text = "Data BitsX";
             // 
@@ -150,96 +161,108 @@
             this.ParityPanel.Controls.Add(this.ParityLbl);
             this.ParityPanel.Controls.Add(this.ParityCB);
             this.ParityPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.ParityPanel.Location = new System.Drawing.Point(0, 90);
+            this.ParityPanel.Location = new System.Drawing.Point(0, 105);
+            this.ParityPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.ParityPanel.Name = "ParityPanel";
-            this.ParityPanel.Size = new System.Drawing.Size(300, 30);
+            this.ParityPanel.Size = new System.Drawing.Size(350, 35);
             this.ParityPanel.TabIndex = 36;
             // 
             // ParityLbl
             // 
             this.ParityLbl.AutoSize = true;
-            this.ParityLbl.Location = new System.Drawing.Point(4, 7);
+            this.ParityLbl.Location = new System.Drawing.Point(5, 8);
+            this.ParityLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.ParityLbl.Name = "ParityLbl";
-            this.ParityLbl.Size = new System.Drawing.Size(40, 13);
+            this.ParityLbl.Size = new System.Drawing.Size(44, 15);
             this.ParityLbl.TabIndex = 15;
             this.ParityLbl.Text = "ParityX";
             // 
             // ParityCB
             // 
-            this.ParityCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.ParityCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.ParityCB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.ParityCB.FormattingEnabled = true;
-            this.ParityCB.Location = new System.Drawing.Point(124, 4);
+            this.ParityCB.Location = new System.Drawing.Point(145, 5);
+            this.ParityCB.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.ParityCB.Name = "ParityCB";
-            this.ParityCB.Size = new System.Drawing.Size(164, 21);
+            this.ParityCB.Size = new System.Drawing.Size(191, 23);
             this.ParityCB.TabIndex = 14;
+            this.ParityCB.SelectedIndexChanged += new System.EventHandler(this.ParityCB_SelectedIndexChanged);
             // 
             // StopBitsPanel
             // 
             this.StopBitsPanel.Controls.Add(this.StopBitsLbl);
             this.StopBitsPanel.Controls.Add(this.StopBitsCB);
             this.StopBitsPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.StopBitsPanel.Location = new System.Drawing.Point(0, 120);
+            this.StopBitsPanel.Location = new System.Drawing.Point(0, 140);
+            this.StopBitsPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.StopBitsPanel.Name = "StopBitsPanel";
-            this.StopBitsPanel.Size = new System.Drawing.Size(300, 30);
+            this.StopBitsPanel.Size = new System.Drawing.Size(350, 35);
             this.StopBitsPanel.TabIndex = 37;
             // 
             // StopBitsLbl
             // 
             this.StopBitsLbl.AutoSize = true;
-            this.StopBitsLbl.Location = new System.Drawing.Point(4, 7);
+            this.StopBitsLbl.Location = new System.Drawing.Point(5, 8);
+            this.StopBitsLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.StopBitsLbl.Name = "StopBitsLbl";
-            this.StopBitsLbl.Size = new System.Drawing.Size(56, 13);
+            this.StopBitsLbl.Size = new System.Drawing.Size(60, 15);
             this.StopBitsLbl.TabIndex = 15;
             this.StopBitsLbl.Text = "Stop BitsX";
             // 
             // StopBitsCB
             // 
-            this.StopBitsCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.StopBitsCB.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.StopBitsCB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.StopBitsCB.FormattingEnabled = true;
-            this.StopBitsCB.Location = new System.Drawing.Point(124, 4);
+            this.StopBitsCB.Location = new System.Drawing.Point(145, 5);
+            this.StopBitsCB.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.StopBitsCB.Name = "StopBitsCB";
-            this.StopBitsCB.Size = new System.Drawing.Size(164, 21);
+            this.StopBitsCB.Size = new System.Drawing.Size(191, 23);
             this.StopBitsCB.TabIndex = 14;
+            this.StopBitsCB.SelectedIndexChanged += new System.EventHandler(this.StopBitsCB_SelectedIndexChanged);
             // 
             // FlowControlPanel
             // 
             this.FlowControlPanel.Controls.Add(this.FlowControlLbl);
             this.FlowControlPanel.Controls.Add(this.FlowControlCb);
             this.FlowControlPanel.Dock = System.Windows.Forms.DockStyle.Top;
-            this.FlowControlPanel.Location = new System.Drawing.Point(0, 150);
+            this.FlowControlPanel.Location = new System.Drawing.Point(0, 175);
+            this.FlowControlPanel.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.FlowControlPanel.Name = "FlowControlPanel";
-            this.FlowControlPanel.Size = new System.Drawing.Size(300, 30);
+            this.FlowControlPanel.Size = new System.Drawing.Size(350, 35);
             this.FlowControlPanel.TabIndex = 38;
             // 
             // FlowControlLbl
             // 
             this.FlowControlLbl.AutoSize = true;
-            this.FlowControlLbl.Location = new System.Drawing.Point(4, 7);
+            this.FlowControlLbl.Location = new System.Drawing.Point(5, 8);
+            this.FlowControlLbl.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.FlowControlLbl.Name = "FlowControlLbl";
-            this.FlowControlLbl.Size = new System.Drawing.Size(72, 13);
+            this.FlowControlLbl.Size = new System.Drawing.Size(82, 15);
             this.FlowControlLbl.TabIndex = 15;
             this.FlowControlLbl.Text = "Flow ControlX";
             // 
             // FlowControlCb
             // 
-            this.FlowControlCb.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left) 
+            this.FlowControlCb.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Left)
             | System.Windows.Forms.AnchorStyles.Right)));
             this.FlowControlCb.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.FlowControlCb.FormattingEnabled = true;
-            this.FlowControlCb.Location = new System.Drawing.Point(124, 4);
+            this.FlowControlCb.Location = new System.Drawing.Point(145, 5);
+            this.FlowControlCb.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.FlowControlCb.Name = "FlowControlCb";
-            this.FlowControlCb.Size = new System.Drawing.Size(164, 21);
+            this.FlowControlCb.Size = new System.Drawing.Size(191, 23);
             this.FlowControlCb.TabIndex = 14;
+            this.FlowControlCb.SelectedIndexChanged += new System.EventHandler(this.FlowControlCb_SelectedIndexChanged);
             // 
             // Settings
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(7F, 15F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(300, 196);
+            this.ClientSize = new System.Drawing.Size(350, 226);
             this.Controls.Add(this.FlowControlPanel);
             this.Controls.Add(this.StopBitsPanel);
             this.Controls.Add(this.ParityPanel);
@@ -247,6 +270,7 @@
             this.Controls.Add(this.BaudRatePanel);
             this.Controls.Add(this.PortNamePanel);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Margin = new System.Windows.Forms.Padding(4, 3, 4, 3);
             this.MaximizeBox = false;
             this.MinimizeBox = false;
             this.Name = "Settings";

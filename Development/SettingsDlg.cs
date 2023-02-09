@@ -30,12 +30,7 @@
 // Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
 //---------------------------------------------------------------------------
 using System;
-using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
-using System.Drawing;
-using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using Gurux.Common;
 using Gurux.Serial.Properties;
@@ -47,7 +42,7 @@ namespace Gurux.Serial
     /// </summary>
     partial class Settings : Form, IGXPropertyPage, INotifyPropertyChanged
     {
-        GXSerial target;
+        private GXSerial _target;
 
         PropertyChangedEventHandler propertyChanged;
 
@@ -81,24 +76,24 @@ namespace Gurux.Serial
         public Settings(GXSerial target)
         {
             InitializeComponent();
-            this.target = target;
+            _target = target;
         }
 
         private void PortNameCB_SelectedIndexChanged(object sender, EventArgs e)
         {
             if (BaudRatePanel.Enabled)
             {
-                this.BaudRateCB.Items.Clear();
+                BaudRateCB.Items.Clear();
                 BaudRateCB.DropDownStyle = ComboBoxStyle.DropDownList;
                 //User can't change values when connection is open.
-                if (target.IsOpen)
+                if (_target.IsOpen)
                 {
-                    BaudRateCB.Items.Add(target.BaudRate);
-                    this.BaudRateCB.SelectedItem = 0;
+                    BaudRateCB.Items.Add(_target.BaudRate);
+                    BaudRateCB.SelectedItem = 0;
                 }
                 else
                 {
-                    foreach (int it in target.GetAvailableBaudRates(PortNameCB.Text))
+                    foreach (int it in _target.GetAvailableBaudRates(PortNameCB.Text))
                     {
                         if (it == 0)
                         {
@@ -106,10 +101,10 @@ namespace Gurux.Serial
                         }
                         else
                         {
-                            this.BaudRateCB.Items.Add(it);
+                            BaudRateCB.Items.Add(it);
                         }
                     }
-                    this.BaudRateCB.SelectedItem = target.BaudRate;
+                    BaudRateCB.SelectedItem = _target.BaudRate;
                 }
             }
             Dirty = true;
@@ -117,32 +112,36 @@ namespace Gurux.Serial
             {
                 propertyChanged(this, new PropertyChangedEventArgs("PortName"));
             }
+            if (PortNameCB.SelectedIndex != -1)
+            {
+                _target.PortName = PortNameCB.Text;
+            }
         }
 
         #region IGXPropertyPage Members
 
         void IGXPropertyPage.Apply()
         {
-            target.PortName = this.PortNameCB.Text;
-            if (this.BaudRateCB.Enabled)
+            _target.PortName = PortNameCB.Text;
+            if (BaudRateCB.Enabled)
             {
-                target.BaudRate = Convert.ToInt32(this.BaudRateCB.Text);
+                _target.BaudRate = Convert.ToInt32(BaudRateCB.Text);
             }
-            if (this.DataBitsCB.Enabled)
+            if (DataBitsCB.Enabled)
             {
-                target.DataBits = Convert.ToInt32(this.DataBitsCB.Text);
+                _target.DataBits = Convert.ToInt32(DataBitsCB.Text);
             }
-            if (this.ParityCB.Enabled)
+            if (ParityCB.Enabled)
             {
-                target.Parity = (System.IO.Ports.Parity)this.ParityCB.SelectedItem;
+                _target.Parity = (System.IO.Ports.Parity)ParityCB.SelectedItem;
             }
-            if (this.StopBitsCB.Enabled)
+            if (StopBitsCB.Enabled)
             {
-                target.StopBits = (System.IO.Ports.StopBits)this.StopBitsCB.SelectedItem;
+                _target.StopBits = (System.IO.Ports.StopBits)StopBitsCB.SelectedItem;
             }
-            if (this.FlowControlCb.Enabled)
+            if (FlowControlCb.Enabled)
             {
-                target.Handshake = (System.IO.Ports.Handshake)this.FlowControlCb.SelectedItem;
+                _target.Handshake = (System.IO.Ports.Handshake)FlowControlCb.SelectedItem;
             }
             Dirty = false;
         }
@@ -150,85 +149,85 @@ namespace Gurux.Serial
         void IGXPropertyPage.Initialize()
         {
             //Update texts.
-            this.Text = Resources.SettingsTxt;
-            this.PortNameLbl.Text = Resources.PortNameTxt;
-            this.BaudRateLbl.Text = Resources.BaudRateTxt;
-            this.DataBitsLbl.Text = Resources.DataBitsTxt;
-            this.ParityLbl.Text = Resources.ParityTxt;
-            this.StopBitsLbl.Text = Resources.StopBitsTxt;
-            this.FlowControlLbl.Text = Resources.FlowControlTxt;
+            Text = Resources.SettingsTxt;
+            PortNameLbl.Text = Resources.PortNameTxt;
+            BaudRateLbl.Text = Resources.BaudRateTxt;
+            DataBitsLbl.Text = Resources.DataBitsTxt;
+            ParityLbl.Text = Resources.ParityTxt;
+            StopBitsLbl.Text = Resources.StopBitsTxt;
+            FlowControlLbl.Text = Resources.FlowControlTxt;
             //Hide controls which user do not want to show.
-            PortNamePanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.PortName) != 0;
+            PortNamePanel.Enabled = (_target.ConfigurableSettings & AvailableMediaSettings.PortName) != 0;
             if (PortNamePanel.Enabled)
             {
-                if (target.AvailablePorts != null)
+                if (_target.AvailablePorts != null)
                 {
-                    PortNameCB.Items.AddRange(target.AvailablePorts);
+                    PortNameCB.Items.AddRange(_target.AvailablePorts);
                 }
                 else
                 {
                     PortNameCB.Items.AddRange(GXSerial.GetPortNames());
                 }
-                if (this.PortNameCB.Items.Contains(target.PortName))
+                if (PortNameCB.Items.Contains(_target.PortName))
                 {
-                    this.PortNameCB.SelectedItem = target.PortName;
+                    PortNameCB.SelectedItem = _target.PortName;
                 }
                 else
                 {
                     if (PortNameCB.Items.Count != 0)
                     {
-                        this.PortNameCB.SelectedIndex = 0;
+                        PortNameCB.SelectedIndex = 0;
                     }
                     else
                     {
-                        FlowControlPanel.Enabled = StopBitsPanel.Enabled = ParityPanel.Enabled = DataBitsPanel.Enabled = BaudRatePanel.Enabled = this.PortNameCB.Enabled = false;
+                        FlowControlPanel.Enabled = StopBitsPanel.Enabled = ParityPanel.Enabled = DataBitsPanel.Enabled = BaudRatePanel.Enabled = PortNameCB.Enabled = false;
                         return;
                     }
                 }
             }
-            BaudRatePanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.BaudRate) != 0;
+            BaudRatePanel.Enabled = (_target.ConfigurableSettings & AvailableMediaSettings.BaudRate) != 0;
             if (BaudRatePanel.Enabled)
             {
                 PortNameCB_SelectedIndexChanged(null, null);
-                this.BaudRateCB.SelectedItem = target.BaudRate;
+                BaudRateCB.SelectedItem = _target.BaudRate;
             }
-            DataBitsPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.DataBits) != 0;
+            DataBitsPanel.Enabled = (_target.ConfigurableSettings & AvailableMediaSettings.DataBits) != 0;
             if (DataBitsPanel.Enabled)
             {
-                this.DataBitsCB.Items.Add(7);
-                this.DataBitsCB.Items.Add(8);
-                this.DataBitsCB.SelectedItem = target.DataBits;
+                DataBitsCB.Items.Add(7);
+                DataBitsCB.Items.Add(8);
+                DataBitsCB.SelectedItem = _target.DataBits;
             }
 
-            ParityPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.Parity) != 0;
+            ParityPanel.Enabled = (_target.ConfigurableSettings & AvailableMediaSettings.Parity) != 0;
             if (ParityPanel.Enabled)
             {
-                this.ParityCB.Items.Add(System.IO.Ports.Parity.None);
-                this.ParityCB.Items.Add(System.IO.Ports.Parity.Odd);
-                this.ParityCB.Items.Add(System.IO.Ports.Parity.Even);
-                this.ParityCB.Items.Add(System.IO.Ports.Parity.Mark);
-                this.ParityCB.Items.Add(System.IO.Ports.Parity.Space);
-                this.ParityCB.SelectedItem = target.Parity;
+                ParityCB.Items.Add(System.IO.Ports.Parity.None);
+                ParityCB.Items.Add(System.IO.Ports.Parity.Odd);
+                ParityCB.Items.Add(System.IO.Ports.Parity.Even);
+                ParityCB.Items.Add(System.IO.Ports.Parity.Mark);
+                ParityCB.Items.Add(System.IO.Ports.Parity.Space);
+                ParityCB.SelectedItem = _target.Parity;
             }
 
-            StopBitsPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.StopBits) != 0;
+            StopBitsPanel.Enabled = (_target.ConfigurableSettings & AvailableMediaSettings.StopBits) != 0;
             if (StopBitsPanel.Enabled)
             {
-                this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.None);
-                this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.One);
-                this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.OnePointFive);
-                this.StopBitsCB.Items.Add(System.IO.Ports.StopBits.Two);
-                this.StopBitsCB.SelectedItem = target.StopBits;
+                StopBitsCB.Items.Add(System.IO.Ports.StopBits.None);
+                StopBitsCB.Items.Add(System.IO.Ports.StopBits.One);
+                StopBitsCB.Items.Add(System.IO.Ports.StopBits.OnePointFive);
+                StopBitsCB.Items.Add(System.IO.Ports.StopBits.Two);
+                StopBitsCB.SelectedItem = _target.StopBits;
             }
 
-            FlowControlPanel.Enabled = (target.ConfigurableSettings & AvailableMediaSettings.Handshake) != 0;
+            FlowControlPanel.Enabled = (_target.ConfigurableSettings & AvailableMediaSettings.Handshake) != 0;
             if (FlowControlPanel.Enabled)
             {
-                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.None);
-                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.XOnXOff);
-                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.RequestToSend);
-                this.FlowControlCb.Items.Add(System.IO.Ports.Handshake.RequestToSendXOnXOff);
-                this.FlowControlCb.SelectedItem = target.Handshake;
+                FlowControlCb.Items.Add(System.IO.Ports.Handshake.None);
+                FlowControlCb.Items.Add(System.IO.Ports.Handshake.XOnXOff);
+                FlowControlCb.Items.Add(System.IO.Ports.Handshake.RequestToSend);
+                FlowControlCb.Items.Add(System.IO.Ports.Handshake.RequestToSendXOnXOff);
+                FlowControlCb.SelectedItem = _target.Handshake;
             }
             UpdateEditBoxSizes();
             Dirty = false;
@@ -241,7 +240,7 @@ namespace Gurux.Serial
         {
             //Find max length of the localization string.
             int maxLength = 0;
-            foreach (Control it in this.Controls)
+            foreach (Control it in Controls)
             {
                 if (it.Enabled)
                 {
@@ -255,7 +254,7 @@ namespace Gurux.Serial
                 }
             }
             //Increase edit control length.
-            foreach (Control it in this.Controls)
+            foreach (Control it in Controls)
             {
                 if (it.Enabled)
                 {
@@ -280,6 +279,10 @@ namespace Gurux.Serial
             {
                 propertyChanged(this, new PropertyChangedEventArgs("BaudRate"));
             }
+            if (BaudRateCB.SelectedIndex != -1)
+            {
+                _target.BaudRate = Convert.ToInt32(BaudRateCB.Text);
+            }
         }
 
         private void DataBitsCB_SelectedIndexChanged(object sender, EventArgs e)
@@ -288,6 +291,10 @@ namespace Gurux.Serial
             if (propertyChanged != null)
             {
                 propertyChanged(this, new PropertyChangedEventArgs("DataBits"));
+            }
+            if (DataBitsCB.SelectedIndex != -1)
+            {
+                _target.DataBits = Convert.ToInt32(DataBitsCB.Text);
             }
         }
 
@@ -298,6 +305,10 @@ namespace Gurux.Serial
             {
                 propertyChanged(this, new PropertyChangedEventArgs("Parity"));
             }
+            if (ParityCB.SelectedIndex != -1)
+            {
+                _target.Parity = (System.IO.Ports.Parity)ParityCB.SelectedItem;
+            }
         }
 
         private void StopBitsCB_SelectedIndexChanged(object sender, EventArgs e)
@@ -307,6 +318,10 @@ namespace Gurux.Serial
             {
                 propertyChanged(this, new PropertyChangedEventArgs("StopBits"));
             }
+            if (StopBitsCB.SelectedIndex != -1)
+            {
+                _target.StopBits = (System.IO.Ports.StopBits)StopBitsCB.SelectedItem;
+            }
         }
 
         private void FlowControlCb_SelectedIndexChanged(object sender, EventArgs e)
@@ -315,6 +330,10 @@ namespace Gurux.Serial
             if (propertyChanged != null)
             {
                 propertyChanged(this, new PropertyChangedEventArgs("FlowControl"));
+            }
+            if (FlowControlCb.SelectedIndex != -1)
+            {
+                _target.Handshake = (System.IO.Ports.Handshake)FlowControlCb.SelectedItem;
             }
         }
     }
