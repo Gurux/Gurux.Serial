@@ -71,12 +71,12 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Gurux.Common">
-      <Version>8.4.2212.501</Version>
+      <Version>8.4.2302.901</Version>
     </PackageReference>
     <PackageReference Include="System.IO.Ports">
       <Version>7.0.0</Version>
     </PackageReference>
-    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.5.1.1" />
+    <PackageReference Include="Xamarin.AndroidX.AppCompat" Version="1.6.1.5" />
   </ItemGroup>
   <ItemGroup>
     <AndroidResource Include="Resources\values\strings.xml" />

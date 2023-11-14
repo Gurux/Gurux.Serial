@@ -160,7 +160,6 @@ namespace Gurux.Serial
         {
             _contect = contect;
             _Receiver = new GXUsbReciever(this);
-            _Receiver = new GXUsbReciever(this);
             IntentFilter filter = new IntentFilter("Gurux.Serial");
             filter.AddAction(UsbManager.ActionUsbAccessoryDetached);
             filter.AddAction(UsbManager.ActionUsbDeviceAttached);

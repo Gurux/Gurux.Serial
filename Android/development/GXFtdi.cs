@@ -79,6 +79,8 @@ namespace Gurux.Serial
         {
             if ((vendor == 1027 && product == 24557) ||
                 (vendor == 1027 && product == 24577) ||
+                //Tespro
+                (vendor == 0403 && product == 6001) ||
                     "FTDI" == manufacturer)
             {
                 return true;
