@@ -371,6 +371,10 @@ namespace Gurux.Serial
             if (manager == null)
             {
                 manager = (UsbManager)_contect.GetSystemService(Context.UsbService);
+                if (manager == null)
+                {
+                    return;
+                }
             }
             byte[] buffer = new byte[255];
             string name = "Gurux.Serial";
@@ -415,12 +419,17 @@ namespace Gurux.Serial
                     port.VendorId = device.VendorId;
                     port.ProductId = device.ProductId;
                     KeyValuePair<string, string>? info = Find(_contect, device.VendorId, device.ProductId);
-                    if (info != null)
+                    if (info != null && info.HasValue)
                     {
                         port.Vendor = info.Value.Key;
                         port.Product = info.Value.Value;
                     }
                     UsbDeviceConnection connection = manager.OpenDevice(device);
+                    if (connection == null)
+                    {
+                        //If failed to open the device.
+                        return;
+                    }
                     try
                     {
                         port.Serial = connection.Serial;
@@ -1131,7 +1140,7 @@ namespace Gurux.Serial
                                             break;
                                         }
                                     }
-                                    HandleReceivedData(0, tmp.ToArray(), (int) tmp.Length);
+                                    HandleReceivedData(0, tmp.ToArray(), (int)tmp.Length);
                                 }
                                 else
                                 {

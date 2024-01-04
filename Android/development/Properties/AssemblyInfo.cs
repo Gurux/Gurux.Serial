@@ -12,7 +12,7 @@ using Android.Hardware.Usb;
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Gurux Ltd.")]
 [assembly: AssemblyProduct("Gurux.Serial.Android")]
-[assembly: AssemblyCopyright("Copyright (c) 1998-2022 Gurux Ltd. All rights reserved.")]
+[assembly: AssemblyCopyright("Copyright (c) 1998-2024 Gurux Ltd. All rights reserved.")]
 [assembly: AssemblyTrademark("Gurux Ltd.")]
 [assembly: AssemblyCulture("")]
 [assembly: ComVisible(false)]
