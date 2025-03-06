@@ -47,7 +47,7 @@
   </ItemGroup>
 
  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.4.2503.601" />
+    <PackageReference Include="Gurux.Common" Version="8.4.2503.602" />
     <PackageReference Include="System.Resources.Extensions" Version="9.0.2" />
  </ItemGroup>
  <ItemGroup Condition="'$(TargetFramework)' == 'net90-windows' or '$(TargetFramework)' == 'net80-windows' or '$(TargetFramework)' == 'net462'">
