@@ -49,6 +49,7 @@ namespace Gurux.Serial
         /// <summary>
         /// Has user made any changes for the settings.
         /// </summary>
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool Dirty
         {
             get;

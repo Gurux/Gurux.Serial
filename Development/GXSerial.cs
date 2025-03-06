@@ -37,10 +37,6 @@ using System.ComponentModel;
 using Gurux.Common;
 using System.IO;
 using Gurux.Shared;
-#if NET462_OR_GREATER || WINDOWS
-using System.Windows.Forms;
-#endif //NET462_OR_GREATER || WINDOWS
-
 using System.IO.Ports;
 using System.Xml;
 using System.Diagnostics;
@@ -1965,9 +1961,11 @@ namespace Gurux.Serial
         /// <seealso cref="BaudRate">BaudRate</seealso>
         /// <seealso cref="DataBits">DataBits</seealso>
         /// <seealso href="PropertiesDialog.html">Properties Dialog</seealso>
-        public bool Properties(Form parent)
+        public bool Properties(System.Windows.Forms.Form parent)
         {
-            return new PropertiesForm(this.PropertiesForm, Resources.SettingsTxt, IsOpen, Resources.OK, Resources.Cancel, "https://www.gurux.fi/GXSerialProperties").ShowDialog(parent) == DialogResult.OK;
+            return new PropertiesForm(PropertiesForm, Resources.SettingsTxt, IsOpen, 
+            Resources.OK, Resources.Cancel, 
+            "https://www.gurux.fi/GXSerialProperties").ShowDialog(parent) == System.Windows.Forms.DialogResult.OK;
         }
 
         /// <summary>

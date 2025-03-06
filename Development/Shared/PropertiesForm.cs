@@ -32,6 +32,7 @@
 using System;
 using System.Diagnostics;
 using System.Drawing;
+using System.Security.Policy;
 using System.Windows.Forms;
 using Gurux.Common;
 
@@ -131,7 +132,12 @@ namespace Gurux.Shared
             try
             {
                 // Show online help.
-                Process.Start(HelpLink);
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = HelpLink,
+                    UseShellExecute = true // Required in .NET Core and later
+                };
+                Process.Start(psi);
                 // Set flag to show that the Help event as been handled
                 hevent.Handled = true;
             }
