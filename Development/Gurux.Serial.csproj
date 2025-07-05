@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
  <PropertyGroup>
     <RootNamespace>Gurux.Serial</RootNamespace>
     <AssemblyName>Gurux.Serial</AssemblyName>
@@ -11,7 +11,7 @@
     <Version Condition=" '$(BUILD_BUILDNUMBER)' == '' ">0.0.1-local</Version>
     <Version Condition=" '$(BUILD_BUILDNUMBER)' != '' ">$(BUILD_BUILDNUMBER)</Version>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <TargetFrameworks>net90;net9.0-windows;net80;net8.0-windows;net6.0-windows;net60;net462;netcoreapp3.1;netstandard2.1;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net9.0;net9.0-windows;net8.0;net8.0-windows;net6.0-windows;net6.0;net462;netcoreapp3.1;netstandard2.1;netstandard2.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <RepositoryUrl>https://github.com/gurux/Gurux.Serial</RepositoryUrl>
     <PackageTags>Gurux Device Framework Network Serial port</PackageTags>
@@ -26,20 +26,20 @@
     <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 <PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
-    <TargetFramework>net60-windows</TargetFramework>
+    <TargetFramework>net6.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
-    <TargetFramework>net80-windows</TargetFramework>
+    <TargetFramework>net8.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
  <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
-    <TargetFramework>net90-windows</TargetFramework>
+    <TargetFramework>net9.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
- <ItemGroup Condition="'$(TargetFramework)' == 'net90' or '$(TargetFramework)' == 'net80' or '$(TargetFramework)' == 'net60' or '$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
+ <ItemGroup Condition="'$(TargetFramework)' == 'net9.0' or '$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
      <Compile Remove="SettingsDlg.cs" />
      <Compile Remove="SettingsDlg.Designer.cs" />
      <Compile Remove="Shared\PropertiesForm.cs" />
@@ -50,7 +50,7 @@
     <PackageReference Include="Gurux.Common" Version="8.4.2503.602" />
     <PackageReference Include="System.Resources.Extensions" Version="9.0.2" />
  </ItemGroup>
- <ItemGroup Condition="'$(TargetFramework)' == 'net90-windows' or '$(TargetFramework)' == 'net80-windows' or '$(TargetFramework)' == 'net462'">
+ <ItemGroup Condition="'$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows' or '$(TargetFramework)' == 'net462'">
     <Reference Include="System.Data.Linq" />
     <Reference Include="System.Windows.Forms" />
   </ItemGroup>
@@ -70,10 +70,10 @@
    </PackageReference>
  </ItemGroup>
 
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1' or '$(TargetFramework)' == 'net60' or '$(TargetFramework)' == 'net6.0-windows' or '$(TargetFramework)' == 'net462'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1' or '$(TargetFramework)' == 'net6.0' or '$(TargetFramework)' == 'net6.0-windows' or '$(TargetFramework)' == 'net462'">
     <PackageReference Include="System.IO.Ports" Version="6.0.0" />
   </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net90' or '$(TargetFramework)' == 'net80' or '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows'">
+  <ItemGroup Condition="'$(TargetFramework)' == 'net9.0' or '$(TargetFramework)' == 'net8.0' or '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows'">
     <PackageReference Include="System.IO.Ports" Version="9.0.2" />
   </ItemGroup>  
   <ItemGroup>
