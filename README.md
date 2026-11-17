@@ -1,175 +1,301 @@
-# Gurux.Serial — .NET 10 and 11
+# Gurux.Serial
 
-`GXSerial` provides one asynchronous media API on Windows, Linux and Android. Windows/Linux use `System.IO.Ports` or a direct Bluetooth transport; Android uses a selected native transport. Terminal and SMS share this transport through composition. `Settings` uses legacy XML and `JsonSettings` uses JSON. UI belongs to separate MAUI, Avalonia and Blazor adapters.
+Gurux.Serial provides asynchronous serial communication for .NET 10 and .NET 11. The same `GXSerial` API supports operating-system serial ports, Bluetooth serial connections and application-supplied accessory streams. Gurux.Terminal and Gurux.SMS reuse this transport.
 
-The library targets `net11.0` and `net10.0`, with corresponding Windows-specific Bluetooth targets. A .NET 10 application selects the .NET 10 library asset; it does not load the .NET 11 assembly. The repository uses the .NET 11 SDK. UI adapters retain .NET 10 targets alongside .NET 11; the example application targets .NET 11.
+The transport library has no dependency on MAUI, Avalonia, Blazor or WinForms. Settings editors and example application views live in separate projects.
 
-```csharp
+## Packages and requirements
+
+| Package | Purpose |
+| --- | --- |
+| Gurux.Serial | UI-independent transport, settings and shared receive integration. |
+| Gurux.Serial.Avalonia | Optional Avalonia settings editor. |
+| Gurux.Serial.Blazor | Optional Blazor settings components. |
+| Gurux.Serial.Maui | Optional native MAUI settings editor. |
+
+This README describes the **9.0 API**. Earlier 8.x packages use different APIs; use a matching 9.0 package release or build the current source.
+
+The library targets `net10.0` and `net11.0`, with matching Windows-specific Bluetooth targets. Android targets are enabled with `BuildMobile=true`; `BuildApple=true` also enables iOS targets. Applications select the matching library asset for their target framework.
+
+Building from source uses the stable .NET 11 SDK selected by [global.json](global.json), including for .NET 10 outputs. Native mobile builds require the corresponding SDK workloads; iOS builds also require the appropriate Apple toolchain.
+
+## Platform support
+
+| Platform | Available transports | Requirements and limits |
+| --- | --- | --- |
+| Windows | COM ports, Bluetooth Classic RFCOMM, BLE GATT | Device drivers and Bluetooth permissions. Native BLE requires the Windows-specific library target. |
+| Linux | Serial device nodes, Bluetooth Classic RFCOMM, BLE GATT | Device permissions; Bluetooth uses BlueZ, with `libbluetooth.so.3` for automatic RFCOMM channel resolution. |
+| macOS | Serial ports exposed by the operating system | Device drivers and access permissions. The desktop direct Bluetooth implementations target Windows and Linux. |
+| Android | Native Bluetooth Classic, BLE and USB host serial adapters | Application-managed runtime permissions, device selection and the appropriate native stream factory. |
+| iOS | Native CoreBluetooth BLE or an application-supplied supported accessory stream | Bluetooth usage description and Apple tooling. Arbitrary COM ports and physical USB serial are not exposed by this implementation. |
+
+Compilation and injected-stream tests do not establish physical device compatibility. Validate the selected adapter, firmware, permissions and background behavior on the target device.
+
+## Open a serial port
+
+This example opens a Windows serial port, sends three bytes and briefly prints incoming data as hexadecimal. Replace `COM3` with the selected device name, such as `/dev/ttyUSB0` on Linux.
+
+~~~csharp
+using Gurux.Serial;
+
+using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+await using var serial = new GXSerial
+{
+    PortName = "COM3",
+    BaudRate = 115200
+};
+
+serial.OnReceived += (_, args) =>
+{
+    if (args.Data is byte[] data)
+    {
+        Console.WriteLine(Convert.ToHexString(data));
+    }
+};
+
+await serial.OpenAsync(timeout.Token);
+await serial.SendAsync(new byte[] { 1, 2, 3 }, cancellationToken: timeout.Token);
+await Task.Delay(TimeSpan.FromSeconds(1), timeout.Token);
+await serial.CloseAsync();
+~~~
+
+The delay keeps the event-driven example alive briefly; it does not identify a complete protocol reply. For request/reply protocols, use buffered receive.
+
+`PortName` must be explicitly configured. `Validate()` reports localized settings errors without opening the device; `OpenAsync()` rejects invalid settings.
+
+## Buffered request and reply
+
+Enter buffered mode **before sending** so that a fast response is not lost. Keep the scope alive across both awaited operations.
+
+~~~csharp
+using Gurux.Common;
+using Gurux.Serial;
+
+using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
 await using var serial = new GXSerial { PortName = "COM3", BaudRate = 115200 };
-// Linux: PortName = "/dev/ttyUSB0" (the account needs device permissions).
-serial.OnReceived += (_, e) => Console.WriteLine(Convert.ToHexString((byte[])e.Data!));
-await serial.OpenAsync(cancellationToken);
-await serial.SendAsync(new byte[] { 1, 2, 3 }, cancellationToken: cancellationToken);
-```
+await serial.OpenAsync(timeout.Token);
 
-`PortName` must be explicitly configured before opening. `Validate()` rejects an empty or whitespace-only port or accessory name.
+using (serial.BeginSynchronous())
+{
+    var reply = new ReceiveParameters<byte[]>
+    {
+        Count = 3,
+        WaitTime = 5000
+    };
 
-The serial-backed examples enable Open only after the selected port is found in current discovery. They refresh availability in the background while closed, including after settings changes and device removal. `GXSerial.IsPortAvailableAsync()` checks a physical port or a known native Bluetooth identifier without opening it; `SerialPortAvailability` provides a throttled snapshot for UI polling. A listed Bluetooth device is not guaranteed to be in radio range.
+    await serial.SendAsync(new byte[] { 1, 2, 3 }, cancellationToken: timeout.Token);
+    if (await serial.ReceiveAsync(reply, timeout.Token) && reply.Reply is byte[] response)
+    {
+        Console.WriteLine(Convert.ToHexString(response));
+    }
+}
+~~~
 
-Example action availability follows `OnMediaStateChange` on the UI dispatcher: Open requires Closed, while Close/Cancel and Send require Open. Opening and Closing disable all three actions. The refresh timer still updates logs and device availability, but lifecycle changes do not wait for it.
+This example expects three reply bytes. Set `Count`, `Eop` and `WaitTime` to match your protocol. Delimiters can span incoming fragments; a completed delimiter-based reply includes the terminator bytes.
 
-For request/reply, use `using var scope = serial.BeginSynchronous()` before sending, then `ReceiveAsync` with `ReceiveParameters<byte[]>` (count/EOP/timeout). Close, EOF and transport failures wake pending receives. A second simultaneous open is rejected; close cancels a pending open. Stream factories must honor their cancellation token. Received event handlers may close the connection.
+Timeout or closure returns `false`; cancellation throws `OperationCanceledException`. With `AllData` enabled, a failed receive can still contain partial data. Do not share one receive-parameter object between concurrent operations.
 
-After a remote EOF, schedule reconnection outside the `Closed` event handler and
-await `CloseAsync()` before `OpenAsync()`. The EOF reader still owns its cleanup
-while invoking that callback; immediate reopening from that callback is rejected.
+`BeginSynchronous()` enables buffering without holding a Monitor lock across `await`. The legacy `Synchronous` lock is suitable only for entirely blocking exchanges.
 
-`PortSettings` configures baud, framing, handshake, DTR and RTS. `GetAvailableBaudRates()` returns common choices, including 57600, 128000, 230400, 460800 and 921600; it does not claim to probe hardware. The desktop driver validates the chosen rate. Configure settings while closed.
+## Serial settings
 
-## Android
+Configure the device and line settings before opening.
 
-Build with `dotnet build Development/Gurux.Serial.csproj -p:BuildMobile=true -f net10.0-android`.
+| Setting | Default | Purpose |
+| --- | --- | --- |
+| `PortName` | Unset | Operating-system port name or selected accessory identifier. |
+| `BaudRate` | `9600` | Requested baud rate; the driver/device determines support. |
+| `DataBits` | `8` | Payload bits per serial frame; supported validation range is 5–8. |
+| `Parity` | `None` | Parity checking. |
+| `StopBits` | `One` | Stop interval. |
+| `Handshake` | `None` | Hardware/software flow control policy. |
+| `DtrEnable` / `RtsEnable` | `false` | Manually controlled modem signals, where supported. |
+| `PortSettings.BluetoothChannel` | `0` | Desktop RFCOMM automatic SDP resolution; 1–30 selects an explicit channel. |
+| `PortSettings.BluetoothProfile` | `null` | BLE service and characteristic profile. Required for `ble:` identifiers. |
 
-After the app obtains the required Android permissions:
+The properties on `GXSerial` forward to its `PortSettings` object. `GetAvailableBaudRates()` returns conventional choices, including 57600, 128000, 230400, 460800 and 921600; it does not probe hardware.
 
-```csharp
-// Paired Bluetooth Classic device; BLUETOOTH_CONNECT on Android 12+.
-var bluetoothFactory = AndroidSerialTransports.BluetoothRfcomm(bluetoothDevice);
-// Or: await UsbManager.RequestPermission result first, then:
-var usbFactory = AndroidSerialTransports.UsbCdcAcm(usbManager, usbDevice);
-await using var serial = new GXSerial(bluetoothFactory) { PortName = "accessory", BaudRate = 9600 };
-await serial.OpenAsync(cancellationToken);
-```
+`Settings` stores legacy XML configuration, including the `Port`, `Bps` and `ByteSize` names. `JsonSettings` stores source-generated JSON. Both preserve Bluetooth profile configuration; replacing either requires closed media with no pending open or cleanup operation.
 
-Pass the appropriate factory to GXSerial (or GXTerminal/GXSMS). RFCOMM defaults to the standard Serial Port Profile UUID, with an optional custom service UUID. The library owns and closes the socket/USB connection. USB currently supports a single CDC ACM control/data interface pair, bulk endpoints, line coding and DTR/RTS. Hardware/software handshake and vendor protocols such as FTDI, CP210x and CH34x require a separate driver and are rejected. USB detach is detected during reads; the app remains responsible for permission UI and device selection. These native adapters compile against the Android SDK; physical-device verification is still required.
+### Changing settings while connected
 
-An owned readable/writable `Stream` factory is also supported for other accessory drivers and deterministic tests. Physical iPhone serial is outside the current scope; no arbitrary iOS COM-port support is claimed. `BuildApple=true` includes an iOS library target for applications supplying their own supported stream; Apple builds require the appropriate Apple toolchain.
+Use `ApplySettingsAsync()` to commit supported live changes. Changing properties on `PortSettings` alone does not apply them to active hardware.
 
-## Verify
+~~~csharp
+using Gurux.Serial;
 
-From the GXMedias directory:
+using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+await using var serial = new GXSerial { PortName = "COM3", BaudRate = 9600 };
+await serial.OpenAsync(timeout.Token);
 
-```
-dotnet run --project Gurux.Serial/Tests/Serial.Tests.csproj -p:TargetFrameworks=net10.0
-dotnet build Gurux.SMS/Development/Gurux.SMS.csproj -p:BuildMobile=true -f net10.0-android
-```
+var settings = new SerialPortSettings
+{
+    PortName = serial.PortName,
+    BaudRate = 115200,
+    DataBits = serial.DataBits,
+    Parity = serial.Parity,
+    StopBits = serial.StopBits,
+    Handshake = serial.Handshake,
+    DtrEnable = serial.DtrEnable,
+    RtsEnable = serial.RtsEnable,
+    BluetoothChannel = serial.PortSettings.BluetoothChannel,
+    BluetoothProfile = serial.PortSettings.BluetoothProfile
+};
 
-The executable regression suite exercises real stream transport, buffering/lifecycle, AT parsing, SMS prompt exchange, PDU codecs and settings roundtrips without attached hardware. `Gurux.Serial.Example` and both bridge examples now use the modern implementation; see `docs/media-examples.md` in GXMedias.
+await serial.ApplySettingsAsync(settings, timeout.Token);
+~~~
+
+The request is copied before asynchronous work. It cannot change the active device identity, Bluetooth channel or profile. An open desktop serial port applies framing and modem-signal changes through its driver; an injected transport must implement `IGXSerialSettings` to support live updates. Unsupported live changes throw `NotSupportedException`. While closed, the method stages the validated settings.
+
+If applying physical settings fails, the implementation attempts to restore the previous configuration and reports recovery failure if restoration also fails.
+
+## Device discovery and availability
+
+`GXSerial.GetPortNames()` lists physical ports and supported platform identifiers. `GXSerial.IsPortAvailableAsync()` checks whether a selected identity is currently listed without opening it. `SerialPortAvailability` supplies throttled snapshots for UI polling.
+
+A discovered identity does not guarantee access permissions, functioning hardware or Bluetooth radio range.
+
+On Linux, discovery merges runtime results with existing numbered `/dev/ttyS*`, `/dev/ttyUSB*`, `/dev/ttyACM*`, `/dev/ttyAMA*` and `/dev/ttymxc*` nodes. Names are deduplicated and naturally ordered. Console names, directories and nonnumeric suffixes are excluded. The account still needs device access, commonly through the `dialout` group.
+
+Android discovery lists USB host identities (`usb:`), permitted paired Bluetooth identities (`bluetooth:`) and recent BLE identities (`ble:`). iOS uses CoreBluetooth peripheral UUIDs rather than MAC addresses.
 
 ## Desktop Bluetooth
 
-Direct Classic RFCOMM and BLE client streams are available on Windows and Linux.
-See [desktop Bluetooth configuration and requirements](docs/desktop-bluetooth.md).
+Windows and Linux support direct Classic RFCOMM and BLE GATT streams.
 
-## Bluetooth UART configuration
+- `bluetooth:` identifiers select Classic RFCOMM. Channel zero resolves the Serial Port service through SDP; channels 1–30 select an explicit channel. Windows resolves the service UUID during connect; Linux uses BlueZ.
+- `ble:` identifiers select a GATT connection using `PortSettings.BluetoothProfile`.
+- `BluetoothSerialTransports.GetDevicesAsync()` enumerates known devices for the selected `BluetoothSerialTransport`.
+- Windows native BLE requires a Windows-specific target such as `net10.0-windows10.0.19041.0`. Linux uses its BlueZ backend.
 
-The embedded `Development/Bluetooth/devices.csv` catalogue uses
-`Name;GATT Uuid;Read service;Write Service;ConfigurationService;ConfigurationCommandProvider`.
-The read, write and configuration UUIDs identify characteristics in the listed GATT service.
-A trailing `*` matches a device-name prefix, ignoring case. The last two columns are optional.
-Windows, Android, iOS and Linux share this catalogue. Discovery matches the advertised or
-operating-system device name, independently of MAC addresses, Windows native IDs,
-CoreBluetooth UUIDs or BlueZ paths. `BluetoothSerialDevice.Profile` exposes the matching
-GATT profile; unknown or unnamed devices return null until a known name is available.
-The settings editors use catalogue profiles for GATT only. RFCOMM lists devices offering
-the Serial Port service (0x1101) without requiring a catalogue entry. Its channel is
-resolved automatically through SDP when opening: Windows resolves the service UUID
-during connect; Linux uses the system BlueZ client library (libbluetooth.so.3).
-There is no channel input in the settings editors. The transport API still accepts
-an explicit channel from 1 through 30; zero selects automatic SDP resolution.
-The native identifier and Service, Read, Write and Configuration UUIDs are shown in a
-collapsed, read-only Device information section. Manual identifiers and UUID entry are
-not supported by these editors. Saved GATT endpoints restore without scanning only when their
-service and characteristic UUIDs match a catalogue row; its configuration defaults are used.
-When opening, a present configured service retains that complete profile. If the service
-is absent, native discovery can select the matching device catalogue service and its full
-characteristic/configuration profile. The fallback never accepts a service not actually
-offered by that device. A final service error lists configured, catalogue and available UUIDs.
-For GATT, Find devices lists devices whose names match this catalogue or whose service metadata advertises the Serial Port UUID (0x1101). An SPP-only match can be selected for GATT metadata reading; opening a GATT serial connection still requires a catalogue profile.
-For RFCOMM, the Serial Port service UUID is required and catalogue names are irrelevant.
-Discovery merges UUID and name metadata across advertisement and scan-response fragments.
-Device information also offers an explicit **Read GATT services** action. It temporarily
-connects to the selected BLE device to list all actual service UUIDs, including services
-outside the catalogue. Advertisement UUIDs are not presented as a complete service list.
-The read does not write configuration or subscribe to notifications, and never changes
-the selected catalogue profile. Cancellation or closing the editor awaits native cleanup.
-The shipped profiles have no configuration characteristic.
+The settings editors list RFCOMM devices offering the Serial Port service (0x1101), without requiring a catalogue-name match. They resolve the channel automatically and do not expose a manual channel field.
 
-Bluetooth baud rate, parity and stop-bit controls require a configuration UUID and a registered
-command generator. A UUID alone or a static payload does not enable UART editing.
-COM and USB settings remain editable. The shared Serial controls provide the same rule to
-Terminal and SMS editors in MAUI, Avalonia and Blazor.
+## Android adapters
 
-Different modules use different AT commands. A host can implement
-`IBluetoothConfigurationCommands.GetCommands(SerialPortSettings settings)` and register the
-implementation at application startup:
+Build the Android library target from this repository directory:
 
-```csharp
-BluetoothConfigurationCommands.Register(
-    configurationGuid,
-    () => new GXAtCommand());
-```
+~~~powershell
+dotnet build Development/Gurux.Serial.csproj -f net10.0-android -p:BuildMobile=true -p:GeneratePackageOnBuild=false
+~~~
 
-Here `configurationGuid` is the `ConfigurationService` characteristic UUID from the catalogue,
-and `GXAtCommand` is the host's device-specific implementation, not a universal built-in AT
-dialect. Its method returns the complete command sequence, including required separators
-and line endings. Register before showing settings or opening a device. Registration and
-capability checks do not instantiate the generator; opening creates a fresh instance.
+After obtaining permissions and selecting the native device, pass an adapter factory to `new GXSerial(factory)`. Configure a nonempty `PortName` identifying the selected accessory.
 
-The profile automatically uses its configuration UUID to find the registered factory.
-The CSV's sixth column can stay empty. An explicit `BluetoothLeProfile.ConfigurationCommandProvider`
-or sixth-column name overrides the UUID default, allowing devices sharing a UUID to use
-different command dialects. Named factories remain supported:
+| Factory | Purpose |
+| --- | --- |
+| `AndroidSerialTransports.BluetoothRfcomm(device)` | Connects a paired Bluetooth Classic device using the standard Serial Port Profile UUID by default. Supports a custom service UUID and an explicit insecure-socket option. |
+| `AndroidSerialTransports.BluetoothLe(context, device, profile)` | Connects and subscribes to the selected BLE service and characteristics. |
+| `AndroidSerialTransports.Usb(manager, device)` | Detects a known USB serial chipset or falls back to single-port CDC ACM. |
+| `AndroidSerialTransports.UsbCdcAcm(manager, device)` | Explicitly selects a single CDC ACM control/data interface pair. |
 
-```csharp
-string provider = BluetoothConfigurationCommands.Register(
-    typeof(GXAtCommand), () => new GXAtCommand(), "GXAtCommand");
-```
+The USB adapter includes CDC ACM, FTDI, CP210x, CH340/CH341 and legacy Prolific PL2303 implementations. The `Usb` overload accepts an explicit `AndroidUsbChipset` and port index for supported vendor adapters. Explicit selection can accommodate rebranded identifiers but does not guarantee compatibility with every hardware revision.
 
-For parameterless implementations, `BluetoothConfigurationCommands.Register<GXAtCommand>()`
-uses the full type name as its key. Unknown explicit names fail when opening, rather than
-silently selecting the UUID default. With no selected generator, static `ConfigurationValue`
-bytes are still written if provided, but the UART editing controls remain disabled.
+CDC ACM supports a single port. Vendor adapters select interfaces with bulk IN/OUT endpoints. Line settings and manual DTR/RTS are supported where implemented; automatic hardware/software handshaking is rejected by these USB adapters.
 
-The native BLE opening path evaluates the provider against the current settings and writes its
-UTF-8 command bytes to the configuration characteristic before returning the data stream.
-The generated sequence is limited to a 512-byte GATT value. Responses and pauses between
-commands are device-specific; this hook formats a single write sequence and does not parse
-AT replies. An explicitly supplied `ConfigurationValue` remains supported when neither a named provider
-nor a UUID default is selected. Provider names survive JSON and XML settings; saved names do not instantiate or load
-arbitrary classes. Each application must register its implementations before opening.
+Applications own permission requests and device-selection UI. Wait for USB permission before opening. Bluetooth Classic requires `BLUETOOTH_CONNECT` on Android 12 and later; BLE discovery requires the corresponding scan/connect permissions and location permission on older Android versions where applicable.
 
-## Explicit BLE discovery
+The returned stream owns the socket or USB connection. USB detach is observed during reads. The same stream factories can be passed to `GXTerminal` and `GXSMS`.
 
-MAUI settings on Android, Windows and iOS, and Avalonia settings on Linux or a Windows-targeted host,
-provide a **Find BLE devices** action. Discovery runs for ten seconds and stops on
-device selection, cancellation or closing the editor. It never starts merely by
-opening settings. The device list shows advertised names and stable identifiers,
-including unpaired devices. Device security can still require pairing when opening
-its protected GATT service. Classic Bluetooth retains the existing paired/known-device flow.
+## BLE discovery and profiles
 
-The UI-independent API is `BluetoothLeDiscovery.ScanAsync(duration, deviceFound, cancellationToken)`.
-It returns at most 256 devices and suppresses late callbacks after completion.
-Recent results are cached for five minutes for selected-device availability checks;
-a listed device is not a guarantee that it remains in range. Windows uses an
-advertisement watcher, Linux an owned BlueZ LE discovery session, Android its LE scanner,
-and iOS CoreBluetooth. iOS identifiers are peripheral UUIDs rather than MAC addresses.
+`BluetoothLeDiscovery.ScanAsync(duration, deviceFound, cancellationToken)` performs explicit discovery without opening a serial data connection. The default duration is ten seconds, with a maximum of one minute and at most 256 distinct results. Completion suppresses late callbacks; recent results are cached for five minutes for availability checks.
 
-Android applications declare Bluetooth scan/connect permissions; older Android versions
-need location permission for discovery. The supplied examples request those permissions
-only from the search button. iOS examples include a localized Bluetooth usage description
-under Properties/iOS/InfoPlist.strings. Known device names load their GATT profile from
-the catalogue; other devices require explicit service and read/write UUIDs in settings.
+Windows uses an advertisement watcher, Linux an owned BlueZ LE discovery session, Android its LE scanner and iOS CoreBluetooth. Discovery can find unpaired devices, although protected characteristics can require pairing when opened.
 
-CoreBluetooth also supplies native iOS notification/write connections for selected
-`ble:` UUIDs. Physical COM/USB serial remains outside the iOS transport implementation.
+The native example editors start scanning from the search action, not merely by opening settings. Selection, cancellation or closing the editor stops discovery. UI updates must use the application dispatcher.
 
-## Linux port discovery
+### Shared device catalogue
 
-`GXSerial.GetPortNames()` merges runtime discovery with existing numbered `/dev/ttyS*`, `/dev/ttyUSB*`, `/dev/ttyACM*`, `/dev/ttyAMA*` and `/dev/ttymxc*` device nodes. This retains UARTs that the runtime omits because their sysfs metadata is incomplete. Names use numeric ordering and duplicates are removed. Console names, directories and nonnumeric suffixes are excluded.
+The embedded [Bluetooth device catalogue](Development/Bluetooth/devices.csv) is shared by Windows, Linux, Android and iOS. Its columns are:
 
-Discovery lists device identities without opening a connection or changing permissions. A listed device node does not guarantee working hardware or permission to open it. The caller still needs the device permissions, commonly membership in the `dialout` group. The example settings editors and selected-port availability checks use this same discovery path.
+~~~text
+Name;GATT Uuid;Read service;Write Service;ConfigurationService;ConfigurationCommandProvider;ConfigurationBytesHex
+~~~
 
-The GATT information list omits UUIDs already displayed in the selected profile's
-Service, Read, Write and Configuration fields. The complete native result remains
-available through the discovery API; this is a display filter only.
+The read, write and configuration UUID columns identify characteristics in the GATT service. A trailing `*` matches a device-name prefix, ignoring case. The optional columns describe configuration generation or static bytes.
+
+Profiles match advertised or operating-system names independently of MAC addresses, Windows native IDs, CoreBluetooth UUIDs and BlueZ paths. `BluetoothSerialDevice.Profile` exposes the matching profile. Unknown or unnamed devices have no automatic profile until a known name becomes available.
+
+The editors use catalogue profiles for GATT and show native identifiers and profile UUIDs as read-only device information. They do not provide manual identifier/UUID entry. Applications can supply their own `BluetoothLeProfile` programmatically.
+
+Saved GATT endpoints restore without scanning only when their service and characteristic UUIDs match a catalogue row; the row supplies configuration defaults. If the configured service is absent when opening, native discovery can select the device's catalogue service and its complete characteristic/configuration profile. It never accepts a service the device does not actually offer. A final service error reports configured, catalogue and available UUIDs.
+
+For GATT selection, the editors list catalogue-name matches or devices advertising the Serial Port UUID (0x1101). An SPP-only match can be inspected, but opening GATT serial still requires a supported profile. Discovery merges UUID and name metadata across advertisement and scan-response fragments.
+
+The explicit **Read GATT services** action temporarily connects to list actual services, including those outside the catalogue. Advertisement UUIDs are not treated as a complete service list. This operation does not configure UART settings, subscribe to notifications or replace the selected profile. Cancellation waits for native cleanup. The information list omits UUIDs already shown in profile fields; the discovery API retains the full result.
+
+### Device-specific UART configuration
+
+BLE has no universal baud-rate or parity configuration protocol. The editors enable Bluetooth UART editing only when the profile has a configuration characteristic and an application-registered command generator. A characteristic UUID alone or static configuration bytes do not enable those controls. COM and USB settings remain editable. Terminal and SMS reuse the same editor rules.
+
+Implement `IBluetoothConfigurationCommands.GetCommands(SerialPortSettings settings)` for the module's command dialect and register its factory before displaying settings or opening the device:
+
+- `BluetoothConfigurationCommands.Register(configurationGuid, factory)` associates a default generator with a configuration characteristic UUID.
+- `BluetoothConfigurationCommands.Register(type, factory, name)` registers a named generator.
+- `BluetoothConfigurationCommands.Register<T>()` registers a parameterless implementation using its full type name.
+
+Registration and capability checks do not instantiate generators; opening creates a fresh instance. An explicit `BluetoothLeProfile.ConfigurationCommandProvider` or sixth-column catalogue name overrides the UUID default. Unknown explicit names fail when opening rather than falling back silently.
+
+The generator returns one complete command sequence, including separators and line endings. Opening writes its UTF-8 bytes to the configuration characteristic before returning the data stream. The payload is limited to 512 bytes. This hook does not parse replies or schedule device-specific pauses between commands.
+
+When no generator is selected, explicitly supplied `ConfigurationValue` bytes remain supported. Provider names survive XML/JSON settings, but saved names never load arbitrary classes: each application must register its implementations. The shipped catalogue profiles currently have no configuration characteristic.
+
+## iOS and custom transports
+
+iOS supplies native notification/write connections for selected `ble:` peripheral UUIDs and a configured `BluetoothLeProfile`. The application must include its Bluetooth usage description and request appropriate authorization.
+
+For other supported accessory drivers, construct `GXSerial` with a `Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>`. The factory must honor cancellation and return a readable, writable stream owned by the media. Closing/disposal releases that stream. An MFi/ExternalAccessory integration must supply its own supported adapter; this library does not expose arbitrary iPhone COM ports.
+
+## Lifecycle and threading
+
+Prefer `OpenAsync`, `SendAsync`, `ReceiveAsync` and `CloseAsync` in asynchronous applications. Blocking APIs remain available for compatibility.
+
+A second simultaneous open is rejected. Closing cancels an in-progress open, closes the active transport and wakes pending receives. Remote EOF and transport failures also wake buffered receives.
+
+Receive handlers may close the connection. After remote EOF, schedule reconnection outside the `Closed` event handler and await `CloseAsync()` before calling `OpenAsync()`. The reader still owns cleanup while invoking its close notification, so immediate reopening there is rejected.
+
+Events are not UI-dispatched. Keep handlers short, marshal UI changes to the platform dispatcher and never hold a Monitor lock across `await`.
+
+`IGXMediaIconProvider.OpenIcon()` opens the embedded PNG as a new caller-owned stream without a UI framework dependency.
+
+## Example application
+
+[Gurux.Serial.Example](Gurux.Serial.Example/Gurux.Serial.Example.csproj) owns its Core logic, Avalonia desktop views and native MAUI views. It targets both .NET 10 and .NET 11. The views include connection controls, buffered request/reply, traffic counters, device discovery and activity history.
+
+Run the Avalonia desktop example from this repository directory:
+
+~~~powershell
+dotnet run --project Gurux.Serial.Example/Gurux.Serial.Example.csproj -f net11.0 -p:BuildDesktop=true -p:GuruxExamplesBuild=true -p:GeneratePackageOnBuild=false
+~~~
+
+Build its Android host:
+
+~~~powershell
+dotnet build Gurux.Serial.Example/Gurux.Serial.Example.csproj -f net11.0-android -p:BuildMobile=true -p:GuruxExamplesBuild=true -p:GeneratePackageOnBuild=false
+~~~
+
+The serial-backed examples refresh device availability while closed. Physical-port Open actions require an available selected port; restored BLE selections can permit an explicit retry without a new scan. Lifecycle actions follow media-state notifications on the UI dispatcher. A discovered identity is not a guarantee that opening will succeed.
+
+## Build and test
+
+Run from this repository directory:
+
+~~~powershell
+dotnet build Development/Gurux.Serial.csproj -p:GeneratePackageOnBuild=false
+dotnet run --project Tests/Serial.Tests.csproj -p:GeneratePackageOnBuild=false
+~~~
+
+The regression executable exercises injected stream transports, receive buffering, cancellation and lifecycle behavior, live settings, AT modem parsing, SMS prompt exchange, PDU codecs and settings round trips without attached hardware.
+
+Additional focused projects cover [Bluetooth profiles and configuration](Tests/Bluetooth/Bluetooth.Tests.csproj), [desktop Bluetooth](Tests/DesktopBluetooth/DesktopBluetooth.Tests.csproj), [Linux BLE](Tests/DesktopLinux/LinuxBluetoothLeTests.csproj), and [Android USB protocols](Tests/Android/Usb/UsbProtocolTests.csproj). Use each project's platform requirements when running it.
+
+Headless tests and successful native compilation do not replace physical COM/USB/Bluetooth checks, real SMS/modem validation or mobile background testing.
+
+## Migrating from 8.x
+
+The 9.0 implementation uses current Gurux.Common contracts, shared receive buffering and asynchronous lifecycle/cancellation APIs. Optional settings adapters replace bundled platform dialogs.
+
+Use `IGXSerialSettings.ApplySettingsAsync()` for supported live line changes. Use an explicit native stream factory for Android accessories and a supported BLE/accessory path on iOS.
+
+## License
+
+Gurux.Serial is available under either [GPL-2.0-only](LICENSE) or a commercial license from Gurux Ltd. See [commercial licensing information](LICENSES/LicenseRef-Gurux-Commercial) or contact [Gurux Ltd](https://www.gurux.fi/).
