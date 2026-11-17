@@ -1,0 +1,102 @@
+@*
+// --------------------------------------------------------------------------
+// Gurux Ltd
+//
+// Copyright (c) Gurux Ltd.
+//
+// This file is part of Gurux Device Framework.
+//
+// Commit: $Format:%H$
+// Date:   $Format:%cI$
+//
+// This software is available under either of the following licenses:
+//
+// 1. GNU General Public License, version 2 only (GPL-2.0-only).
+//    See the LICENSE file included with this distribution.
+//
+// 2. A commercial license granted by Gurux Ltd under a separate written
+//    agreement. Use under this option requires a valid commercial license
+//    and is governed by the terms of that agreement.
+//
+// If you have not obtained a commercial license from Gurux Ltd,
+// use of this software is governed by GPL-2.0-only.
+//
+// Commercial licensing: https://www.gurux.fi/
+//
+// SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-Gurux-Commercial
+// --------------------------------------------------------------------------
+*@
+@using Gurux.Serial
+<section aria-label="@Properties.Resources.BluetoothSettings">
+    <h3>@Properties.Resources.BluetoothSettings</h3>
+    <label for="bluetooth-transport">@Properties.Resources.BluetoothTransport</label>
+    <select id="bluetooth-transport" class="form-select" value="@Model.Transport" @onchange="ChangeTransport">
+        <option value="@BluetoothSerialTransport.Classic">@Properties.Resources.BluetoothClassic</option>
+        <option value="@BluetoothSerialTransport.LowEnergy">@Properties.Resources.BluetoothLowEnergy</option>
+    </select>
+    <button type="button" class="btn btn-secondary my-2" @onclick="Find" disabled="@(!Model.CanFind || Model.GattServices.IsBusy || (Model.IsSearching && !Model.IsScanning))">
+        @(Model.IsScanning ? Properties.Resources.StopSearch : Properties.Resources.FindDevices)
+    </button>
+    <p>@(Model.Transport == BluetoothSerialTransport.LowEnergy ? Properties.Resources.BluetoothScanHint : Properties.Resources.BluetoothKnownHint)</p>
+    @if (!Model.CanFind)
+    {
+        <p>@Properties.Resources.BluetoothScanUnavailable</p>
+    }
+    <label for="bluetooth-devices">@Properties.Resources.BluetoothDevices</label>
+    <select id="bluetooth-devices" class="form-select" value="@Model.SelectedId" @onchange="SelectDevice">
+        <option value="" disabled hidden></option>
+        @foreach (var device in Model.Devices)
+        {
+            <option value="@device.Id">@Model.DisplayName(device)</option>
+        }
+    </select>
+    <details id="bluetooth-details" class="my-2">
+        <summary>@Properties.Resources.AdvancedBluetoothSettings</summary>
+        <label for="bluetooth-identifier">@Properties.Resources.BluetoothIdentifier</label>
+        <input id="bluetooth-identifier" class="form-control" value="@Model.SelectedId" readonly />
+        <label for="bluetooth-service">@Properties.Resources.BluetoothService</label>
+        <input id="bluetooth-service" class="form-control" value="@Model.Profile?.Service" readonly />
+        <label for="bluetooth-read">@Properties.Resources.BluetoothRead</label>
+        <input id="bluetooth-read" class="form-control" value="@Model.Profile?.ReadCharacteristic" readonly />
+        <label for="bluetooth-write">@Properties.Resources.BluetoothWrite</label>
+        <input id="bluetooth-write" class="form-control" value="@Model.Profile?.WriteCharacteristic" readonly />
+        <label for="bluetooth-configuration">@Properties.Resources.BluetoothConfiguration</label>
+        <input id="bluetooth-configuration" class="form-control" value="@Model.Profile?.ConfigurationCharacteristic" readonly />
+        @if (Model.Transport == BluetoothSerialTransport.LowEnergy)
+        {
+            <h4>@Properties.Resources.BluetoothGattServices</h4>
+            <button type="button" id="read-gatt-services" class="btn btn-secondary my-2" @onclick="ReadServices"
+                disabled="@(Model.GattServices.DeviceId is null || (Model.IsSearching && !Model.GattServices.IsBusy))">
+                @(Model.GattServices.IsBusy ? Properties.Resources.CancelGattRead : Properties.Resources.ReadGattServices)
+            </button>
+            @if (Model.GattServices.IsBusy)
+            {
+                <p role="status">@Properties.Resources.GattServicesLoading</p>
+            }
+            else if (Model.GattServices.Error is string reason)
+            {
+                <p role="alert">@string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.GattServicesFailed, reason)</p>
+            }
+            else if (Model.GattServices.HasResult)
+            {
+                var additionalServices = Model.GattServices.GetAdditionalServices(Model.Profile);
+                @if (additionalServices.Count == 0)
+                {
+                    <p role="status">@Properties.Resources.GattServicesEmpty</p>
+                }
+                else
+                {
+                    <textarea id="gatt-services" class="form-control" readonly rows="@additionalServices.Count" aria-label="@Properties.Resources.BluetoothGattServices">@string.Join(Environment.NewLine, additionalServices)</textarea>
+                }
+            }
+            else
+            {
+                <p>@Properties.Resources.GattServicesHint</p>
+            }
+        }
+    </details>
+    @if (error is not null || Model.Status is not null)
+    {
+        <p role="status">@(error ?? Model.Status)</p>
+    }
+</section>

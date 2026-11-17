@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk.Razor">
+  <PropertyGroup><TargetFrameworks>net11.0;net10.0</TargetFrameworks><DefaultItemExcludes>$(DefaultItemExcludes);Tests/**</DefaultItemExcludes><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PackageId>Gurux.Serial.Blazor</PackageId>
+    <Version Condition="'$(BUILD_BUILDNUMBER)' == ''">0.0.1-local</Version>
+    <Version Condition="'$(BUILD_BUILDNUMBER)' != ''">$(BUILD_BUILDNUMBER)</Version>
+    <Authors>Gurux Ltd</Authors><Company>Gurux Ltd</Company>
+    <Description>Optional Blazor settings components for Gurux media libraries.</Description>
+    <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression><PackageReadmeFile>README.md</PackageReadmeFile></PropertyGroup>
+  <PropertyGroup>
+    <!-- Preserve portable hosts while offering the native Windows BLE backend to Windows-targeted hosts. -->
+    <TargetFrameworks>$(TargetFrameworks);net11.0-windows10.0.19041.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Remove="Tests/**/*.cs" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <PackageReference Include="Gurux.UI.Components" Version="4.0.2611.1301" />
+    <ProjectReference Include="../../Development/Gurux.Serial.csproj" />
+
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RepositoryUrl>https://github.com/Gurux/Gurux.Serial</RepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageIcon>GXSerial.png</PackageIcon>
+    <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.2611.1601</GuruxCommonVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../Development/GXSerial.png" Pack="true" PackagePath="/" />
+    <None Remove="Tests/**;tests/**" />
+    <Content Remove="Tests/**;tests/**" />
+    <EmbeddedResource Remove="Tests/**;tests/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+  </ItemGroup>
+</Project>

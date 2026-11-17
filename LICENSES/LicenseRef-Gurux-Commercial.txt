@@ -1,0 +1,12 @@
+Gurux Commercial License Notice
+
+Commercial rights to Gurux.UI.Components are granted only under a separate
+written agreement between Gurux Ltd and the customer. This notice does not
+itself grant a commercial license. The terms of a commercial license are
+governed by that separate agreement.
+
+This notice does not restrict any rights granted under the alternative
+GNU General Public License, version 2 only (GPL-2.0-only).
+Third-party components remain subject to their own licenses.
+
+For commercial licensing inquiries, contact Gurux Ltd: https://www.gurux.fi/

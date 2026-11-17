@@ -1,0 +1,56 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 18
+VisualStudioVersion = 18.12.12405.243
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Gurux.Serial.Example", "Gurux.Serial.Example.csproj", "{8A2CCF1B-E5CD-4E12-84F5-88A2B63EDAB4}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gurux.Serial", "..\Development\Gurux.Serial.csproj", "{AE050207-B564-0722-99BB-8EC4A7B9D430}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gurux.Serial.Maui", "..\UI\Gurux.Serial.Maui\Gurux.Serial.Maui.csproj", "{D96D3357-17A6-DCEA-3F8D-F9BE10D165CC}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gurux.Serial.Blazor", "..\UI\Gurux.Serial.Blazor\Gurux.Serial.Blazor.csproj", "{30188A3D-05BC-5CFC-D104-319856E31DF5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Gurux.Serial.Avalonia", "..\UI\Gurux.Serial.Avalonia\Gurux.Serial.Avalonia.csproj", "{B6680E4C-BD46-D115-88FC-F7A7508D36F9}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "UI", "UI", "{79C66233-5D73-423D-8633-7F63F71C5048}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8A2CCF1B-E5CD-4E12-84F5-88A2B63EDAB4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A2CCF1B-E5CD-4E12-84F5-88A2B63EDAB4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A2CCF1B-E5CD-4E12-84F5-88A2B63EDAB4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A2CCF1B-E5CD-4E12-84F5-88A2B63EDAB4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AE050207-B564-0722-99BB-8EC4A7B9D430}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AE050207-B564-0722-99BB-8EC4A7B9D430}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AE050207-B564-0722-99BB-8EC4A7B9D430}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AE050207-B564-0722-99BB-8EC4A7B9D430}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D96D3357-17A6-DCEA-3F8D-F9BE10D165CC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D96D3357-17A6-DCEA-3F8D-F9BE10D165CC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D96D3357-17A6-DCEA-3F8D-F9BE10D165CC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D96D3357-17A6-DCEA-3F8D-F9BE10D165CC}.Release|Any CPU.Build.0 = Release|Any CPU
+		{30188A3D-05BC-5CFC-D104-319856E31DF5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{30188A3D-05BC-5CFC-D104-319856E31DF5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{30188A3D-05BC-5CFC-D104-319856E31DF5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{30188A3D-05BC-5CFC-D104-319856E31DF5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B6680E4C-BD46-D115-88FC-F7A7508D36F9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B6680E4C-BD46-D115-88FC-F7A7508D36F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B6680E4C-BD46-D115-88FC-F7A7508D36F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B6680E4C-BD46-D115-88FC-F7A7508D36F9}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{D96D3357-17A6-DCEA-3F8D-F9BE10D165CC} = {79C66233-5D73-423D-8633-7F63F71C5048}
+		{30188A3D-05BC-5CFC-D104-319856E31DF5} = {79C66233-5D73-423D-8633-7F63F71C5048}
+		{B6680E4C-BD46-D115-88FC-F7A7508D36F9} = {79C66233-5D73-423D-8633-7F63F71C5048}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {7759D3A8-CCFA-4C20-9F29-A7E6D673FD2A}
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,41 @@
+<Project>
+  <ItemGroup>
+    <ProjectReference Include="$(ExampleRoot)/Core/Gurux.Serial.Example.Core.csproj" AdditionalProperties="GuruxExamplesBuild=true" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' == 'net11.0' Or '$(TargetFramework)' == 'net10.0'">
+    <Compile Include="$(ExampleRoot)/UI/Desktop/**/*.cs" Exclude="$(ExampleRoot)/UI/Desktop/**/bin/**;$(ExampleRoot)/UI/Desktop/**/obj/**;$(ExampleRoot)/UI/Desktop/**/Tests/**" />
+    <EmbeddedResource Include="$(ExampleRoot)/UI/Desktop/Properties/ExampleSettingsResources.resx" LogicalName="Gurux.Serial.Example.Desktop.Properties.ExampleSettingsResources.resources" />
+    <EmbeddedResource Include="$(ExampleRoot)/Resources/AppIcon/appicon.png" LogicalName="ExampleIcon.png" />
+    <Content Include="$(ExampleRoot)/UI/Desktop/Linux/org.gurux.examples.serial.desktop" Link="Linux/org.gurux.examples.serial.desktop" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(ExampleRoot)/UI/Desktop/Linux/install-desktop.py" Link="Linux/install-desktop.py" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="$(ExampleRoot)/Resources/AppIcon/appicon.png" Link="Linux/org.gurux.examples.serial.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <ProjectReference Include="$(ExampleRoot)/../UI/Gurux.Serial.Avalonia/Gurux.Serial.Avalonia.csproj" AdditionalProperties="GuruxExamplesBuild=true" />
+    <PackageReference Include="Avalonia.Desktop" Version="12.1.6" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="12.1.6" />
+  </ItemGroup>
+  <ItemGroup Condition="'$(TargetFramework)' != '' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != ''">
+    <MauiIcon Include="$(ExampleRoot)/Resources/AppIcon/appicon.png" Color="#FFFFFF" Resize="true" />
+    <Compile Include="$(ExampleRoot)/UI/Maui/**/*.cs" Exclude="$(ExampleRoot)/UI/Maui/**/bin/**;$(ExampleRoot)/UI/Maui/**/obj/**;$(ExampleRoot)/UI/Maui/**/Tests/**;$(ExampleRoot)/UI/Maui/Platforms/**" />
+    <EmbeddedResource Include="$(ExampleRoot)/UI/Maui/Properties/ExampleSettingsResources.resx" LogicalName="Gurux.Serial.Example.Maui.Properties.ExampleSettingsResources.resources" />
+    <ProjectReference Include="$(ExampleRoot)/../UI/Gurux.Serial.Maui/Gurux.Serial.Maui.csproj" AdditionalProperties="GuruxExamplesBuild=true" />
+    <ProjectReference Include="$(ExampleRoot)/../../Gurux.Serial/Development/Gurux.Serial.csproj" AdditionalProperties="GuruxExamplesBuild=true" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="[11.0.10,12.0.0)" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '11.0'" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="[10.0.110,11.0.0)" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '10.0'" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">
+    <ApplicationDefinition Include="$(ExampleRoot)/UI/Maui/Platforms/Windows/App.xaml" Link="Platforms/Windows/App.xaml" />
+    <Compile Include="$(ExampleRoot)/UI/Maui/Platforms/Windows/App.xaml.cs" Link="Platforms/Windows/App.xaml.cs" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">
+    <Compile Include="$(ExampleRoot)/UI/Maui/Platforms/Android/*.cs" Link="Platforms/Android/%(Filename)%(Extension)" />
+    <AndroidResource Include="$(ExampleRoot)/UI/Maui/Platforms/Android/Resources/xml/device_filter.xml" Link="Resources/xml/device_filter.xml" />
+  </ItemGroup>
+  <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">
+    <Compile Include="$(ExampleRoot)/UI/Maui/Platforms/iOS/*.cs" Link="Platforms/iOS/%(Filename)%(Extension)" />
+    <BundleResource Include="$(ExampleRoot)/Properties/iOS/InfoPlist.strings" LogicalName="en.lproj/InfoPlist.strings" />
+    <None Include="$(ExampleRoot)/UI/Maui/Platforms/iOS/Info.plist" Link="Info.plist" />
+  </ItemGroup>
+  <Target Name="RequireAndroidExampleTransport" BeforeTargets="PrepareForBuild">
+    <Error Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android' And '$(BuildMobile)' != 'true' And '$(BuildApple)' != 'true'" Text="Build Android examples with -p:BuildMobile=true." />
+  </Target>
+</Project>

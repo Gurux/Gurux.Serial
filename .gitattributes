@@ -3,6 +3,22 @@
 
 # Custom for Visual Studio
 *.cs     diff=csharp
+*.cs     export-subst
+*.razor  export-subst
+*.js     export-subst
+*.mjs    export-subst
+*.ts     export-subst
+*.tsx    export-subst
+*.java   export-subst
+*.py     export-subst
+*.c      export-subst
+*.cpp    export-subst
+*.h      export-subst
+*.hpp    export-subst
+*.go     export-subst
+*.ps1    export-subst
+*.yml    export-subst
+*.yaml   export-subst
 *.sln    merge=union
 *.csproj merge=union
 *.vbproj merge=union
@@ -20,3 +36,10 @@
 *.PDF	 diff=astextplain
 *.rtf	 diff=astextplain
 *.RTF	 diff=astextplain
+
+# Tests and local validation outputs are not part of release source archives.
+Tests export-ignore
+tests export-ignore
+**/Tests export-ignore
+**/tests export-ignore
+artifacts export-ignore

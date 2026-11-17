@@ -1,2084 +1,596 @@
-//
 // --------------------------------------------------------------------------
-//  Gurux Ltd
+// Gurux Ltd
 //
+// Copyright (c) Gurux Ltd.
 //
+// This file is part of Gurux Device Framework.
 //
-// Filename:        $HeadURL$
+// Commit: $Format:%H$
+// Date:   $Format:%cI$
 //
-// Version:         $Revision$,
-//                  $Date$
-//                  $Author$
+// This software is available under either of the following licenses:
 //
-// Copyright (c) Gurux Ltd
+// 1. GNU General Public License, version 2 only (GPL-2.0-only).
+//    See the LICENSE file included with this distribution.
 //
-//---------------------------------------------------------------------------
+// 2. A commercial license granted by Gurux Ltd under a separate written
+//    agreement. Use under this option requires a valid commercial license
+//    and is governed by the terms of that agreement.
 //
-//  DESCRIPTION
+// If you have not obtained a commercial license from Gurux Ltd,
+// use of this software is governed by GPL-2.0-only.
 //
-// This file is a part of Gurux Device Framework.
+// Commercial licensing: https://www.gurux.fi/
 //
-// Gurux Device Framework is Open Source software; you can redistribute it
-// and/or modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; version 2 of the License.
-// Gurux Device Framework is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU General Public License for more details.
-//
-// This code is licensed under the GNU General Public License v2.
-// Full text may be retrieved at http://www.gnu.org/licenses/gpl-2.0.txt
-//---------------------------------------------------------------------------
-
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.ComponentModel;
-using Gurux.Common;
-using System.IO;
-using Gurux.Shared;
-using System.IO.Ports;
+// SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-Gurux-Commercial
+// --------------------------------------------------------------------------
+using SerialPort = System.IO.Ports.SerialPort;
+using System.Text.Json;
 using System.Xml;
-using System.Diagnostics;
-using System.Reflection;
-using System.Threading;
-using Gurux.Serial.Properties;
+using System.Xml.Linq;
+using Gurux.Common;
+using System.IO.Ports;
 
-namespace Gurux.Serial
+namespace Gurux.Serial;
+/// <summary>One asynchronous serial API for desktop ports and platform accessory streams.</summary>
+/// <remarks>The stream factory must return a readable, writable stream owned by this instance.
+/// On iOS use a supported MFi ExternalAccessory or BLE adapter stream. iOS does not expose arbitrary COM ports.</remarks>
+public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProvider
 {
-    /// <summary>
-    /// A media component that enables communication of serial port.
-    /// See help in http://www.gurux.org/index.php?q=Gurux.Net
-    /// </summary>
-    public class GXSerial : IGXMedia2, IGXVirtualMedia, INotifyPropertyChanged, IDisposable
+    /// <summary>Opens the embedded PNG icon for this media without loading a UI framework.</summary>
+    /// <returns>A new readable stream positioned at the beginning, or null if the embedded icon is unavailable.</returns>
+    /// <remarks>The caller owns the stream and must dispose it. Each call returns an independent stream.</remarks>
+    public Stream? OpenIcon()
     {
-        private object m_sync = new object();
-        int LastEopPos = 0;
-        bool IsVirtual, VirtualOpen;
-        TraceLevel m_Trace;
-        private readonly static Dictionary<string, List<int>> BaudRates = new Dictionary<string, List<int>>();
-        object m_Eop;
-        private readonly GXSynchronousMediaBase m_syncBase;
-        UInt64 m_BytesSent, m_BytesReceived;
-        readonly object m_Synchronous = new object();
-        readonly object m_baseLock = new object();
-        internal System.IO.Ports.SerialPort m_base = new System.IO.Ports.SerialPort();
-        GXReceiveThread m_Receiver;
-        Thread m_ReceiverThread;
-        byte m_EofChar, m_ErrorChar, m_EventChar, m_XonChar, m_XoffChar;
+        return typeof(GXSerial).Assembly.GetManifestResourceStream("Gurux.Serial.MediaIcon.png");
+    }
 
-        /// <summary>
-        /// Get baud rates supported by given serial port.
-        /// </summary>
-        public int[] GetAvailableBaudRates(string portName)
+    /// <summary>Creates an owned platform stream instead of opening a desktop serial port.</summary>
+    readonly Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? factory;
+    /// <summary>Serializes access to lifecycle transitions and pending cleanup state.</summary>
+    readonly object lifecycle = new();
+    /// <summary>Prevents concurrent writes from interleaving bytes on the transport.</summary>
+    readonly SemaphoreSlim writer = new(1, 1);
+    /// <summary>Identifies callbacks executing within the current asynchronous open operation.</summary>
+    readonly AsyncLocal<bool> inOpening = new();
+    /// <summary>Cancels the currently pending serial stream creation.</summary>
+    CancellationTokenSource? openingCancellation;
+    /// <summary>Signals completion of the currently pending open operation.</summary>
+    TaskCompletionSource? openingDone;
+    /// <summary>Identifies callbacks executing within the receive loop to avoid waiting on themselves.</summary>
+    readonly AsyncLocal<bool> inReader = new();
+    /// <summary>Holds the owned readable and writable connection while the media is open.</summary>
+    Stream? stream;
+    /// <summary>Owns the desktop serial port associated with the active stream.</summary>
+    SerialPort? port;
+    /// <summary>Cancels the active receive loop when the connection closes.</summary>
+    CancellationTokenSource? stopping;
+    /// <summary>Tracks receive and cleanup tasks that must finish before a subsequent open.</summary>
+    readonly HashSet<Task> workers = [];
+    /// <summary>Identifies close callbacks to prevent recursive cleanup waits.</summary>
+    readonly AsyncLocal<bool> inClosing = new();
+    /// <summary>Identifies cleanup work whose closed callback is permitted to reopen the media.</summary>
+    readonly AsyncLocal<Task?> completedCleanup = new();
+    /// <summary>Creates serial media that opens an operating system serial port.</summary>
+    public GXSerial()
+    {
+    }
+
+    /// <summary>Creates serial media that owns the stream returned by the supplied transport factory.</summary>
+    /// <param name="streamFactory">Creates an owned readable and writable stream for the supplied serial settings and cancellation token.</param>
+    /// <exception cref="ArgumentNullException">The stream factory is null.</exception>
+    public GXSerial(Func<SerialPortSettings, CancellationToken, ValueTask<Stream>> streamFactory) => factory = streamFactory ?? throw new ArgumentNullException(nameof(streamFactory));
+    /// <summary>Gets the framing and device settings used by the underlying serial connection.</summary>
+    public SerialPortSettings PortSettings { get; private set; } = new();
+    /// <summary>Gets or sets the operating system port name or platform accessory identifier.</summary>
+    public string? PortName { get => PortSettings.PortName; set => PortSettings.PortName = value; }
+    /// <summary>Gets or sets the requested transfer rate in bits per second.</summary>
+    public int BaudRate { get => PortSettings.BaudRate; set => PortSettings.BaudRate = value; }
+    /// <summary>Gets or sets the number of payload bits in each serial frame.</summary>
+    public int DataBits { get => PortSettings.DataBits; set => PortSettings.DataBits = value; }
+    /// <summary>Gets or sets the parity check used for each serial frame.</summary>
+    public Parity Parity { get => PortSettings.Parity; set => PortSettings.Parity = value; }
+    /// <summary>Gets or sets the stop interval terminating each serial frame.</summary>
+    public StopBits StopBits { get => PortSettings.StopBits; set => PortSettings.StopBits = value; }
+    /// <summary>Gets or sets the hardware or software flow control policy.</summary>
+    public Handshake Handshake { get => PortSettings.Handshake; set => PortSettings.Handshake = value; }
+    /// <summary>Gets or sets whether the data terminal ready signal is asserted.</summary>
+    public bool DtrEnable { get => PortSettings.DtrEnable; set => PortSettings.DtrEnable = value; }
+    /// <summary>Gets or sets whether the request to send signal is asserted.</summary>
+    public bool RtsEnable { get => PortSettings.RtsEnable; set => PortSettings.RtsEnable = value; }
+    /// <inheritdoc/>
+    public override string Name => PortName ?? string.Empty;
+    /// <inheritdoc/>
+    public override string MediaType => "Serial";
+    /// <inheritdoc/>
+    public override bool IsOpen => stream != null;
+
+    /// <summary>Gets or replaces serial settings using the legacy Port, Bps and ByteSize XML element names.</summary>
+    /// <remarks>Accepts XML fragments or a Serial wrapper. Null or empty input restores defaults.
+    /// Numeric and named framing enumeration values are accepted. Optional BluetoothChannel and BluetoothProfile elements preserve Bluetooth configuration, including an application-registered command provider name.
+    /// Changes require a closed transport.</remarks>
+    /// <exception cref="InvalidOperationException">The media is open, opening or awaiting cleanup.</exception>
+    /// <exception cref="XmlException">The supplied XML is malformed.</exception>
+    /// <exception cref="FormatException">A numeric, Boolean, Bluetooth UUID or base64 configuration setting is malformed.</exception>
+    /// <exception cref="ArgumentException">A framing enumeration cannot be parsed or a Bluetooth profile is invalid.</exception>
+    public override string? Settings
+    {
+        get
         {
-            List<int> items = new List<int>();
-            if (portName != null && BaudRates.ContainsKey(portName.ToLower()))
+            var xml = new XElement("Serial",
+                PortName == null ? null : new XElement("Port", PortName),
+                new XElement("Bps", BaudRate), new XElement("ByteSize", DataBits),
+                new XElement("StopBits", (int)StopBits), new XElement("Parity", (int)Parity),
+                new XElement("Handshake", (int)Handshake), new XElement("DtrEnable", DtrEnable),
+                new XElement("RtsEnable", RtsEnable),
+                PortSettings.BluetoothChannel == 0 ? null : new XElement("BluetoothChannel", PortSettings.BluetoothChannel),
+                PortSettings.BluetoothProfile == null ? null : new XElement("BluetoothProfile",
+                    new XElement("Service", PortSettings.BluetoothProfile.Service),
+                    new XElement("ReadCharacteristic", PortSettings.BluetoothProfile.ReadCharacteristic),
+                    new XElement("WriteCharacteristic", PortSettings.BluetoothProfile.WriteCharacteristic),
+                    PortSettings.BluetoothProfile.ConfigurationCharacteristic is Guid configuration ? new XElement("ConfigurationCharacteristic", configuration) : null,
+                    PortSettings.BluetoothProfile.ConfigurationValue is byte[] bytes ? new XElement("ConfigurationValue", Convert.ToBase64String(bytes)) : null,
+                    PortSettings.BluetoothProfile.ConfigurationCommandProvider is string provider ? new XElement("ConfigurationCommandProvider", provider) : null));
+            return string.Concat(xml.Elements().Select(element => element.ToString(SaveOptions.DisableFormatting)));
+        }
+        set
+        {
+            lock (lifecycle)
             {
-                return BaudRates[portName.ToLower()].ToArray();
-            }
-            if (!IsVirtual && string.IsNullOrEmpty(portName))
-            {
-                string[] ports = GXSerial.GetPortNames();
-                if (ports.Length != 0)
+                if (IsOpen || openingDone != null || workers.Count != 0)
                 {
-                    portName = GXSerial.GetPortNames()[0];
+                    throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("CloseTheMediaAndAwaitCleanupBeforeChangingSettings"));
                 }
-                else
+                var root = XElement.Parse("<Settings>" + value + "</Settings>");
+                var xml = root.Element("Serial") ?? root;
+                var settings = new SerialPortSettings
                 {
-                    portName = null;
-                }
-            }
-            if (!IsVirtual && portName != null)
-            {
-                BaudRates[portName.ToLower()] = items;
-                try
-                {
-                    Int32 value = 0;
-                    using (SerialPort port = new SerialPort(portName))
+                    PortName = (string?)xml.Element("Port") ?? (string?)xml.Element("PortName"),
+                    BaudRate = (int?)xml.Element("Bps") ?? (int?)xml.Element("BaudRate") ?? 9600,
+                    DataBits = (int?)xml.Element("ByteSize") ?? (int?)xml.Element("DataBits") ?? 8,
+                    StopBits = Enum.Parse<StopBits>((string?)xml.Element("StopBits") ?? "One"),
+                    Parity = Enum.Parse<Parity>((string?)xml.Element("Parity") ?? "None"),
+                    Handshake = Enum.Parse<Handshake>((string?)xml.Element("Handshake") ?? "None"),
+                    DtrEnable = (bool?)xml.Element("DtrEnable") ?? false,
+                    RtsEnable = (bool?)xml.Element("RtsEnable") ?? false,
+                    BluetoothChannel = (int?)xml.Element("BluetoothChannel") ?? 0,
+                    BluetoothProfile = xml.Element("BluetoothProfile") is XElement bluetooth ? new BluetoothLeProfile(
+                        Guid.Parse((string)bluetooth.Element("Service")!),
+                        Guid.Parse((string)bluetooth.Element("ReadCharacteristic")!),
+                        Guid.Parse((string)bluetooth.Element("WriteCharacteristic")!),
+                        bluetooth.Element("ConfigurationCharacteristic") is XElement configuration ? Guid.Parse(configuration.Value) : null,
+                        bluetooth.Element("ConfigurationValue") is XElement bytes ? Convert.FromBase64String(bytes.Value) : null)
                     {
-                        port.Open();
-                        FieldInfo fi = port.BaseStream.GetType().GetField("commProp", BindingFlags.Instance | BindingFlags.NonPublic);
-                        if (fi != null)
-                        {
-                            object p = fi.GetValue(port.BaseStream);
-                            value = (Int32)p.GetType().GetField("dwSettableBaud", BindingFlags.Instance | BindingFlags.NonPublic | BindingFlags.Public).GetValue(p);
-                        }
-                    }
-                    if (value != 0)
+                        ConfigurationCommandProvider = (string?)bluetooth.Element("ConfigurationCommandProvider")
+                    } : null
+                };
+                PortSettings = settings;
+            }
+        }
+    }
+
+    /// <summary>Gets or replaces the JSON-serialized serial port settings.</summary>
+    /// <remarks>Assigning null resets the settings. Replacement requires closed media with no pending open or cleanup work.</remarks>
+    /// <exception cref="InvalidOperationException">The media is open, opening or awaiting cleanup.</exception>
+    /// <exception cref="JsonException">The value is not valid JSON for serial port settings.</exception>
+    /// <exception cref="ArgumentException">The JSON value is null.</exception>
+    public override string? JsonSettings
+    {
+        get => JsonSerializer.Serialize(PortSettings, SerialJsonContext.Default.SerialPortSettings);
+        set
+        {
+            lock (lifecycle)
+            {
+                if (IsOpen || openingDone != null || workers.Count != 0)
+                {
+                    throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("CloseTheMediaAndAwaitCleanupBeforeChangingSettings"));
+                }
+
+                PortSettings = value == null ? new SerialPortSettings() : JsonSerializer.Deserialize(value, SerialJsonContext.Default.SerialPortSettings) ?? throw new ArgumentException(global::Gurux.Serial.Properties.Resources.Get("InvalidSettings"));
+            }
+        }
+    }
+
+    /// <summary>Checks the configured port name, baud rate, data bits and framing values.</summary>
+    /// <returns>All localized configuration errors, or an empty list when the settings are valid.</returns>
+    public override IReadOnlyList<GXValidationError> Validate() => PortSettings.GetValidationErrors();
+    /// <summary>Common baud rates, not a hardware capability probe. The device driver validates a selected rate on open.</summary>
+    /// <param name="portName">The optional port name; the conventional rate list is independent of the selected hardware.</param>
+    /// <returns>The conventional transfer rates offered to settings editors.</returns>
+    public static int[] GetAvailableBaudRates(string? portName = null) => [300, 600, 1200, 2400, 4800, 9600, 14400, 19200, 38400, 56000, 57600, 115200, 128000, 230400, 256000, 460800, 921600];
+    /// <summary>Enumerates physical ports, permitted Android devices and recently discovered mobile BLE identifiers.</summary>
+    /// <remarks>Linux includes existing numbered serial device nodes even when runtime sysfs discovery omits them. Listing a node does not open it or verify hardware availability or access permissions.</remarks>
+    /// <returns>The available device identifiers; physical ports use natural numeric order and mobile BLE identifiers come from explicit discovery.</returns>
+    public static string[] GetPortNames()
+    {
+#if ANDROID
+        return SerialPortDiscovery.SortPortNames(AndroidSerialTransports.GetPortNames(Android.App.Application.Context));
+#elif IOS || MACCATALYST
+        return BluetoothLeDiscovery.GetKnownDevices().Select(device => "ble:" + device.Id).ToArray();
+#else
+        if (OperatingSystem.IsLinux())
+        {
+            return SerialPortDiscovery.GetLinuxPortNames(SerialPort.GetPortNames, "/dev");
+        }
+        return OperatingSystem.IsWindows() || OperatingSystem.IsMacOS()
+            ? SerialPortDiscovery.SortPortNames(SerialPort.GetPortNames())
+            : [];
+#endif
+    }
+    /// <summary>Checks whether a selected port or known Bluetooth identifier is currently listed without opening it.</summary>
+    /// <param name="portName">The selected operating-system port or native accessory identifier.</param>
+    /// <param name="cancellationToken">Cancels discovery.</param>
+    /// <returns>False for blank selections, missing devices or unavailable discovery services; otherwise true for a matching listed device.</returns>
+    /// <remarks>Bluetooth discovery uses operating-system-known devices without scanning or connecting. A known device is not guaranteed to be in radio range.</remarks>
+    /// <exception cref="OperationCanceledException">The caller cancels discovery.</exception>
+    public static Task<bool> IsPortAvailableAsync(string? portName, CancellationToken cancellationToken = default) => SerialPortDiscovery.IsAvailableAsync(portName, cancellationToken);
+
+    /// <inheritdoc/>
+    public override async Task OpenAsync(CancellationToken cancellationToken = default)
+    {
+        CancellationTokenSource cancel;
+        TaskCompletionSource done;
+        lock (lifecycle)
+        {
+            if (openingDone != null)
+            {
+                throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("SerialMediaIsAlreadyOpening"));
+            }
+
+            if (IsOpen)
+            {
+                return;
+            }
+
+            if (workers.Any(task => !task.IsCompleted && !ReferenceEquals(task, completedCleanup.Value)))
+            {
+                throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("SerialMediaIsStillClosingAwaitCloseAsyncBeforeReopening"));
+            }
+
+            openingCancellation = cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            openingDone = done = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        }
+
+        Stream? source = null;
+        SerialPort? owner = null;
+        bool previous = inOpening.Value;
+        inOpening.Value = true;
+        try
+        {
+            SetState(MediaState.Opening);
+            cancel.Token.ThrowIfCancellationRequested();
+            var errors = Validate();
+            if (errors.Count != 0)
+            {
+                PortSettings.Validate();
+                throw new ArgumentException(errors[0].Message);
+            }
+            if (factory != null)
+            {
+                source = await factory(PortSettings, cancel.Token).ConfigureAwait(false);
+            }
+#if IOS || MACCATALYST
+            else if (PortName?.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                source = await BluetoothSerialTransports.BluetoothLe(PortName[4..], PortSettings.BluetoothProfile!)(PortSettings, cancel.Token).ConfigureAwait(false);
+            }
+#endif
+#if !ANDROID && !IOS && !MACCATALYST
+            else if (PortName?.StartsWith("bluetooth:", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                source = await BluetoothSerialTransports.BluetoothRfcomm(PortName[10..], PortSettings.BluetoothChannel)(PortSettings, cancel.Token).ConfigureAwait(false);
+            }
+            else if (PortName?.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) == true)
+            {
+                source = await BluetoothSerialTransports.BluetoothLe(PortName[4..], PortSettings.BluetoothProfile!)(PortSettings, cancel.Token).ConfigureAwait(false);
+            }
+#endif
+            else
+            {
+                if (!(OperatingSystem.IsWindows() || OperatingSystem.IsLinux() || OperatingSystem.IsMacOS()))
+                {
+                    throw new PlatformNotSupportedException(global::Gurux.Serial.Properties.Resources.Get("SupplyAPlatformAccessoryStreamFactoryOnAndroidIOS"));
+                }
+
+#if !IOS && !MACCATALYST
+                owner = new SerialPort(PortName, BaudRate, (System.IO.Ports.Parity)Parity, DataBits, (System.IO.Ports.StopBits)StopBits)
+                {
+                    Handshake = (System.IO.Ports.Handshake)Handshake,
+                    DtrEnable = DtrEnable,
+                    RtsEnable = RtsEnable
+                };
+                owner.Open();
+                source = owner.BaseStream;
+#else
+                throw new PlatformNotSupportedException(global::Gurux.Serial.Properties.Resources.Get("PhysicalIPhoneSerialIsOutsideTheCurrentScopeSupplyAnOwnedSupportedStream"));
+#endif
+            }
+
+            if (source == null || !source.CanRead || !source.CanWrite)
+            {
+                throw new IOException(global::Gurux.Serial.Properties.Resources.Get("TransportMustBeReadableAndWritable"));
+            }
+
+            lock (lifecycle)
+            {
+                cancel.Token.ThrowIfCancellationRequested();
+                stream = source;
+                port = owner;
+                stopping = new CancellationTokenSource();
+                ReceiveBuffer.Open();
+            }
+
+            SetState(MediaState.Open);
+            lock (lifecycle)
+            {
+                if (ReferenceEquals(stream, source) && stopping != null)
+                {
+                    var active = source;
+                    var serialPort = owner;
+                    var token = stopping.Token;
+                    TrackWorker(Task.Run(() => ReadLoopAsync(active, serialPort, token)));
+                }
+            }
+        }
+        catch
+        {
+            lock (lifecycle)
+            {
+                if (ReferenceEquals(stream, source))
+                {
+                    stream = null;
+                    port = null;
+                    stopping?.Cancel();
+                    stopping?.Dispose();
+                    stopping = null;
+                }
+
+                ReceiveBuffer.Close();
+            }
+
+            if (source != null)
+            {
+                await DisposeTransportAsync(source).ConfigureAwait(false);
+            }
+            owner?.Dispose();
+            SetState(MediaState.Closed);
+            throw;
+        }
+        finally
+        {
+            lock (lifecycle)
+            {
+                openingCancellation = null;
+                openingDone = null;
+            }
+
+            cancel.Dispose();
+            done.TrySetResult();
+            inOpening.Value = previous;
+        }
+    }
+
+    /// <summary>Provides a subclass hook before incoming transport bytes are published to receive subscribers.</summary>
+    /// <param name="data">The received bytes, valid only for the duration of this callback.</param>
+    protected virtual void OnDataReceived(ReadOnlySpan<byte> data)
+    {
+    }
+
+    /// <summary>Reads the active stream until cancellation, disconnect or failure and closes the media afterward.</summary>
+    /// <param name="source">The active owned stream to read.</param>
+    /// <param name="owner">The desktop serial port owning the stream, or null for an injected stream.</param>
+    /// <param name="token">Cancels the pending connection or receive operation.</param>
+    /// <returns>A task completing when the receive loop and its cleanup finish.</returns>
+    async Task ReadLoopAsync(Stream source, SerialPort? owner, CancellationToken token)
+    {
+        inReader.Value = true;
+        byte[] buffer = new byte[4096];
+        try
+        {
+            while (!token.IsCancellationRequested)
+            {
+                int count = await source.ReadAsync(buffer, token).ConfigureAwait(false);
+                if (count == 0)
+                {
+                    break;
+                }
+
+                OnDataReceived(buffer.AsSpan(0, count));
+                PublishReceived(buffer.AsSpan(0, count).ToArray(), PortName);
+            }
+        }
+        catch (Exception) when (token.IsCancellationRequested)
+        {
+        }
+        catch (Exception ex)
+        {
+            ReportError(ex);
+        }
+        finally
+        {
+            bool disconnected = false;
+            lock (lifecycle)
+            {
+                if (ReferenceEquals(stream, source))
+                {
+                    stream = null;
+                    if (ReferenceEquals(port, owner))
                     {
-                        if ((value & 0x1) != 0)
-                        {
-                            items.Add(75);
-                        }
-                        if ((value & 0x2) != 0)
-                        {
-                            items.Add(110);
-                        }
-                        if ((value & 0x8) != 0)
-                        {
-                            items.Add(150);
-                        }
-                        if ((value & 0x10) != 0)
-                        {
-                            items.Add(300);
-                        }
-                        if ((value & 0x20) != 0)
-                        {
-                            items.Add(600);
-                        }
-                        if ((value & 0x40) != 0)
-                        {
-                            items.Add(1200);
-                        }
-                        if ((value & 0x80) != 0)
-                        {
-                            items.Add(1800);
-                        }
-                        if ((value & 0x100) != 0)
-                        {
-                            items.Add(2400);
-                        }
-                        if ((value & 0x200) != 0)
-                        {
-                            items.Add(4800);
-                        }
-                        if ((value & 0x400) != 0)
-                        {
-                            items.Add(7200);
-                        }
-                        if ((value & 0x800) != 0)
-                        {
-                            items.Add(9600);
-                        }
-                        if ((value & 0x1000) != 0)
-                        {
-                            items.Add(14400);
-                        }
-                        if ((value & 0x2000) != 0)
-                        {
-                            items.Add(19200);
-                        }
-                        if ((value & 0x4000) != 0)
-                        {
-                            items.Add(38400);
-                        }
-                        if ((value & 0x8000) != 0)
-                        {
-                            items.Add(56000);
-                        }
-                        if ((value & 0x40000) != 0)
-                        {
-                            items.Add(57600);
-                        }
-                        if ((value & 0x20000) != 0)
-                        {
-                            items.Add(115200);
-                        }
-                        if ((value & 0x10000) != 0)
-                        {
-                            items.Add(128000);
-                        }
-                        if ((value & 0x10000000) != 0) //Programmable baud rate.
-                        {
-                            items.Add(0);
-                        }
+                        port = null;
                     }
-                }
-                catch
-                {
-                    items.Clear();
-                }
-            }
-            //Add default baud rates.
-            if (items.Count == 0)
-            {
-                items.Add(300);
-                items.Add(600);
-                items.Add(1800);
-                items.Add(2400);
-                items.Add(4800);
-                items.Add(9600);
-                items.Add(19200);
-                items.Add(38400);
-                items.Add(56000);
-                items.Add(57600);
-                items.Add(115200);
-                items.Add(128000);
-                items.Add(0); //Programmable baud rate.
-            }
-            return items.ToArray();
-        }
 
-        /// <summary>
-        /// Constructor.
-        /// </summary>
-        public GXSerial()
-        {
-            ConfigurableSettings = AvailableMediaSettings.All;
-            m_syncBase = new GXSynchronousMediaBase(1024);
-            //Events are not currently implemented in Mono's serial port.
-            if (Environment.OSVersion.Platform != PlatformID.Unix && !IsVirtual)
-            {
-                m_base.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(GXSerial_DataReceived);
-            }
-        }
-
-        /// <summary>
-        /// Constructor
-        /// </summary>
-        /// <param name="portName">Used serial port.</param>
-        public GXSerial(string portName)
-        {
-            ConfigurableSettings = AvailableMediaSettings.All;
-            m_syncBase = new GXSynchronousMediaBase(1024);
-            //Events are not currently implemented in Mono's serial port.
-            if (Environment.OSVersion.Platform != PlatformID.Unix && !IsVirtual)
-            {
-                m_base.DataReceived += new System.IO.Ports.SerialDataReceivedEventHandler(GXSerial_DataReceived);
-            }
-            this.PortName = portName;
-        }
-
-        internal void NotifyError(Exception ex)
-        {
-            if (m_OnError != null)
-            {
-                m_OnError(this, ex);
-            }
-            if (m_Trace >= TraceLevel.Error && m_OnTrace != null)
-            {
-                m_OnTrace(this, new TraceEventArgs(TraceTypes.Error, ex, null));
-            }
-        }
-
-        void NotifyMediaStateChange(MediaState state)
-        {
-            if (m_Trace >= TraceLevel.Info && m_OnTrace != null)
-            {
-                m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, state, null));
-            }
-            if (m_OnMediaStateChange != null)
-            {
-                m_OnMediaStateChange(this, new MediaStateEventArgs(state));
-            }
-        }
-
-        /// <summary>
-        /// What level of tracing is used.
-        /// </summary>
-        public TraceLevel Trace
-        {
-            get
-            {
-                return m_Trace;
-            }
-            set
-            {
-                m_Trace = m_syncBase.Trace = value;
-            }
-        }
-
-        /// <summary>
-        /// Gets the underlying System.IO.Stream object for a System.IO.Ports.SerialPort object.
-        /// </summary>
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Browsable(false)]
-        public Stream BaseStream
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.BaseStream;
+                    ReceiveBuffer.Close();
+                    disconnected = true;
                 }
             }
+
+            if (disconnected)
+            {
+                await DisposeTransportAsync(source).ConfigureAwait(false);
+                owner?.Dispose();
+                SetState(MediaState.Closed);
+            }
+
+            inReader.Value = false;
+        }
+    }
+
+    /// <inheritdoc/>
+    public override async ValueTask SendAsync(ReadOnlyMemory<byte> data, string? receiver = null, CancellationToken cancellationToken = default)
+    {
+        await writer.WaitAsync(cancellationToken).ConfigureAwait(false);
+        try
+        {
+            var active = stream ?? throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("SerialMediaIsClosed"));
+            await active.WriteAsync(data, cancellationToken).ConfigureAwait(false);
+            await active.FlushAsync(cancellationToken).ConfigureAwait(false);
+            AddBytesSent(data.Length);
+        }
+        finally
+        {
+            writer.Release();
+        }
+    }
+
+    /// <summary>Tracks asynchronous connection work until completion so reopening waits for cleanup.</summary>
+    /// <param name="task">The asynchronous work to retain until it completes.</param>
+    void TrackWorker(Task task)
+    {
+        lock (lifecycle)
+        {
+            workers.Add(task);
+        }
+        _ = task.ContinueWith(completed =>
+        {
+            lock (lifecycle)
+            {
+                workers.Remove(completed);
+            }
+        }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
+    }
+
+    /// <summary>Awaits native BLE subscription cleanup while preserving synchronous close behavior for other streams.</summary>
+    /// <param name="source">The owned transport to release.</param>
+    /// <returns>An operation completing after all required native cleanup.</returns>
+    private static ValueTask DisposeTransportAsync(Stream source)
+    {
+        if (source is DesktopBluetoothLeStream)
+        {
+            return source.DisposeAsync();
+        }
+        source.Dispose();
+        return ValueTask.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    public override async Task CloseAsync()
+    {
+        Task[] pending;
+        Stream? active;
+        SerialPort? owner;
+        CancellationTokenSource? cancel;
+        var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        lock (lifecycle)
+        {
+            openingCancellation?.Cancel();
+            pending = workers.Concat(openingDone == null ? [] : new[] { openingDone.Task }).ToArray();
+            workers.Add(completion.Task);
+            active = stream;
+            stream = null;
+            owner = port;
+            port = null;
+            cancel = stopping;
+            stopping = null;
+            ReceiveBuffer.Close();
+            cancel?.Cancel();
         }
 
-        internal void GXSerial_DataReceived(object sender, System.IO.Ports.SerialDataReceivedEventArgs e)
+        bool reentrant = inClosing.Value || inReader.Value || inOpening.Value || inSettingsApply.Value;
+        bool previous = inClosing.Value;
+        inClosing.Value = true;
+        Exception? failure = null;
+        // Attempts one cleanup action while retaining the first failure for the caller.
+        // action: The resource cleanup operation to attempt.
+        void Cleanup(Action action)
         {
             try
             {
-                int count = 0;
-                int index = m_syncBase.receivedSize;
-                byte[] buff = null;
-                int totalCount = 0;
-                Thread.Sleep((int)ReceiveDelay);
-                while (IsOpen && (count = m_base.BytesToRead) != 0)
-                {
-                    totalCount += count;
-                    buff = new byte[count];
-                    m_base.Read(buff, 0, count);
-                    m_syncBase.AppendData(buff, 0, count);
-                    m_BytesReceived += (uint)count;
-                }
-                if (totalCount != 0)
-                {
-                    HandleReceivedData(index, buff, totalCount);
-                }
+                action();
             }
             catch (Exception ex)
             {
-                if (m_base.IsOpen)
-                {
-                    if (this.IsSynchronous)
-                    {
-                        m_syncBase.Exception = ex;
-                        m_syncBase.receivedEvent.Set();
-                    }
-                    else
-                    {
-                        NotifyError(ex);
-                    }
-                }
+                failure ??= ex;
             }
         }
 
-        private void HandleReceivedData(int index, byte[] buff, int totalCount)
+        try
         {
-            lock (m_syncBase.receivedSync)
+            if (active != null)
             {
-                if (totalCount != 0 && Eop != null) //Search Eop if given.
-                {
-                    byte[] eop = null;
-                    if (Eop is Array)
-                    {
-                        foreach (object it in (Array)Eop)
-                        {
-                            eop = Gurux.Common.GXCommon.GetAsByteArray(it);
-                            totalCount = Gurux.Common.GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.receivedSize);
-                            if (totalCount != -1)
-                            {
-                                break;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        eop = Gurux.Common.GXCommon.GetAsByteArray(Eop);
-                        totalCount = Gurux.Common.GXCommon.IndexOf(m_syncBase.m_Received, eop, index, m_syncBase.receivedSize);
-                    }
-                    if (totalCount != -1)
-                    {
-                        totalCount += eop.Length;
-                    }
-                }
+                Cleanup(() => SetState(MediaState.Closing));
             }
-            if (totalCount != -1 && m_Trace == TraceLevel.Verbose && m_OnTrace != null)
-            {
-                int pos;
-                //If sync data is not read.
-                if (index + totalCount >= LastEopPos)
-                {
-                    pos = LastEopPos;
-                }
-                else //If sync data is read.
-                {
-                    pos = index;
-                }
-                int count;
-                if (totalCount > LastEopPos)
-                {
-                    count = totalCount - LastEopPos;
-                }
-                else
-                {
-                    count = totalCount;
-                }
-                TraceEventArgs arg = new TraceEventArgs(TraceTypes.Received,
-                                    m_syncBase.m_Received, pos, count, null);
-                LastEopPos = index + totalCount;
-                if (LastEopPos != 0)
-                {
-                    --LastEopPos;
-                }
-                m_OnTrace(this, arg);
-            }
-            if (this.IsSynchronous)
-            {
-                if (totalCount != -1)
-                {
-                    m_syncBase.receivedEvent.Set();
-                }
-            }
-            else if (this.m_OnReceived != null)
-            {
-                if (totalCount != -1)
-                {
-                    buff = new byte[m_syncBase.receivedSize];
-                    Array.Copy(m_syncBase.m_Received, buff, m_syncBase.receivedSize);
-                    m_syncBase.receivedSize = 0;
-                    m_OnReceived(this, new ReceiveEventArgs(buff, m_base.PortName));
-                }
-            }
-        }
 
-        /// <summary>
-        /// Used baud rate for communication.
-        /// </summary>
-        /// <remarks>Can be changed without disconnecting.</remarks>
-        [Browsable(true)]
-        [DefaultValue(9600)]
-        [MonitoringDescription("BaudRate")]
-        public int BaudRate
-        {
-            get
+            if (active != null)
             {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("BaudRate");
-                    if (value != null)
-                    {
-                        return int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.BaudRate;
-                }
-            }
-            set
-            {
-                lock (m_baseLock)
-                {
-                    bool change = m_base.BaudRate != value;
-                    m_base.BaudRate = value;
-                    if (change)
-                    {
-                        NotifyPropertyChanged("BaudRate");
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// True if the port is in a break state; otherwise, false.
-        /// </summary>
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Browsable(false)]
-        public bool BreakState
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("BreakState");
-                    if (value != null)
-                    {
-                        return bool.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.BreakState;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.BreakState != value;
-                    m_base.BreakState = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("BreakState");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the number of bytes in the receive buffer.
-        /// </summary>
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Browsable(false)]
-        public int BytesToRead
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.BytesToRead;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the number of bytes in the send buffer.
-        /// </summary>
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public int BytesToWrite
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.BytesToWrite;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the state of the Carrier Detect line for the port.
-        /// </summary>
-        [Browsable(false)]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        public bool CDHolding
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.CDHolding;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the state of the Clear-to-Send line.
-        /// </summary>
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Browsable(false)]
-        public bool CtsHolding
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.CtsHolding;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Eof Char.
-        /// </summary>
-        public byte EofChar
-        {
-            get
-            {
-                if (IsOpen)
-                {
-                    return GXSerialPortExtension.GetChar(this, "EofChar");
-                }
-                return m_EofChar;
-            }
-            set
-            {
-                if (IsOpen)
-                {
-                    GXSerialPortExtension.SetChar(this, "EofChar", value);
-                }
-                else
-                {
-                    m_EofChar = value;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Error Char.
-        /// </summary>
-        public byte ErrorChar
-        {
-            get
-            {
-                if (IsOpen)
-                {
-                    return GXSerialPortExtension.GetChar(this, "ErrorChar");
-                }
-                return m_ErrorChar;
-            }
-            set
-            {
-                if (IsOpen)
-                {
-                    GXSerialPortExtension.SetChar(this, "ErrorChar", value);
-                }
-                else
-                {
-                    m_ErrorChar = value;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Event Char of serial port.
-        /// </summary>
-        public byte EventChar
-        {
-            get
-            {
-                if (IsOpen)
-                {
-                    return GXSerialPortExtension.GetChar(this, "EvtChar");
-                }
-                return m_EventChar;
-            }
-            set
-            {
-                if (IsOpen)
-                {
-                    GXSerialPortExtension.SetChar(this, "EvtChar", value);
-                }
-                else
-                {
-                    m_EventChar = value;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Xon Char of serial port.
-        /// </summary>
-        public byte XonChar
-        {
-            get
-            {
-                if (IsOpen)
-                {
-                    return GXSerialPortExtension.GetChar(this, "XonChar");
-                }
-                return m_XonChar;
-            }
-            set
-            {
-                if (IsOpen)
-                {
-                    GXSerialPortExtension.SetChar(this, "XonChar", value);
-                }
-                else
-                {
-                    m_XonChar = value;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Xoff Char of serial port.
-        /// </summary>
-        public byte XoffChar
-        {
-            get
-            {
-                if (IsOpen)
-                {
-                    return GXSerialPortExtension.GetChar(this, "XoffChar");
-                }
-                return m_XoffChar;
-            }
-            set
-            {
-                if (IsOpen)
-                {
-                    GXSerialPortExtension.SetChar(this, "XoffChar", value);
-                }
-                else
-                {
-                    m_XoffChar = value;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the standard length of data bits per byte.
-        /// </summary>
-        [MonitoringDescription("DataBits")]
-        [DefaultValue(8)]
-        [Browsable(true)]
-        public int DataBits
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("DataBits");
-                    if (value != null)
-                    {
-                        return int.Parse(value);
-                    }
-                }
-
-                lock (m_baseLock)
-                {
-                    return m_base.DataBits;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.DataBits != value;
-                    m_base.DataBits = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("DataBits");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether null bytes are ignored when transmitted between the port and the receive buffer.
-        /// </summary>
-        [Browsable(true)]
-        [DefaultValue(false)]
-        [MonitoringDescription("DiscardNull")]
-        public bool DiscardNull
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("DiscardNull");
-                    if (value != null)
-                    {
-                        return bool.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.DiscardNull;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.DiscardNull != value;
-                    m_base.DiscardNull = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("DiscardNull");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets the state of the Data Set Ready (DSR) signal.
-        /// </summary>
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Browsable(false)]
-        public bool DsrHolding
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.DsrHolding;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets a value that enables the Data Terminal Ready (DTR) signal during serial communication.
-        /// </summary>
-        [DefaultValue(false)]
-        [MonitoringDescription("DtrEnable")]
-        [Browsable(true)]
-        public bool DtrEnable
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("DtrEnable");
-                    if (value != null)
-                    {
-                        return bool.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.DtrEnable;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.DtrEnable != value;
-                    m_base.DtrEnable = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("DtrEnable");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the byte encoding for pre- and post-transmission conversion of text.
-        /// </summary>
-        [MonitoringDescription("Encoding")]
-        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
-        [Browsable(false)]
-        public Encoding Encoding
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.Encoding;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.Encoding != value;
-                    m_base.Encoding = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("Encoding");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the handshaking protocol for serial port transmission of data.
-        /// </summary>
-        [Browsable(true)]
-        [MonitoringDescription("Handshake")]
-        public Handshake Handshake
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("Handshake");
-                    if (value != null)
-                    {
-                        return (Handshake)int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.Handshake;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.Handshake != value;
-                    m_base.Handshake = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("Handshake");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets a value indicating the open or closed status of the System.IO.Ports.SerialPort object.
-        /// </summary>
-        [Browsable(false)]
-        public bool IsOpen
-        {
-            get
-            {
-                lock (m_baseLock)
-                {
-                    return m_base.IsOpen;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the parity-checking protocol.
-        /// </summary>
-        [Browsable(true)]
-        [MonitoringDescription("Parity")]
-        public Parity Parity
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("Parity");
-                    if (value != null)
-                    {
-                        return (Parity)int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.Parity;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.Parity != value;
-                    m_base.Parity = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("Parity");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the byte that replaces invalid bytes in a data stream when a parity error occurs.
-        /// </summary>
-        [Browsable(true)]
-        [MonitoringDescription("ParityReplace")]
-        [DefaultValue(63)]
-        public byte ParityReplace
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("ParityReplace");
-                    if (value != null)
-                    {
-                        return byte.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.ParityReplace;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.ParityReplace != value;
-                    m_base.ParityReplace = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("ParityReplace");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the port for communications, including but not limited to all available COM ports.
-        /// </summary>
-        [MonitoringDescription("PortName")]
-        [Browsable(true)]
-        [DefaultValue("COM1")]
-        public string PortName
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("PortName");
-                    if (value != null)
-                    {
-                        return value;
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.PortName;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.PortName != value;
-                    m_base.PortName = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("PortName");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the size of the System.IO.Ports.SerialPort input buffer.
-        /// </summary>
-        [DefaultValue(4096)]
-        [MonitoringDescription("ReadBufferSize")]
-        [Browsable(true)]
-        public int ReadBufferSize
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("ReadBufferSize");
-                    if (value != null)
-                    {
-                        return int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.ReadBufferSize;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.ReadBufferSize != value;
-                    m_base.ReadBufferSize = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("ReadBufferSize");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the number of milliseconds before a time-out occurs when a read operation does not finish.
-        /// </summary>
-        [MonitoringDescription("ReadTimeout")]
-        [Browsable(true)]
-        [DefaultValue(-1)]
-        public int ReadTimeout
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("ReadTimeout");
-                    if (value != null)
-                    {
-                        return int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.ReadTimeout;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.ReadTimeout != value;
-                    m_base.ReadTimeout = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("ReadTimeout");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the number of bytes in the internal input buffer before a System.IO.Ports.SerialPort.DataReceived event occurs.
-        /// </summary>
-        [MonitoringDescription("ReceivedBytesThreshold")]
-        [DefaultValue(1)]
-        [Browsable(true)]
-        public int ReceivedBytesThreshold
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("ReceivedBytesThreshold");
-                    if (value != null)
-                    {
-                        return int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.ReceivedBytesThreshold;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.ReceivedBytesThreshold != value;
-                    m_base.ReceivedBytesThreshold = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("ReceivedBytesThreshold");
-                }
-            }
-        }
-
-        /// <summary>
-        ///  Reads all immediately available bytes asn returns them as string.
-        /// </summary>
-        /// <returns>Content as string.</returns>
-        public string ReadExisting()
-        {
-            return m_base.ReadExisting();
-        }
-
-        /// <summary>
-        /// Gets or sets a value indicating whether the Request to Send (RTS) signal is enabled during serial communication.
-        /// </summary>
-        [MonitoringDescription("RtsEnable")]
-        [DefaultValue(false)]
-        [Browsable(true)]
-        public bool RtsEnable
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("RtsEnable");
-                    if (value != null)
-                    {
-                        return bool.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.RtsEnable;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.RtsEnable != value;
-                    m_base.RtsEnable = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("RtsEnable");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the standard number of stopbits per byte.
-        /// </summary>
-        [MonitoringDescription("StopBits")]
-        [DefaultValue(StopBits.One)]
-        [Browsable(true)]
-        public StopBits StopBits
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("StopBits");
-                    if (value != null)
-                    {
-                        return (StopBits)int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.StopBits;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.StopBits != value;
-                    m_base.StopBits = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("StopBits");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the size of the serial port output buffer.
-        /// </summary>
-        [Browsable(true)]
-        [DefaultValue(2048)]
-        [MonitoringDescription("WriteBufferSize")]
-        public int WriteBufferSize
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("WriteBufferSize");
-                    if (value != null)
-                    {
-                        return int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.WriteBufferSize;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.WriteBufferSize != value;
-                    m_base.WriteBufferSize = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("WriteBufferSize");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Gets or sets the number of milliseconds before a time-out occurs when a write operation does not finish.
-        /// </summary>
-        [MonitoringDescription("WriteTimeout")]
-        [Browsable(true)]
-        [DefaultValue(-1)]
-        public int WriteTimeout
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("WriteTimeout");
-                    if (value != null)
-                    {
-                        return int.Parse(value);
-                    }
-                }
-                lock (m_baseLock)
-                {
-                    return m_base.WriteTimeout;
-                }
-            }
-            set
-            {
-                bool change;
-                lock (m_baseLock)
-                {
-                    change = m_base.WriteTimeout != value;
-                    m_base.WriteTimeout = value;
-                }
-                if (change)
-                {
-                    NotifyPropertyChanged("WriteTimeout");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Closes the port connection, sets the System.IO.Ports.SerialPort.IsOpen property to false, and disposes of the internal System.IO.Stream object.
-        /// </summary>
-        public void Close()
-        {
-            bool bOpen = VirtualOpen;
-            if (!IsVirtual)
-            {
-                lock (m_baseLock)
-                {
-                    bOpen = m_base.IsOpen;
-                }
-            }
-            if (bOpen)
-            {
-                m_syncBase.Close();
                 try
                 {
-                    NotifyMediaStateChange(MediaState.Closing);
+                    await DisposeTransportAsync(active).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
-                    NotifyError(ex);
-                    throw;
+                    failure ??= ex;
+                }
+            }
+
+            if (owner != null)
+            {
+                Cleanup(owner.Dispose);
+            }
+
+            if (!reentrant)
+            {
+                try
+                {
+                    await Task.WhenAll(pending).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    failure ??= ex;
+                }
+            }
+
+            if (cancel != null)
+            {
+                Cleanup(cancel.Dispose);
+            }
+
+            if (active != null)
+            {
+                var previousCleanup = completedCleanup.Value;
+                completedCleanup.Value = completion.Task;
+                try
+                {
+                    Cleanup(() => SetState(MediaState.Closed));
                 }
                 finally
                 {
-                    if (!IsVirtual)
-                    {
-                        try
-                        {
-                            if (m_Receiver != null)
-                            {
-                                m_Receiver.Closing.Set();
-                            }
-                            lock (m_baseLock)
-                            {
-                                m_base.Close();
-                            }
-                            if (m_ReceiverThread != null && m_ReceiverThread.IsAlive)
-                            {
-                                m_ReceiverThread.Join();
-                            }
-                        }
-                        catch
-                        {
-                            //Ignore all errors on close.
-                        }
-                    }
-                    VirtualOpen = false;
-                    NotifyMediaStateChange(MediaState.Closed);
+                    completedCleanup.Value = previousCleanup;
                 }
             }
         }
-
-        /// <summary>
-        /// Discards data from the serial driver's receive buffer.
-        /// </summary>
-        public void DiscardInBuffer()
+        finally
         {
-            lock (m_baseLock)
+            inClosing.Value = previous;
+            completion.TrySetResult();
+            lock (lifecycle)
             {
-                m_base.DiscardInBuffer();
+                workers.Remove(completion.Task);
             }
         }
 
-        /// <summary>
-        /// Discards data from the serial driver's transmit buffer.
-        /// </summary>
-        public void DiscardOutBuffer()
+        if (failure != null)
         {
-            lock (m_baseLock)
-            {
-                m_base.DiscardOutBuffer();
-            }
+            System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw();
         }
-
-        /// <summary>
-        /// Gets an array of serial port names for the current computer.
-        /// </summary>
-        /// <returns></returns>
-        public static string[] GetPortNames()
-        {
-            return System.IO.Ports.SerialPort.GetPortNames();
-        }
-
-        /// <summary>
-        /// User defined available ports.
-        /// </summary>
-        /// <remarks>If this is not set ports are retrieved from current system.</remarks>
-        public string[] AvailablePorts
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Opens a new serial port connection.
-        /// </summary>
-        /// <remarks>
-        /// Remember to set <see cref="DtrEnable "/> and <see cref="RtsEnable"/> to True before start communicate.
-        /// </remarks>
-        public void Open()
-        {
-            Close();
-            try
-            {
-                m_syncBase.Open();
-                NotifyMediaStateChange(MediaState.Opening);
-                if (m_Trace >= TraceLevel.Info && m_OnTrace != null)
-                {
-                    string eop = "None";
-                    if (m_Eop is byte[])
-                    {
-                        eop = BitConverter.ToString(m_Eop as byte[], 0);
-                    }
-                    else if (m_Eop != null)
-                    {
-                        eop = m_Eop.ToString();
-                    }
-                    string str = string.Format("{0} {1} {2} {3} {4} {5} {6} {7} {8} {9} {10} {11} {12} {13} {14}",
-                        Resources.SettingsTxt,
-                        Resources.PortNameTxt,
-                        m_base.PortName,
-                        Resources.BaudRateTxt,
-                        m_base.BaudRate,
-                        Resources.DataBitsTxt,
-                        m_base.DataBits.ToString(),
-                        Resources.ParityTxt,
-                        m_base.Parity.ToString(),
-                        Resources.StopBitsTxt,
-                        m_base.StopBits.ToString(),
-                        Resources.FlowControlTxt,
-                        m_base.Handshake.ToString(),
-                        Resources.EopTxt,
-                        eop);
-                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Info, str, null));
-                }
-                if (!IsVirtual)
-                {
-                    lock (m_baseLock)
-                    {
-                        m_base.Open();
-                    }
-                    //Events are not currently implemented in Mono's serial port.
-                    if (Environment.OSVersion.Platform == PlatformID.Unix)
-                    {
-                        m_Receiver = new GXReceiveThread(this);
-                        m_ReceiverThread = new Thread(new ThreadStart(m_Receiver.Receive));
-                        m_ReceiverThread.IsBackground = true;
-                        m_ReceiverThread.Start();
-                    }
-                }
-                else
-                {
-                    VirtualOpen = true;
-                }
-                this.DtrEnable = this.RtsEnable = true;
-                NotifyMediaStateChange(MediaState.Open);
-            }
-            catch
-            {
-                Close();
-                throw;
-            }
-        }
-
-        #region Events
-        /// <summary>
-        /// GXNet component sends received data through this method.
-        /// </summary>
-        [Description("GXNet component sends received data through this method.")]
-        public event ReceivedEventHandler OnReceived
-        {
-            add
-            {
-                m_OnReceived += value;
-            }
-            remove
-            {
-                m_OnReceived -= value;
-            }
-        }
-
-        /// <summary>
-        /// Errors that occur after the connection is established, are sent through this method.
-        /// </summary>
-        [Description("Errors that occur after the connection is established, are sent through this method.")]
-        public event Gurux.Common.ErrorEventHandler OnError
-        {
-            add
-            {
-
-                m_OnError += value;
-            }
-            remove
-            {
-                m_OnError -= value;
-            }
-        }
-
-        /// <summary>
-        /// Media component sends notification, when its state changes.
-        /// </summary>
-        [Description("Media component sends notification, when its state changes.")]
-        public event MediaStateChangeEventHandler OnMediaStateChange
-        {
-            add
-            {
-                m_OnMediaStateChange += value;
-            }
-            remove
-            {
-                m_OnMediaStateChange -= value;
-            }
-        }
-
-        /// <summary>
-        /// Called when the client is establishing a connection with a Net Server.
-        /// </summary>
-        [Description("Called when the client is establishing a connection with a Net Server.")]
-        public event ClientConnectedEventHandler OnClientConnected
-        {
-            add
-            {
-                m_OnClientConnected += value;
-            }
-            remove
-            {
-                m_OnClientConnected -= value;
-            }
-        }
-
-        /// <summary>
-        /// Called when the client has been disconnected from the network server.
-        /// </summary>
-        [Description("Called when the client has been disconnected from the network server.")]
-        public event ClientDisconnectedEventHandler OnClientDisconnected
-        {
-            add
-            {
-                m_OnClientDisconnected += value;
-            }
-            remove
-            {
-                m_OnClientDisconnected -= value;
-            }
-        }
-
-        /// <summary>
-        /// Occurs when a property value changes.
-        /// </summary>
-        event PropertyChangedEventHandler INotifyPropertyChanged.PropertyChanged
-        {
-            add
-            {
-                m_OnPropertyChanged += value;
-            }
-            remove
-            {
-                m_OnPropertyChanged -= value;
-            }
-        }
-
-        /// <inheritdoc cref="TraceEventHandler"/>
-        [Description("Called when the Media is sending or receiving data.")]
-        public event TraceEventHandler OnTrace
-        {
-            add
-            {
-                m_OnTrace += value;
-            }
-            remove
-            {
-                m_OnTrace -= value;
-            }
-        }
-
-        private void NotifyPropertyChanged(string info)
-        {
-            if (m_OnPropertyChanged != null)
-            {
-                m_OnPropertyChanged(this, new PropertyChangedEventArgs(info));
-            }
-        }
-
-
-        //Events
-        TraceEventHandler m_OnTrace;
-        PropertyChangedEventHandler m_OnPropertyChanged;
-        MediaStateChangeEventHandler m_OnMediaStateChange;
-        ClientConnectedEventHandler m_OnClientConnected;
-        ClientDisconnectedEventHandler m_OnClientDisconnected;
-        internal Gurux.Common.ErrorEventHandler m_OnError;
-        ReceivedEventHandler m_OnReceived;
-        GetPropertyValueEventHandler m_OnGetPropertyValue;
-        ReceivedEventHandler m_OnDataSend;
-
-        #endregion //Events
-
-        /// <inheritdoc cref="IGXMedia.ConfigurableSettings"/>
-        public AvailableMediaSettings ConfigurableSettings
-        {
-            get
-            {
-                return (Gurux.Serial.AvailableMediaSettings)((IGXMedia)this).ConfigurableSettings;
-            }
-            set
-            {
-                ((IGXMedia)this).ConfigurableSettings = (int)value;
-            }
-        }
-
-        /// <inheritdoc cref="IGXMedia.Tag"/>
-        public object Tag
-        {
-            get;
-            set;
-        }
-
-        /// <inheritdoc cref="IGXMedia.MediaContainer"/>
-        IGXMediaContainer IGXMedia.MediaContainer
-        {
-            get;
-            set;
-        }
-
-        /// <inheritdoc cref="IGXMedia.SyncRoot"/>
-        [Browsable(false), ReadOnly(true)]
-        public object SyncRoot
-        {
-            get
-            {
-                //In some special cases when binary serialization is used this might be null
-                //after deserialize. Just set it.
-                if (m_sync == null)
-                {
-                    m_sync = new object();
-                }
-                return m_sync;
-            }
-        }
-
-        /// <inheritdoc cref="IGXVirtualMedia.Virtual"/>
-        bool IGXVirtualMedia.Virtual
-        {
-            get
-            {
-                return IsVirtual;
-            }
-            set
-            {
-                IsVirtual = value;
-            }
-        }
-
-        /// <summary>
-        /// Occurs when a property value is asked.
-        /// </summary>
-        event GetPropertyValueEventHandler IGXVirtualMedia.OnGetPropertyValue
-        {
-            add
-            {
-                m_OnGetPropertyValue += value;
-            }
-            remove
-            {
-                m_OnGetPropertyValue -= value;
-            }
-        }
-
-        /// <summary>
-        /// Occurs when data is sent on virtual mode.
-        /// </summary>
-        event ReceivedEventHandler IGXVirtualMedia.OnDataSend
-        {
-            add
-            {
-                m_OnDataSend += value;
-            }
-            remove
-            {
-                m_OnDataSend -= value;
-            }
-        }
-
-#if NET462_OR_GREATER || WINDOWS
-        /// <summary>
-        /// Occurs when serial port PIN changed.
-        /// </summary>
-        public event SerialPinChangedEventHandler OnPinChanged
-        {
-            add
-            {
-                m_base.PinChanged += value;
-            }
-            remove
-            {
-                m_base.PinChanged -= value;
-            }
-        }
-#endif //NET462_OR_GREATER || WINDOWS
-
-        /// <summary>
-        /// Called when new data is received to the virtual media.
-        /// </summary>
-        /// <param name="data">received data</param>
-        /// <param name="sender">Data sender.</param>
-        void IGXVirtualMedia.DataReceived(byte[] data, string sender)
-        {
-            int index = m_syncBase.receivedSize;
-            m_syncBase.AppendData(data, 0, data.Length);
-            m_BytesReceived += (uint)data.Length;
-            HandleReceivedData(index, data, data.Length);
-        }
-
-        /// <inheritdoc cref="IGXMedia.Synchronous"/>
-        public object Synchronous
-        {
-            get
-            {
-                return m_Synchronous;
-            }
-        }
-
-        /// <inheritdoc cref="IGXMedia.IsSynchronous"/>
-        public bool IsSynchronous
-        {
-            get
-            {
-                bool reserved = System.Threading.Monitor.TryEnter(m_Synchronous, 0);
-                if (reserved)
-                {
-                    System.Threading.Monitor.Exit(m_Synchronous);
-                }
-                return !reserved;
-            }
-        }
-
-        /// <inheritdoc cref="IGXMedia.ResetSynchronousBuffer"/>
-        public void ResetSynchronousBuffer()
-        {
-            lock (m_syncBase.receivedSync)
-            {
-                m_syncBase.receivedSize = 0;
-            }
-        }
-
-        #region IGXMedia Members
-
-        /// <summary>
-        /// Sent byte count.
-        /// </summary>
-        /// <seealso cref="BytesReceived">BytesReceived</seealso>
-        /// <seealso cref="ResetByteCounters">ResetByteCounters</seealso>
-        [Browsable(false)]
-        public UInt64 BytesSent
-        {
-            get
-            {
-                return m_BytesSent;
-            }
-        }
-
-        /// <summary>
-        /// Received byte count.
-        /// </summary>
-        /// <seealso cref="BytesSent">BytesSent</seealso>
-        /// <seealso cref="ResetByteCounters">ResetByteCounters</seealso>
-        [Browsable(false)]
-        public UInt64 BytesReceived
-        {
-            get
-            {
-                return m_BytesReceived;
-            }
-        }
-
-        /// <summary>
-        /// Resets BytesReceived and BytesSent counters.
-        /// </summary>
-        /// <seealso cref="BytesSent">BytesSent</seealso>
-        /// <seealso cref="BytesReceived">BytesReceived</seealso>
-        public void ResetByteCounters()
-        {
-            m_BytesSent = m_BytesReceived = 0;
-        }
-
-        void Gurux.Common.IGXMedia.Copy(object target)
-        {
-            GXSerial Target = (GXSerial)target;
-            m_base.BaudRate = Target.m_base.BaudRate;
-            m_base.StopBits = Target.m_base.StopBits;
-            m_base.Parity = Target.m_base.Parity;
-            m_base.DataBits = Target.m_base.DataBits;
-        }
-
-        /// <inheritdoc cref="IGXMedia.Eop"/>
-        public object Eop
-        {
-            get
-            {
-                if (IsVirtual && m_OnGetPropertyValue != null)
-                {
-                    string value = m_OnGetPropertyValue("Eop");
-                    if (!string.IsNullOrEmpty(value))
-                    {
-                        return int.Parse(value);
-                    }
-                }
-                return m_Eop;
-            }
-            set
-            {
-                bool change = m_Eop != value;
-                m_Eop = value;
-                if (change)
-                {
-                    NotifyPropertyChanged("Eop");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Media settings as a XML string.
-        /// </summary>
-        public string Settings
-        {
-            get
-            {
-                string tmp = "";
-                if (!string.IsNullOrEmpty(m_base.PortName))
-                {
-                    tmp += "<Port>" + m_base.PortName + "</Port>";
-                }
-                if (m_base.BaudRate != 9600)
-                {
-                    tmp += "<Bps>" + m_base.BaudRate + "</Bps>";
-                }
-                if (m_base.StopBits != System.IO.Ports.StopBits.One)
-                {
-                    tmp += "<StopBits>" + (int)m_base.StopBits + "</StopBits>";
-                }
-                if (m_base.Parity != System.IO.Ports.Parity.None)
-                {
-                    tmp += "<Parity>" + (int)m_base.Parity + "</Parity>";
-                }
-                if (m_base.DataBits != 8)
-                {
-                    tmp += "<ByteSize>" + m_base.DataBits + "</ByteSize>";
-                }
-                if (m_base.Handshake != Handshake.None)
-                {
-                    tmp += "<Handshake>" + (int)m_base.Handshake + "</Handshake>";
-                }
-                return tmp;
-            }
-            set
-            {
-                if (!string.IsNullOrEmpty(value))
-                {
-                    XmlReaderSettings settings = new XmlReaderSettings();
-                    settings.ConformanceLevel = ConformanceLevel.Fragment;
-                    string str;
-                    int result;
-                    //Set default settings.
-                    m_base.BaudRate = 9600;
-                    m_base.DataBits = 8;
-                    m_base.Parity = System.IO.Ports.Parity.None;
-                    bool setStopBits = false;
-                    using (XmlReader xmlReader = XmlReader.Create(new System.IO.StringReader(value), settings))
-                    {
-                        while (xmlReader.Read())
-                        {
-                            if (xmlReader.IsStartElement())
-                            {
-                                switch (xmlReader.Name)
-                                {
-                                    case "Port":
-                                        m_base.PortName = xmlReader.ReadString();
-                                        break;
-                                    case "Bps":
-                                        m_base.BaudRate = Convert.ToInt32(xmlReader.ReadString());
-                                        break;
-                                    case "StopBits":
-                                        setStopBits = true;
-                                        str = xmlReader.ReadString();
-                                        if (int.TryParse(str, out result))
-                                        {
-                                            m_base.StopBits = (StopBits)result;
-                                        }
-                                        else
-                                        {
-                                            m_base.StopBits = (StopBits)Enum.Parse(typeof(StopBits), str);
-                                        }
-                                        break;
-                                    case "Parity":
-                                        str = xmlReader.ReadString();
-                                        if (int.TryParse(str, out result))
-                                        {
-                                            m_base.Parity = (Parity)result;
-                                        }
-                                        else
-                                        {
-                                            m_base.Parity = (Parity)Enum.Parse(typeof(System.IO.Ports.Parity), str);
-                                        }
-                                        break;
-                                    case "ByteSize":
-                                        m_base.DataBits = Convert.ToInt32(xmlReader.ReadString());
-                                        break;
-                                    case "Handshake":
-                                        m_base.Handshake = (Handshake)Convert.ToInt32(xmlReader.ReadString());
-                                        break;
-                                }
-                            }
-                        }
-                    }
-                    if (!setStopBits)
-                    {
-                        m_base.StopBits = System.IO.Ports.StopBits.One;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Current Serial port settings as a string.
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            StringBuilder sb = new StringBuilder();
-            sb.Append(PortName);
-            sb.Append(' ');
-            sb.Append(BaudRate);
-            sb.Append(' ');
-            sb.Append(DataBits);
-            sb.Append(Parity);
-            sb.Append((int)StopBits);
-            sb.Append(' ');
-            sb.Append(Handshake);
-            return sb.ToString();
-        }
-
-        string Gurux.Common.IGXMedia.MediaType
-        {
-            get
-            {
-                return "Serial";
-            }
-        }
-
-        bool Gurux.Common.IGXMedia.Enabled
-        {
-            get
-            {
-                return GXSerial.GetPortNames().Length != 0;
-            }
-        }
-
-        string Gurux.Common.IGXMedia.Name
-        {
-            get
-            {
-                return m_base.PortName;
-            }
-        }
-
-#if NET462_OR_GREATER || WINDOWS
-        /// <summary>
-        /// Shows the serial port Properties dialog.
-        /// </summary>
-        /// <param name="parent">Owner window of the Properties dialog.</param>
-        /// <returns>True, if the user has accepted the changes.</returns>
-        /// <seealso cref="PortName">PortName</seealso>
-        /// <seealso cref="BaudRate">BaudRate</seealso>
-        /// <seealso cref="DataBits">DataBits</seealso>
-        /// <seealso href="PropertiesDialog.html">Properties Dialog</seealso>
-        public bool Properties(System.Windows.Forms.Form parent)
-        {
-            return new PropertiesForm(PropertiesForm, Resources.SettingsTxt, IsOpen, 
-            Resources.OK, Resources.Cancel, 
-            "https://www.gurux.fi/GXSerialProperties").ShowDialog(parent) == System.Windows.Forms.DialogResult.OK;
-        }
-
-        /// <summary>
-        /// Returns a new instance of the Settings form.
-        /// </summary>
-        public System.Windows.Forms.Form PropertiesForm
-        {
-            get
-            {
-                return new Settings(this);
-            }
-        }
-
-#endif //NET462_OR_GREATER || WINDOWS
-
-        /// <summary>
-        /// Sends data asynchronously. <br/>
-        /// No reply from the receiver, whether or not the operation was successful, is expected.
-        /// </summary>
-        public void Send(object data)
-        {
-            ((Gurux.Common.IGXMedia)this).Send(data, null);
-        }
-
-        /// <inheritdoc cref="IGXMedia.Receive"/>
-        public bool Receive<T>(Gurux.Common.ReceiveParameters<T> args)
-        {
-            if (!IsOpen)
-            {
-                throw new InvalidOperationException("Media is closed.");
-            }
-            return m_syncBase.Receive(args);
-        }
-
-        /// <inheritdoc cref="IGXMedia.Send"/>
-        void Gurux.Common.IGXMedia.Send(object data, string receiver)
-        {
-            byte[] value = Gurux.Common.GXCommon.GetAsByteArray(data);
-            lock (m_baseLock)
-            {
-                LastEopPos = 0;
-                if (m_Trace == TraceLevel.Verbose && m_OnTrace != null)
-                {
-                    m_OnTrace(this, new TraceEventArgs(TraceTypes.Sent, value, null));
-                }
-                m_BytesSent += (uint)value.Length;
-                //Reset last position if Eop is used.
-                lock (m_syncBase.receivedSync)
-                {
-                    m_syncBase.lastPosition = 0;
-                }
-                if (!IsVirtual)
-                {
-                    m_base.Write(value, 0, value.Length);
-                }
-                else
-                {
-                    m_OnDataSend(this, new ReceiveEventArgs(data, receiver));
-                }
-            }
-        }
-
-        /// <inheritdoc />
-        public void Validate()
-        {
-
-        }
-
-        /// <inheritdoc />
-        int Gurux.Common.IGXMedia.ConfigurableSettings
-        {
-            get;
-            set;
-        }
-
-        /// <inheritdoc />
-        uint IGXMedia2.AsyncWaitTime
-        {
-            get;
-            set;
-        }
-
-        /// <inheritdoc />
-        EventWaitHandle IGXMedia2.AsyncWaitHandle
-        {
-            get
-            {
-                return null;
-            }
-        }
-
-        /// <inheritdoc />
-        public uint ReceiveDelay
-        {
-            get;
-            set;
-        }
-
-        #endregion
-
-        #region IDisposable Members
-
-        /// <summary>
-        /// Closes the connection.
-        /// </summary>
-        public void Dispose()
-        {
-            if (this.IsOpen)
-            {
-                Close();
-            }
-        }
-
-        #endregion
     }
 }

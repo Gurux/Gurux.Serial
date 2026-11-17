@@ -1,83 +1,51 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
- <PropertyGroup>
-    <RootNamespace>Gurux.Serial</RootNamespace>
-    <AssemblyName>Gurux.Serial</AssemblyName>
-    <Company>Gurux Ltd</Company>
-    <Authors>Gurux Ltd</Authors>
-    <Copyright>Copyright (c) 1998-2025 Gurux Ltd. All rights reserved.</Copyright>
-    <PackageProjectUrl>www.gurux.fi/GXSerial</PackageProjectUrl>
-    <PackageLicenseUrl></PackageLicenseUrl>
-    <Description>Serial media component, for serial port connections.</Description>
-    <Version Condition=" '$(BUILD_BUILDNUMBER)' == '' ">0.0.1-local</Version>
-    <Version Condition=" '$(BUILD_BUILDNUMBER)' != '' ">$(BUILD_BUILDNUMBER)</Version>
-    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
-    <TargetFrameworks>net90;net9.0-windows;net80;net8.0-windows;net6.0-windows;net60;net462;netcoreapp3.1;netstandard2.1;netstandard2.0</TargetFrameworks>
-    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <RepositoryUrl>https://github.com/gurux/Gurux.Serial</RepositoryUrl>
-    <PackageTags>Gurux Device Framework Network Serial port</PackageTags>
-    <PackageId>Gurux.Serial</PackageId>
-    <ApplicationIcon>GXSerial.ico</ApplicationIcon>
-    <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
-    <PackageIcon>GXSerial.png</PackageIcon>
-  </PropertyGroup>
-  <PropertyGroup>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <GenerateDocumentationFile>True</GenerateDocumentationFile>
-  </PropertyGroup>
-<PropertyGroup Condition="'$(TargetFramework)' == 'net6.0-windows'">
-    <TargetFramework>net60-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-  </PropertyGroup>
-<PropertyGroup Condition="'$(TargetFramework)' == 'net8.0-windows'">
-    <TargetFramework>net80-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-  </PropertyGroup>
-
- <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0-windows'">
-    <TargetFramework>net90-windows</TargetFramework>
-    <UseWindowsForms>true</UseWindowsForms>
-  </PropertyGroup>
-
- <ItemGroup Condition="'$(TargetFramework)' == 'net90' or '$(TargetFramework)' == 'net80' or '$(TargetFramework)' == 'net60' or '$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1'">
-     <Compile Remove="SettingsDlg.cs" />
-     <Compile Remove="SettingsDlg.Designer.cs" />
-     <Compile Remove="Shared\PropertiesForm.cs" />
-     <Compile Remove="Shared\PropertiesForm.Designer.cs" />
-  </ItemGroup>
-
- <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="8.4.2503.602" />
-    <PackageReference Include="System.Resources.Extensions" Version="9.0.2" />
- </ItemGroup>
- <ItemGroup Condition="'$(TargetFramework)' == 'net90-windows' or '$(TargetFramework)' == 'net80-windows' or '$(TargetFramework)' == 'net462'">
-    <Reference Include="System.Data.Linq" />
-    <Reference Include="System.Windows.Forms" />
-  </ItemGroup>
- <ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.0'">
-   <PackageReference Include="System.Resources.Extensions">
-     <Version>5.0.0</Version>
-   </PackageReference>
- </ItemGroup>
-<ItemGroup Condition="'$(TargetFramework)' == 'netstandard2.1'">
-   <PackageReference Include="System.Resources.Extensions">
-     <Version>5.0.0</Version>
-   </PackageReference>
- </ItemGroup>
- <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1'">
-   <PackageReference Include="System.Resources.Extensions">
-     <Version>5.0.0</Version>
-   </PackageReference>
- </ItemGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'netcoreapp3.1' or '$(TargetFramework)' == 'netcoreapp2.1' or '$(TargetFramework)' == 'netcoreapp2.0' or '$(TargetFramework)' == 'netstandard2.0' or '$(TargetFramework)' == 'netstandard2.1' or '$(TargetFramework)' == 'net60' or '$(TargetFramework)' == 'net6.0-windows' or '$(TargetFramework)' == 'net462'">
-    <PackageReference Include="System.IO.Ports" Version="6.0.0" />
-  </ItemGroup>
-  <ItemGroup Condition="'$(TargetFramework)' == 'net90' or '$(TargetFramework)' == 'net80' or '$(TargetFramework)' == 'net9.0-windows' or '$(TargetFramework)' == 'net8.0-windows'">
-    <PackageReference Include="System.IO.Ports" Version="9.0.2" />
-  </ItemGroup>  
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>net11.0;net10.0;net11.0-windows10.0.19041.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+        <TargetFrameworks Condition="'$(BuildMobile)' == 'true'">net11.0;net10.0;net11.0-windows10.0.19041.0;net10.0-windows10.0.19041.0;net11.0-android;net10.0-android</TargetFrameworks>
+        <TargetFrameworks Condition="'$(BuildApple)' == 'true'">net11.0;net10.0;net11.0-windows10.0.19041.0;net10.0-windows10.0.19041.0;net11.0-android;net10.0-android;net11.0-ios;net10.0-ios</TargetFrameworks>
+        <EnableWindowsTargeting>true</EnableWindowsTargeting>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+        <PackageId>Gurux.Serial</PackageId>
+        <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
+        <RepositoryUrl>https://github.com/Gurux/Gurux.Serial</RepositoryUrl>
+        <Authors>Gurux Ltd</Authors>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+        <PackageIcon>GXSerial.png</PackageIcon>
+        <Copyright>Copyright (c) 1998-2026 Gurux Ltd. All rights reserved.</Copyright>
+        <Company>Gurux Ltd</Company>
+        <Description>Modern .NET 10 and 11 Serial media with asynchronous transport and optional Android adapters.</Description>
+        <Version Condition="'$(BUILD_BUILDNUMBER)' == ''">0.0.1-local</Version>
+        <Version Condition="'$(BUILD_BUILDNUMBER)' != ''">$(BUILD_BUILDNUMBER)</Version>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.2611.1302</GuruxCommonVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="System.IO.Ports" Version="11.0.0" />
+    </ItemGroup>
+    <ItemGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'android' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != 'ios'">
+        <PackageReference Include="Tmds.DBus" Version="0.95.2" />
+    </ItemGroup>
+    <ItemGroup>
+        <None Include="../README.md" Pack="true" PackagePath="/" />
+        <None Include="GXSerial.png" Pack="true" PackagePath="/" />
+    </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="Properties/Resources.resx" />
+        <EmbeddedResource Include="Bluetooth/devices.csv" LogicalName="Gurux.Serial.BluetoothDevices.csv" />
+    </ItemGroup>
   <ItemGroup>
-    <None Include="GXSerial.png" Pack="true" PackagePath="\" />
-    <None Include="GXSerialPortExtension.cs" />
+    <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+  </ItemGroup>
+    <ItemGroup>
+        <!-- Legacy Windows Forms editors do not belong to the UI-independent transport library. -->
+        <Compile Remove="Shared/PropertiesForm.cs;Shared/PropertiesForm.Designer.cs" />
+    </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="GXSerial.png" LogicalName="Gurux.Serial.MediaIcon.png" />
   </ItemGroup>
 </Project>

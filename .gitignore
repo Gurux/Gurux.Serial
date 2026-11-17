@@ -177,3 +177,8 @@ Gurux.Serial.CSharp.Example/.vs/Gurux.Serial.CSharp.Example/v15/Server/sqlite3/s
 Android/development/.vs/
 Android/Gurux.Serial.Example/.vs/
 *.zip
+
+# Tests and validation outputs stay local.
+**/[Tt]ests/
+artifacts/
+/Gurux.Serial.Example/.vs

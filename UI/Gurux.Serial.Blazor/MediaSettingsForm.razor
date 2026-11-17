@@ -1,0 +1,114 @@
+@*
+// --------------------------------------------------------------------------
+// Gurux Ltd
+//
+// Copyright (c) Gurux Ltd.
+//
+// This file is part of Gurux Device Framework.
+//
+// Commit: $Format:%H$
+// Date:   $Format:%cI$
+//
+// This software is available under either of the following licenses:
+//
+// 1. GNU General Public License, version 2 only (GPL-2.0-only).
+//    See the LICENSE file included with this distribution.
+//
+// 2. A commercial license granted by Gurux Ltd under a separate written
+//    agreement. Use under this option requires a valid commercial license
+//    and is governed by the terms of that agreement.
+//
+// If you have not obtained a commercial license from Gurux Ltd,
+// use of this software is governed by GPL-2.0-only.
+//
+// Commercial licensing: https://www.gurux.fi/
+//
+// SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-Gurux-Commercial
+// --------------------------------------------------------------------------
+*@
+<EditForm Model="Draft" OnSubmit="Save">
+    <h2>@Properties.Resources.MediaSettings</h2>
+    @foreach (var field in Draft.Fields)
+    {
+        <div class="mb-3" @key="field.Id">
+            <label class="form-label" for="@field.Id">@field.Label</label>
+            @if (field.Kind == "toggle")
+            {
+                <GXInputCheckbox TValue="bool" id="@field.Id" @bind-Value="field.Checked" />
+            }
+            else if (field.Kind == "choice" || field.Kind == "port")
+            {
+                <InputSelect class="form-select" id="@field.Id" @bind-Value="field.Value" disabled="@(!field.IsEnabled)">
+                    @if (field.Kind == "port" || string.IsNullOrEmpty(field.Value))
+                    {
+                        <option value="" disabled hidden></option>
+                    }
+                    @foreach (var choice in field.Choices) { <option value="@choice">@choice</option> }
+                </InputSelect>
+            }
+            else if (field.Kind == "password")
+            {
+                <GXInputPassword id="@field.Id" @bind-Value="field.Value" autocomplete="off" />
+            }
+            else if (field.Kind == "multiline")
+            {
+                <GXInputTextArea id="@field.Id" @bind-Value="field.Value" />
+            }
+            else
+            {
+                <GXInputText id="@field.Id" @bind-Value="field.Value" inputmode="@(field.Kind == "number" ? "numeric" : "text")" />
+            }
+        </div>
+    }
+    <BluetoothDevicePicker Model="Draft.Bluetooth" Changed="BluetoothChanged" CancellationToken="CancellationToken" />
+    @if (error is not null) { <p role="alert" class="text-danger">@error</p> }
+    @if (!Embedded)
+    {
+    <div class="d-flex gap-2">
+        <button type="submit" class="btn btn-primary" disabled="@(completed || !Draft.CanSave)">@Properties.Resources.Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel" disabled="@completed">@Properties.Resources.Cancel</button>
+    </div>
+    }
+</EditForm>
+@code {
+    /// <summary>Leaves validation and persistence to the containing editor and hides local actions.</summary>
+    [Parameter] public bool Embedded { get; set; }
+    /// <summary>The host-owned staged settings transaction.</summary>
+    [Parameter, EditorRequired] public MediaSettingsDraft Draft { get; set; } = default!;
+    /// <summary>Called once with true after save or false after cancellation.</summary>
+    [Parameter] public EventCallback<bool> Completed { get; set; }
+    /// <summary>Cancels this editing session without saving.</summary>
+    [Parameter] public CancellationToken CancellationToken { get; set; }
+    /// <summary>Stores a localized validation message.</summary>
+    private string? error;
+    /// <summary>Prevents duplicate form submissions.</summary>
+    private bool completed;
+    /// <summary>Refreshes general port controls and Save availability after direct Bluetooth selection.</summary>
+    private void BluetoothChanged() => StateHasChanged();
+    /// <summary>Validates and commits the staged values.</summary>
+    /// <returns>A task completing after save notification.</returns>
+    private async Task Save()
+    {
+        if (completed || Embedded) { return; }
+        try
+        {
+            CancellationToken.ThrowIfCancellationRequested();
+            Draft.Commit();
+            completed = true;
+            await Completed.InvokeAsync(true);
+        }
+        catch (Exception failure)
+        {
+            error = string.Format(System.Globalization.CultureInfo.CurrentCulture,
+                Properties.Resources.InvalidSettingsDetails, failure.Message);
+        }
+    }
+    /// <summary>Notifies the owner to discard edits.</summary>
+    /// <returns>A task completing after cancellation notification.</returns>
+    private async Task Cancel()
+    {
+        if (completed) { return; }
+        completed = true;
+        await Completed.InvokeAsync(false);
+    }
+}

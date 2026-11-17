@@ -1,0 +1,137 @@
+@*
+// --------------------------------------------------------------------------
+// Gurux Ltd
+//
+// Copyright (c) Gurux Ltd.
+//
+// This file is part of Gurux Device Framework.
+//
+// Commit: $Format:%H$
+// Date:   $Format:%cI$
+//
+// This software is available under either of the following licenses:
+//
+// 1. GNU General Public License, version 2 only (GPL-2.0-only).
+//    See the LICENSE file included with this distribution.
+//
+// 2. A commercial license granted by Gurux Ltd under a separate written
+//    agreement. Use under this option requires a valid commercial license
+//    and is governed by the terms of that agreement.
+//
+// If you have not obtained a commercial license from Gurux Ltd,
+// use of this software is governed by GPL-2.0-only.
+//
+// Commercial licensing: https://www.gurux.fi/
+//
+// SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-Gurux-Commercial
+// --------------------------------------------------------------------------
+*@
+@implements IDisposable
+@implements IAsyncDisposable
+@if (draft is not null && !finished)
+{
+    <MediaAppearance>
+        <section class="container py-3" aria-label="@Properties.Resources.MediaSettings">
+            <MediaSettingsForm @key="draft" Draft="draft" Completed="Finish" CancellationToken="CancellationToken" />
+        </section>
+    </MediaAppearance>
+}
+@code {
+    /// <summary>The closed caller-owned media to edit.</summary>
+    [Parameter, EditorRequired] public Gurux.Common.IGXMedia Media { get; set; } = default!;
+    /// <summary>Called once with true after save or false after cancellation.</summary>
+    [Parameter] public EventCallback<bool> Completed { get; set; }
+    /// <summary>Cancels this editing session without saving.</summary>
+    [Parameter] public CancellationToken CancellationToken { get; set; }
+    /// <summary>Gets or sets optional port discovery invoked once when each media editing session opens.</summary>
+    /// <remarks>When omitted, the editor uses the serial transport's platform port discovery.</remarks>
+    [Parameter] public Func<string[]>? PortNamesProvider { get; set; }
+    /// <summary>Tracks the caller-owned media for replacement detection.</summary>
+    private Gurux.Common.IGXMedia? source;
+    /// <summary>Owns the current settings transaction.</summary>
+    private MediaSettingsDraft? draft;
+    /// <summary>Disconnects the cancellation callback during cleanup.</summary>
+    private CancellationTokenRegistration registration;
+    /// <summary>Tracks which token owns the active registration.</summary>
+    private CancellationToken registeredToken;
+    /// <summary>Prevents duplicate completion notifications.</summary>
+    private bool finished;
+    /// <summary>Serializes cleanup before a replacement draft can be installed.</summary>
+    private Task replacementCleanup = Task.CompletedTask;
+    /// <summary>Rejects stale parameter continuations after a newer replacement request.</summary>
+    private long replacementVersion;
+    /// <summary>Prevents callbacks after disposal.</summary>
+    private bool disposed;
+
+    /// <inheritdoc/>
+    protected override async Task OnParametersSetAsync()
+    {
+        ArgumentNullException.ThrowIfNull(Media);
+        var requestedMedia = Media;
+        if (!ReferenceEquals(source, requestedMedia))
+        {
+            long version = ++replacementVersion;
+            registration.Dispose();
+            registration = default;
+            var previousDraft = draft;
+            draft = null;
+            source = null;
+            if (previousDraft is not null) { replacementCleanup = CleanupReplacementAsync(replacementCleanup, previousDraft); }
+            await replacementCleanup;
+            if (disposed || version != replacementVersion || !ReferenceEquals(Media, requestedMedia)) { return; }
+            finished = false;
+            draft = MediaSettingsDraft.Create(requestedMedia, PortNamesProvider?.Invoke() ?? Gurux.Serial.GXSerial.GetPortNames());
+            source = requestedMedia;
+        }
+        if (registeredToken != CancellationToken || registration == default)
+        {
+            registration.Dispose();
+            registeredToken = CancellationToken;
+            var currentDraft = draft;
+            var currentToken = CancellationToken;
+            registration = CancellationToken.Register(() =>
+            {
+                _ = InvokeAsync(async () =>
+                {
+                    if (!disposed && ReferenceEquals(draft, currentDraft) && currentToken == CancellationToken) { await Finish(false); StateHasChanged(); }
+                });
+            });
+        }
+    }
+    /// <summary>Releases an earlier draft after any preceding metadata cleanup barrier.</summary>
+    /// <param name="previousCleanup">The cleanup barrier established by an earlier replacement.</param>
+    /// <param name="previousDraft">The draft whose native metadata work must end before another session starts.</param>
+    /// <returns>Completion after both cleanup stages finish.</returns>
+    private static async Task CleanupReplacementAsync(Task previousCleanup, MediaSettingsDraft previousDraft)
+    {
+        await previousCleanup.ConfigureAwait(false);
+        await previousDraft.DisposeAsync().ConfigureAwait(false);
+    }
+    /// <summary>Discards the owned copy and notifies the host once.</summary>
+    /// <param name="accepted">Whether settings were committed.</param>
+    /// <returns>A task completing after the host callback.</returns>
+    private async Task Finish(bool accepted)
+    {
+        if (disposed || finished) { return; }
+        finished = true;
+        var acceptedDraft = draft;
+        if (acceptedDraft is not null) { await acceptedDraft.DisposeAsync(); }
+        if (!disposed && ReferenceEquals(draft, acceptedDraft)) { await Completed.InvokeAsync(accepted); }
+    }
+    /// <summary>Discards pending edits and unregisters cancellation.</summary>
+    public void Dispose()
+    {
+        disposed = true;
+        ++replacementVersion;
+        registration.Dispose();
+        draft?.Dispose();
+    }
+    /// <summary>Discards the editor and awaits metadata cleanup before its owner can open another transport.</summary>
+    /// <returns>Completion after native metadata cleanup.</returns>
+    public async ValueTask DisposeAsync()
+    {
+        Dispose();
+        await replacementCleanup;
+        if (draft is not null) { await draft.DisposeAsync(); }
+    }
+}

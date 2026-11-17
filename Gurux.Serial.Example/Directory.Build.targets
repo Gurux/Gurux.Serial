@@ -1,0 +1,10 @@
+<Project>
+  <PropertyGroup>
+    <BuildInParallel>false</BuildInParallel>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Update="@(ProjectReference)">
+      <AdditionalProperties>%(AdditionalProperties);GuruxExamplesBuild=true</AdditionalProperties>
+    </ProjectReference>
+  </ItemGroup>
+</Project>

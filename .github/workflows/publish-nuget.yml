@@ -1,0 +1,361 @@
+# --------------------------------------------------------------------------
+# Gurux Ltd
+#
+# Copyright (c) Gurux Ltd.
+#
+# This file is part of Gurux Device Framework.
+#
+# Commit: $Format:%H$
+# Date:   $Format:%cI$
+#
+# This software is available under either of the following licenses:
+#
+# 1. GNU General Public License, version 2 only (GPL-2.0-only).
+#    See the LICENSE file included with this distribution.
+#
+# 2. A commercial license granted by Gurux Ltd under a separate written
+#    agreement. Use under this option requires a valid commercial license
+#    and is governed by the terms of that agreement.
+#
+# If you have not obtained a commercial license from Gurux Ltd,
+# use of this software is governed by GPL-2.0-only.
+#
+# Commercial licensing: https://www.gurux.fi/
+#
+# SPDX-License-Identifier: GPL-2.0-only OR LicenseRef-Gurux-Commercial
+# --------------------------------------------------------------------------
+
+name: Publish Gurux.Serial NuGet packages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'Development/**'
+      - 'UI/Gurux.Serial.Avalonia/**'
+      - 'UI/Gurux.Serial.Blazor/**'
+      - 'UI/Gurux.Serial.Maui/**'
+      - 'README.md'
+      - 'LICENSE'
+      - 'LICENSES/**'
+      - '.gitattributes'
+      - '.github/workflows/publish-nuget.yml'
+      - 'Directory.Build.props'
+      - 'Directory.Build.targets'
+      - 'Directory.Packages.props'
+      - 'NuGet.Config'
+      - 'nuget.config'
+      - 'global.json'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Optional 9.0 four-part version override; blank = automatic'
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gurux-serial-nuget-releases
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    if: github.repository == 'Gurux/Gurux.Serial' && github.ref == 'refs/heads/master'
+    runs-on: windows-latest
+    timeout-minutes: 90
+    permissions:
+      contents: write
+      id-token: write
+    defaults:
+      run:
+        shell: pwsh
+    env:
+      PROJECT_ID: Gurux.Serial
+      PROJECT_PATH: Development/Gurux.Serial.csproj
+      BUILD_CONFIGURATION: Release
+      # External repositories are resolved from NuGet; this repository builds its own transport.
+      UsePublishedGuruxPackages: 'true'
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: |
+            11.0.x
+            10.0.x
+
+      - name: Install .NET 10 MAUI compatibility workloads
+        run: |
+          $compatibilityDirectory = Join-Path $env:RUNNER_TEMP 'gurux-serial-sdk10'
+          New-Item -ItemType Directory -Path $compatibilityDirectory -Force | Out-Null
+          @{ sdk = @{ version = '10.0.100'; rollForward = 'latestFeature'; allowPrerelease = $false } } |
+            ConvertTo-Json | Set-Content (Join-Path $compatibilityDirectory 'global.json')
+          Push-Location $compatibilityDirectory
+          try {
+            dotnet workload install maui-android maui-windows --skip-manifest-update
+            if ($LASTEXITCODE -ne 0) { throw '.NET 10 MAUI workload installation failed.' }
+          }
+          finally { Pop-Location }
+
+      - name: Install .NET 11 MAUI publishing workloads
+        run: dotnet workload install maui-android maui-windows --skip-manifest-update
+
+      - name: Determine this package's version
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+          NUGET_USER: ${{ vars.NUGET_USER }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:NUGET_USER)) {
+            throw 'Set the NUGET_USER GitHub Actions variable first.'
+          }
+          $project = $env:PROJECT_PATH
+          if (-not (Test-Path $project)) { throw "Project missing: $project" }
+          [xml]$xml = Get-Content $project -Raw
+          $packageId = $xml.SelectSingleNode('/Project/PropertyGroup/PackageId')
+          if ($null -eq $packageId -or $packageId.InnerText -ne $env:PROJECT_ID) {
+            throw 'Unexpected PackageId.'
+          }
+
+          # Version calculation is kept inline so the workflow is self-contained.
+          function Get-PackageVersion {
+            [CmdletBinding()]
+            param(
+                [string[]]$PublishedVersions = @(),
+                [DateTimeOffset]$PublicationTime = [DateTimeOffset]::UtcNow,
+                [string]$RequestedVersion = '',
+                [bool]$AllowExisting = $false
+            )
+            $ErrorActionPreference = 'Stop'
+            $version = $RequestedVersion.Trim()
+            if ([string]::IsNullOrEmpty($version)) {
+                $now = $PublicationTime.UtcDateTime
+                $month = $now.ToString('yyMM', [Globalization.CultureInfo]::InvariantCulture)
+                $prefix = "9.0.$month"
+                $revision = $now.Day * 100 + 1
+                $stable = @(
+                    foreach ($published in $PublishedVersions) {
+                        if ($published -match '^9\.0\.\d+(\.\d+)?$') {
+                            $parsed = $null
+                            if ([version]::TryParse($published, [ref]$parsed)) {
+                                $parsed
+                            }
+                        }
+                    }
+                )
+                $latest = $stable | Sort-Object -Descending | Select-Object -First 1
+                if ($null -ne $latest) {
+                    if ($latest.Build -gt [int]$month) {
+                        throw "A future monthly version already exists: $latest. Enter a manual version."
+                    }
+                    if ($latest.Build -eq [int]$month) {
+                        $revision = [Math]::Max($revision, $latest.Revision + 1)
+                    }
+                }
+                $version = "$prefix.$revision"
+            }
+            if ($version -notmatch '^9\.0\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$') {
+                throw 'Use a four-part numeric version starting with 9.0, for example 9.0.2611.1201.'
+            }
+            foreach ($part in $version.Split('.')) {
+                $number = 0
+                if (-not [int]::TryParse($part, [ref]$number) -or $number -gt 65534) {
+                    throw 'Version components must be between 0 and 65534.'
+                }
+            }
+            if (-not $AllowExisting -and $version -in $PublishedVersions) { throw "Package version already published: $version" }
+            $version
+          }
+
+          # One unused 9.0 version is selected across the complete package family.
+          $versions = @()
+          foreach ($packageId in @($env:PROJECT_ID, "$env:PROJECT_ID.Avalonia", "$env:PROJECT_ID.Blazor", "$env:PROJECT_ID.Maui")) {
+            $url = "https://api.nuget.org/v3-flatcontainer/$($packageId.ToLowerInvariant())/index.json"
+            try {
+              $response = Invoke-RestMethod $url -MaximumRetryCount 3 -RetryIntervalSec 5
+              $versions += @($response.versions)
+            } catch {
+              if ([int]$_.Exception.Response.StatusCode -ne 404) { throw }
+            }
+          }
+          $version = Get-PackageVersion -PublishedVersions $versions -RequestedVersion $env:REQUESTED_VERSION -AllowExisting:(![string]::IsNullOrWhiteSpace($env:REQUESTED_VERSION))
+          "BUILD_BUILDNUMBER=$version" >> $env:GITHUB_ENV
+          "PACKAGE_OUTPUT=$env:GITHUB_WORKSPACE/artifacts/packages" >> $env:GITHUB_ENV
+          Write-Host "$env:PROJECT_ID version $version"
+
+      - name: Resolve published 9.0 dependency versions
+        run: |
+          $ErrorActionPreference = 'Stop'
+          # Resolve each external package independently; no sibling checkout is required.
+          foreach ($packageId in @('Gurux.Common')) {
+            $url = "https://api.nuget.org/v3-flatcontainer/$($packageId.ToLowerInvariant())/index.json"
+            $response = Invoke-RestMethod $url -MaximumRetryCount 3 -RetryIntervalSec 5
+            $latest = @($response.versions | Where-Object { $_ -match '^9\.0\.\d+(\.\d+)?$' } | Sort-Object { [version]$_ } -Descending)[0]
+            if ([string]::IsNullOrWhiteSpace($latest)) {
+              throw "Publish a stable 9.0 version of $packageId before publishing this media."
+            }
+            $property = $packageId.Replace('.', '') + 'Version'
+            "$property=$latest" >> $env:GITHUB_ENV
+          }
+
+      - name: Check version tag before publication
+        env:
+          REQUESTED_VERSION: ${{ inputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "$env:PROJECT_ID/v$env:BUILD_BUILDNUMBER"
+          $existing = @(git ls-remote --exit-code --tags origin "refs/tags/$tag")
+          $status = $LASTEXITCODE
+          if ($status -notin @(0, 2)) { throw 'Could not read remote tags.' }
+          if ($status -eq 0) {
+            if ([string]::IsNullOrWhiteSpace($env:REQUESTED_VERSION)) { throw "Version tag already exists: $tag." }
+            git fetch origin "refs/tags/${tag}:refs/tags/${tag}"
+            if ($LASTEXITCODE -ne 0) { throw "Tag fetch failed: $tag" }
+            $target = git rev-list -n 1 $tag
+            if ($LASTEXITCODE -ne 0 -or $target -ne $env:GITHUB_SHA) { throw "Tag belongs to another commit: $tag" }
+          }
+          # ls-remote returns 2 when no tag matches; that is success for this check.
+          $global:LASTEXITCODE = 0
+
+      - name: Restore, build and pack media and optional UI packages
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $projects = @(
+            $env:PROJECT_PATH,
+            "UI/$env:PROJECT_ID.Avalonia/$env:PROJECT_ID.Avalonia.csproj",
+            "UI/$env:PROJECT_ID.Blazor/$env:PROJECT_ID.Blazor.csproj",
+            "UI/$env:PROJECT_ID.Maui/$env:PROJECT_ID.Maui.csproj"
+          )
+          foreach ($project in $projects) {
+            dotnet pack $project --configuration "$env:BUILD_CONFIGURATION" `
+              "-p:Version=$env:BUILD_BUILDNUMBER" `
+              "-p:PackageVersion=$env:BUILD_BUILDNUMBER" `
+              "-p:RepositoryCommit=$env:GITHUB_SHA" `
+              "-p:PackageOutputPath=$env:PACKAGE_OUTPUT" `
+              '-p:BuildMobile=true' `
+              '-p:GeneratePackageOnBuild=false' `
+              '-p:SignAssembly=false' `
+              '-p:SignManifests=false' `
+              '-p:ContinuousIntegrationBuild=true'
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+          foreach ($packageId in @($env:PROJECT_ID, "$env:PROJECT_ID.Avalonia", "$env:PROJECT_ID.Blazor", "$env:PROJECT_ID.Maui")) {
+            $package = Join-Path $env:PACKAGE_OUTPUT "$packageId.$env:BUILD_BUILDNUMBER.nupkg"
+            if (-not (Test-Path $package)) { throw "Package missing: $package" }
+          }
+
+      - name: NuGet login (Trusted Publishing)
+        uses: NuGet/login@v1
+        id: login
+        with:
+          user: ${{ vars.NUGET_USER }}
+
+      - name: Publish media and optional UI packages
+        env:
+          NUGET_API_KEY: ${{ steps.login.outputs.NUGET_API_KEY }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          function Assert-IdenticalPackage {
+            param([string]$LocalPath, [string]$PublishedPath)
+            $local = [IO.Compression.ZipFile]::OpenRead($LocalPath)
+            $published = [IO.Compression.ZipFile]::OpenRead($PublishedPath)
+            try {
+              $localEntries = @($local.Entries | Where-Object { $_.FullName -notin @('.signature.p7s', '[Content_Types].xml', '_rels/.rels') -and -not $_.FullName.StartsWith('package/services/metadata/') })
+              $publishedEntries = @($published.Entries | Where-Object { $_.FullName -notin @('.signature.p7s', '[Content_Types].xml', '_rels/.rels') -and -not $_.FullName.StartsWith('package/services/metadata/') })
+              if ($localEntries.Count -ne $publishedEntries.Count) { throw 'Published package contents differ.' }
+              foreach ($entry in $localEntries) {
+                $other = $published.GetEntry($entry.FullName)
+                if ($null -eq $other) { throw "Published package entry missing: $($entry.FullName)" }
+                $first = $entry.Open()
+                $second = $other.Open()
+                try {
+                  $firstHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($first))
+                  $secondHash = [Convert]::ToHexString([Security.Cryptography.SHA256]::HashData($second))
+                  if ($firstHash -ne $secondHash) { throw "Published package entry differs: $($entry.FullName)" }
+                } finally { $first.Dispose(); $second.Dispose() }
+              }
+            } finally { $local.Dispose(); $published.Dispose() }
+          }
+          # Push the transport first, then its optional UI packages and adjacent symbols.
+          foreach ($packageId in @($env:PROJECT_ID, "$env:PROJECT_ID.Avalonia", "$env:PROJECT_ID.Blazor", "$env:PROJECT_ID.Maui")) {
+            $package = Join-Path $env:PACKAGE_OUTPUT "$packageId.$env:BUILD_BUILDNUMBER.nupkg"
+            # A manually selected version may resume a partial release only when existing payloads match.
+            $id = $packageId.ToLowerInvariant()
+            $version = $env:BUILD_BUILDNUMBER
+            $url = "https://api.nuget.org/v3-flatcontainer/$id/$version/$id.$version.nupkg"
+            $existing = Join-Path $env:RUNNER_TEMP "$packageId.$version.nupkg"
+            $exists = $true
+            try { Invoke-WebRequest $url -OutFile $existing -MaximumRetryCount 3 -RetryIntervalSec 5 }
+            catch {
+              if ([int]$_.Exception.Response.StatusCode -ne 404) { throw }
+              $exists = $false
+            }
+            $pushOptions = @()
+            if ($exists) {
+              Assert-IdenticalPackage -LocalPath $package -PublishedPath $existing
+              $pushOptions += '--skip-duplicate'
+            }
+            dotnet nuget push $package `
+              --api-key "$env:NUGET_API_KEY" `
+              --source https://api.nuget.org/v3/index.json @pushOptions
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+            "Published $packageId version $env:BUILD_BUILDNUMBER" >> $env:GITHUB_STEP_SUMMARY
+          }
+
+      - name: Create version tag
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "$env:PROJECT_ID/v$env:BUILD_BUILDNUMBER"
+
+          $existing = @(git ls-remote --exit-code --tags origin "refs/tags/$tag")
+          $status = $LASTEXITCODE
+          if ($status -notin @(0, 2)) { throw 'Could not read remote tags.' }
+          if ($status -eq 0) {
+            git fetch origin "refs/tags/${tag}:refs/tags/${tag}"
+            if ($LASTEXITCODE -ne 0) { throw "Tag fetch failed: $tag" }
+            $target = git rev-list -n 1 $tag
+            if ($LASTEXITCODE -ne 0 -or $target -ne $env:GITHUB_SHA) {
+              throw "Tag points to a different commit: $tag"
+            }
+          } else {
+            git tag $tag $env:GITHUB_SHA
+            if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
+
+          git push origin "refs/tags/$tag"
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+
+      - name: Create source archive and GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tag = "$env:PROJECT_ID/v$env:BUILD_BUILDNUMBER"
+          $asset = "$env:PROJECT_ID.$env:BUILD_BUILDNUMBER-source.zip"
+          $archive = Join-Path $env:RUNNER_TEMP $asset
+          git archive --format=zip "--output=$archive" $tag
+          if ($LASTEXITCODE -ne 0) { throw "Source archive failed: $tag" }
+          # Authentication/network failures must not look like an absent release.
+          $releases = gh api --paginate "repos/$env:GITHUB_REPOSITORY/releases?per_page=100" --jq '.[].tag_name'
+          if ($LASTEXITCODE -ne 0) { throw 'Could not list releases.' }
+          if ($tag -notin @($releases)) {
+            gh release create $tag --repo $env:GITHUB_REPOSITORY --verify-tag --title $tag --notes "Source for $env:PROJECT_ID $env:BUILD_BUILDNUMBER. Archive Commit and Date fields identify the release commit."
+            if ($LASTEXITCODE -ne 0) { throw "Release creation failed: $tag" }
+          }
+          $assets = gh release view $tag --repo $env:GITHUB_REPOSITORY --json assets --jq '.assets[].name'
+          if ($LASTEXITCODE -ne 0) { throw "Could not read release assets: $tag" }
+          if ($asset -in @($assets)) {
+            $download = Join-Path $env:RUNNER_TEMP ([guid]::NewGuid().ToString())
+            New-Item -ItemType Directory $download | Out-Null
+            gh release download $tag --repo $env:GITHUB_REPOSITORY --pattern $asset --dir $download
+            if ($LASTEXITCODE -ne 0) { throw "Asset download failed: $asset" }
+            if ((Get-FileHash $archive).Hash -ne (Get-FileHash (Join-Path $download $asset)).Hash) {
+              throw "Existing source asset differs: $asset"
+            }
+          } else {
+            gh release upload $tag $archive --repo $env:GITHUB_REPOSITORY
+            if ($LASTEXITCODE -ne 0) { throw "Asset upload failed: $asset" }
+          }

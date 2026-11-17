@@ -1,0 +1,69 @@
+<root>
+  <data name="WholeNumberRequired" xml:space="preserve"><value>{0} must be a whole number.</value></data>
+  <data name="Protocol" xml:space="preserve"><value>Protocol</value></data>
+  <data name="Hostname" xml:space="preserve"><value>Host name</value></data>
+  <data name="Port" xml:space="preserve"><value>Port</value></data>
+  <data name="Server" xml:space="preserve"><value>Server</value></data>
+  <data name="IPv6" xml:space="preserve"><value>IPv6</value></data>
+  <data name="Maximumclients" xml:space="preserve"><value>Maximum clients</value></data>
+  <data name="Waittimemilliseconds" xml:space="preserve"><value>Wait time (milliseconds)</value></data>
+  <data name="TCPkeepalive" xml:space="preserve"><value>TCP keepalive</value></data>
+  <data name="TCPkeepaliveidleseconds" xml:space="preserve"><value>TCP keepalive idle (seconds)</value></data>
+  <data name="TCPkeepaliveintervalseconds" xml:space="preserve"><value>TCP keepalive interval (seconds)</value></data>
+  <data name="TCPkeepaliveretries" xml:space="preserve"><value>TCP keepalive retries</value></data>
+  <data name="Closethemediabeforeeditingsettings" xml:space="preserve"><value>Close the media before editing settings.</value></data>
+  <data name="Closethemediabeforesavingsettings" xml:space="preserve"><value>Close the media before saving settings.</value></data>
+  <data name="ThemediasettingschangedwhilethisformwasopenReopentheform" xml:space="preserve"><value>The media settings changed while this form was open. Reopen the form.</value></data>
+  <data name="Phonenumber" xml:space="preserve"><value>Phone number</value></data>
+  <data name="Initializationcommandsoneperline" xml:space="preserve"><value>Initialization commands (one per line)</value></data>
+  <data name="Connectiontimeoutseconds" xml:space="preserve"><value>Connection timeout (seconds)</value></data>
+  <data name="SIMPIN" xml:space="preserve"><value>SIM PIN</value></data>
+  <data name="Messageencoding" xml:space="preserve"><value>Message encoding</value></data>
+  <data name="Portname" xml:space="preserve"><value>Port name</value></data>
+  <data name="Baudrate" xml:space="preserve"><value>Baud rate</value></data>
+  <data name="Databits" xml:space="preserve"><value>Data bits</value></data>
+  <data name="Parity" xml:space="preserve"><value>Parity</value></data>
+  <data name="Stopbits" xml:space="preserve"><value>Stop bits</value></data>
+  <data name="Handshake" xml:space="preserve"><value>Handshake</value></data>
+  <data name="DTRenabled" xml:space="preserve"><value>DTR enabled</value></data>
+  <data name="RTSenabled" xml:space="preserve"><value>RTS enabled</value></data>
+  <data name="MediaSettings" xml:space="preserve"><value>Media settings</value></data>
+  <data name="Save" xml:space="preserve"><value>Save</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="UnsupportedMedia" xml:space="preserve"><value>This editor does not support the supplied media type.</value></data>
+  <data name="InvalidSettings" xml:space="preserve"><value>The settings could not be saved. Check the values and ensure the closed media has not changed.</value></data>
+  <data name="ChoiceError" xml:space="preserve"><value>Select {0}.</value></data>
+  <data name="BluetoothSettings" xml:space="preserve"><value>Bluetooth settings</value></data>
+  <data name="BluetoothTransport" xml:space="preserve"><value>Bluetooth transport</value></data>
+  <data name="BluetoothClassic" xml:space="preserve"><value>Bluetooth Classic (RFCOMM)</value></data>
+  <data name="BluetoothLowEnergy" xml:space="preserve"><value>Bluetooth Low Energy (GATT)</value></data>
+  <data name="BluetoothDevices" xml:space="preserve"><value>Bluetooth devices</value></data>
+  <data name="BluetoothDeviceDisplay" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="BluetoothDeviceRequired" xml:space="preserve"><value>Select a device from Bluetooth devices.</value></data>
+  <data name="BluetoothProfileMissing" xml:space="preserve"><value>Device {0} has no matching devices.csv profile. Select a supported device from Bluetooth devices.</value></data>
+  <data name="BluetoothChannelInvalid" xml:space="preserve"><value>Enter an RFCOMM server channel between 1 and 30.</value></data>
+  <data name="BluetoothChannel" xml:space="preserve"><value>RFCOMM server channel</value></data>
+  <data name="BluetoothService" xml:space="preserve"><value>BLE service UUID</value></data>
+  <data name="BluetoothIdentifier" xml:space="preserve"><value>Bluetooth address or native device identifier</value></data>
+  <data name="AdvancedBluetoothSettings" xml:space="preserve"><value>Device information</value></data>
+  <data name="FindDevices" xml:space="preserve"><value>Find devices</value></data>
+  <data name="StopSearch" xml:space="preserve"><value>Stop search</value></data>
+  <data name="BluetoothSearching" xml:space="preserve"><value>Searching for Bluetooth devices…</value></data>
+  <data name="BluetoothNoDevices" xml:space="preserve"><value>No supported Bluetooth devices were found.</value></data>
+  <data name="BluetoothDiscoveryFailed" xml:space="preserve"><value>Bluetooth devices could not be listed: {0}</value></data>
+  <data name="BluetoothKnownHint" xml:space="preserve"><value>Lists devices on the application host offering the Serial Port service (0x1101). The RFCOMM channel is resolved automatically through SDP.</value></data>
+  <data name="BluetoothScanHint" xml:space="preserve"><value>Shows nearby BLE devices that match devices.csv or advertise the Serial Port service UUID (0x1101). The search uses Bluetooth on the application host, not the browser device.</value></data>
+  <data name="BluetoothScanUnavailable" xml:space="preserve"><value>BLE discovery is unavailable on this application host or library target.</value></data>
+  <data name="InvalidSettingsDetails" xml:space="preserve"><value>The settings could not be saved: {0}</value></data>
+  <data name="BluetoothDiscoveryCanceled" xml:space="preserve"><value>Bluetooth device discovery was canceled or timed out.</value></data>
+  <data name="BluetoothRead" xml:space="preserve"><value>Read characteristic UUID</value></data>
+  <data name="BluetoothWrite" xml:space="preserve"><value>Write characteristic UUID</value></data>
+  <data name="BluetoothConfiguration" xml:space="preserve"><value>Configuration characteristic UUID</value></data>
+  <data name="BluetoothGattServices" xml:space="preserve"><value>Other GATT services on this device</value></data>
+  <data name="ReadGattServices" xml:space="preserve"><value>Read GATT services</value></data>
+  <data name="CancelGattRead" xml:space="preserve"><value>Cancel read</value></data>
+  <data name="GattServicesLoading" xml:space="preserve"><value>Reading GATT services…</value></data>
+  <data name="GattServicesEmpty" xml:space="preserve"><value>No additional GATT service UUIDs were found.</value></data>
+  <data name="GattServicesHint" xml:space="preserve"><value>Read the device to list other actual GATT service UUIDs. UUIDs already shown above are excluded. This briefly connects without applying UART settings.</value></data>
+  <data name="GattServicesFailed" xml:space="preserve"><value>GATT services could not be read: {0}</value></data>
+</root>

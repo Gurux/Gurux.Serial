@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>net11.0-android;net10.0-android</TargetFrameworks>
+    <!-- Match the transport's Android opt-in so ordinary Windows builds use its Windows implementation. -->
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net11.0-windows10.0.19041.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(BuildMobile)' == 'true' And $([MSBuild]::IsOSPlatform('windows'))">$(TargetFrameworks);net11.0-android;net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="'$(EnableIosTarget)' == 'true'">$(TargetFrameworks);net11.0-ios;net10.0-ios</TargetFrameworks>
+    <UseMaui>true</UseMaui>
+    <ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Tests/**</DefaultItemExcludes>
+    <PackageId>Gurux.Serial.Maui</PackageId><Authors>Gurux Ltd</Authors><Company>Gurux Ltd</Company>
+    <Version Condition="'$(BUILD_BUILDNUMBER)' == ''">0.0.1-local</Version>
+    <Version Condition="'$(BUILD_BUILDNUMBER)' != ''">$(BUILD_BUILDNUMBER)</Version>
+    <Description>Native MAUI settings editor for Gurux Serial media.</Description>
+    <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression><PackageReadmeFile>README.md</PackageReadmeFile>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$(TargetFramework.StartsWith('net11.0-android'))">24.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Keep each target on its matching MAUI major release. -->
+    <PackageReference Include="Microsoft.Maui.Controls" Version="[11.0.10,12.0.0)" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '11.0'" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="[10.0.110,11.0.0)" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '10.0'" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <ProjectReference Include="../../Development/Gurux.Serial.csproj" />
+
+  </ItemGroup>
+
+  <PropertyGroup>
+    <RepositoryUrl>https://github.com/Gurux/Gurux.Serial</RepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageIcon>GXSerial.png</PackageIcon>
+    <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.2611.1601</GuruxCommonVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Include="../../Development/GXSerial.png" Pack="true" PackagePath="/" />
+    <None Remove="Tests/**;tests/**" />
+    <Content Remove="Tests/**;tests/**" />
+    <EmbeddedResource Remove="Tests/**;tests/**" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+  </ItemGroup>
+</Project>

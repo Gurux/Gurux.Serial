@@ -1,0 +1,39 @@
+<Project>
+  <PropertyGroup>
+    <TargetFrameworks>net11.0;net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="$([MSBuild]::IsOSPlatform('windows'))">net11.0-windows10.0.19041.0;net10.0-windows10.0.19041.0</TargetFrameworks>
+    <!-- Linux publishing uses Avalonia even when invoked from a Windows build host. -->
+    <TargetFrameworks Condition="'$(BuildDesktop)' == 'true' Or $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">net11.0;net10.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(BuildMobile)' == 'true'">$(TargetFrameworks);net11.0-android;net10.0-android</TargetFrameworks>
+    <TargetFrameworks Condition="'$(BuildApple)' == 'true'">$(TargetFrameworks);net11.0-ios;net10.0-ios</TargetFrameworks>
+    <UseMaui Condition="'$(TargetFramework)' != '' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != ''">true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <OutputType>Exe</OutputType>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultMauiItems>false</EnableDefaultMauiItems>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <WindowsPackageType>None</WindowsPackageType>
+    <WindowsAppSDKSelfContained Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">true</WindowsAppSDKSelfContained>
+    <ApplicationIcon>$(ExampleRoot)/GXSerial.ico</ApplicationIcon>
+    <!-- Select the generated iOS asset catalog icon explicitly for the Apple asset compiler. -->
+    <AppIcon Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">appicon</AppIcon>
+    <ApplicationTitle>$(ExampleTitle)</ApplicationTitle>
+    <ApplicationId>org.gurux.examples.$(ExampleId)</ApplicationId>
+    <ApplicationDisplayVersion>1.0</ApplicationDisplayVersion>
+    <ApplicationVersion>1</ApplicationVersion>
+    <RootNamespace>Gurux.Serial.Example.Host</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <BuildInParallel>false</BuildInParallel>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'android'">21.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$(TargetFramework.StartsWith('net11.0-android'))">24.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">15.0</SupportedOSPlatformVersion>
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+    <AndroidManifest>$([MSBuild]::MakeRelative('$(MSBuildProjectDirectory)', '$(ExampleRoot)/UI/Maui/Platforms/Android/AndroidManifest.xml'))</AndroidManifest>
+    <AppBundleManifest Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'ios'">$(ExampleRoot)/UI/Maui/Platforms/iOS/Info.plist</AppBundleManifest>
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,10 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <ExampleRoot>$(MSBuildThisFileDirectory)</ExampleRoot>
+    <ExampleTitle>Gurux.Serial.Example</ExampleTitle>
+    <ExampleId>serial</ExampleId>
+    <AssemblyName>Gurux.Serial.Example</AssemblyName>
+  </PropertyGroup>
+  <Import Project="$(ExampleRoot)/Example.App.props" />
+  <Import Project="$(ExampleRoot)/Example.App.targets" />
+</Project>

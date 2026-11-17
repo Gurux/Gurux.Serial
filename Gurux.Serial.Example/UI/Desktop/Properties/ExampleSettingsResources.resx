@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <resheader name="reader"><value>System.Resources.ResXResourceReader, System.Windows.Forms</value></resheader>
+  <resheader name="writer"><value>System.Resources.ResXResourceWriter, System.Windows.Forms</value></resheader>
+  <data name="EditorAlreadyShowing" xml:space="preserve"><value>This editor is already showing settings.</value></data>
+  <data name="ConnectionGroup" xml:space="preserve"><value>Connection</value></data>
+  <data name="DataGroup" xml:space="preserve"><value>Data exchange</value></data>
+  <data name="ActivityGroup" xml:space="preserve"><value>Activity Log</value></data>
+  <data name="ConnectionActive" xml:space="preserve"><value>Connected</value></data>
+  <data name="ConnectionInactive" xml:space="preserve"><value>Disconnected</value></data>
+  <data name="ConnectionBusy" xml:space="preserve"><value>Working…</value></data>
+  <data name="PayloadLabel" xml:space="preserve"><value>Data</value></data>
+  <data name="CountLabel" xml:space="preserve"><value>Minimum reply bytes</value></data>
+  <data name="TerminatorLabel" xml:space="preserve"><value>End of packet</value></data>
+  <data name="TimeoutLabel" xml:space="preserve"><value>Timeout (ms)</value></data>
+  <data name="ReplyGroup" xml:space="preserve"><value>Reply settings</value></data>
+  <data name="StatusOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="StatusClosed" xml:space="preserve"><value>Closed</value></data>
+  <data name="StatusNotConfigured" xml:space="preserve"><value>Not configured</value></data>
+  <data name="StatusSerial" xml:space="preserve"><value>{0} | Serial port: {1}</value></data>
+</root>

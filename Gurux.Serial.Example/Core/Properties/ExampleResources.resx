@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype"><value>text/microsoft-resx</value></resheader>
+  <resheader name="version"><value>2.0</value></resheader>
+  <data name="Title" xml:space="preserve"><value>Gurux Serial example</value></data>
+  <data name="Settings" xml:space="preserve"><value>Settings</value></data>
+  <data name="RightSettings" xml:space="preserve"><value>Right settings</value></data>
+  <data name="Open" xml:space="preserve"><value>Open</value></data>
+  <data name="Closed" xml:space="preserve"><value>Closed</value></data>
+  <data name="Close" xml:space="preserve"><value>Close / cancel</value></data>
+  <data name="Send" xml:space="preserve"><value>Send</value></data>
+  <data name="Canceled" xml:space="preserve"><value>Canceled.</value></data>
+  <data name="SendPlaceholder" xml:space="preserve"><value>Text or hexadecimal bytes</value></data>
+  <data name="EopPlaceholder" xml:space="preserve"><value>End of packet</value></data>
+  <data name="Hexadecimal" xml:space="preserve"><value>Hexadecimal</value></data>
+  <data name="ReceiveReply" xml:space="preserve"><value>Receive reply</value></data>
+  <data name="ReplyOptions" xml:space="preserve"><value>Reply count (0 = EOP), EOP, timeout in milliseconds</value></data>
+  <data name="Unsupported" xml:space="preserve"><value>On iOS, select a Bluetooth Low Energy device in Settings.</value></data>
+  <data name="Opened" xml:space="preserve"><value>Opened.</value></data>
+  <data name="ClosedLog" xml:space="preserve"><value>Closed.</value></data>
+  <data name="Timeout" xml:space="preserve"><value>No reply was received before the timeout.</value></data>
+  <data name="RxBytes" xml:space="preserve"><value>RX {0}: {1} | {2}</value></data>
+  <data name="RxData" xml:space="preserve"><value>RX {0}: {1}</value></data>
+  <data name="Error" xml:space="preserve"><value>Error: {0}</value></data>
+  <data name="Tx" xml:space="preserve"><value>TX {0}</value></data>
+  <data name="Reply" xml:space="preserve"><value>Reply: {0}</value></data>
+  <data name="UsbUnavailable" xml:space="preserve"><value>USB services are unavailable.</value></data>
+  <data name="TransportTitle" xml:space="preserve"><value>Serial transport</value></data>
+  <data name="UsbTransport" xml:space="preserve"><value>USB serial</value></data>
+  <data name="BluetoothTransport" xml:space="preserve"><value>Paired Bluetooth (Classic or supported BLE)</value></data>
+  <data name="EnableBluetooth" xml:space="preserve"><value>Enable Bluetooth and pair the serial device in Android Settings first.</value></data>
+  <data name="BluetoothDevice" xml:space="preserve"><value>Bluetooth device</value></data>
+  <data name="BluetoothDeviceLabel" xml:space="preserve"><value>{0} ({1})</value></data>
+  <data name="UsbDeviceLabel" xml:space="preserve"><value>USB {0:X4}:{1:X4} ({2})</value></data>
+  <data name="SelectedUnavailable" xml:space="preserve"><value>The selected device '{0}' is unavailable. Clear the port field to select another device.</value></data>
+  <data name="NoDevices" xml:space="preserve"><value>No devices are available. Attach a USB CDC ACM device or pair a Bluetooth Classic serial device in Android Settings.</value></data>
+  <data name="SelectDevice" xml:space="preserve"><value>Select serial device</value></data>
+  <data name="WindowNotReady" xml:space="preserve"><value>The application window is not ready.</value></data>
+  <data name="Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="SelectionCanceled" xml:space="preserve"><value>Device selection was canceled.</value></data>
+  <data name="BluetoothPermission" xml:space="preserve"><value>Nearby devices permission is required to use paired Bluetooth serial devices.</value></data>
+  <data name="UsbRequestFailed" xml:space="preserve"><value>Cannot create USB permission request.</value></data>
+  <data name="UsbPermissionDenied" xml:space="preserve"><value>USB device permission was denied.</value></data>
+  <data name="BluetoothProfileRequired" xml:space="preserve">
+    <value>This Bluetooth LE device requires an explicit service and read/write characteristic profile.</value>
+  </data>
+  <data name="Menu" xml:space="preserve"><value>Menu</value></data>
+  <data name="Data" xml:space="preserve"><value>Data</value></data>
+  <data name="MediaSettings" xml:space="preserve"><value>Media settings</value></data>
+  <data name="CommunicationSettings" xml:space="preserve"><value>Communication settings</value></data>
+  <data name="Echo" xml:space="preserve"><value>Echo received data</value></data>
+  <data name="ReceivedData" xml:space="preserve"><value>Received data</value></data>
+  <data name="InvalidReplySettings" xml:space="preserve"><value>The reply count must be zero or greater, and the timeout must be positive or -1 for an indefinite wait.</value></data>
+  <data name="CloseBeforeReplySettings" xml:space="preserve"><value>Close the connection before changing reply settings. The settings apply when the connection is opened.</value></data>
+  <data name="ConnectionMenu" xml:space="preserve"><value>Connection</value></data>
+  <data name="ViewMenu" xml:space="preserve"><value>View</value></data>
+  <data name="OpenRejectedSettings" xml:space="preserve"><value>Cannot open serial port '{0}' with BaudRate={1}, DataBits={2}, Parity={3}, StopBits={4}, Handshake={5}, DtrEnable={6}, RtsEnable={7}. The transport rejected these settings: {8}</value></data>
+  <data name="Clear" xml:space="preserve"><value>Clear</value></data>
+</root>

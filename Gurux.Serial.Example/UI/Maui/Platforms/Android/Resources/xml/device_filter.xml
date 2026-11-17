@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Device identifiers from the Gurux.Serial.Android reference application. -->
+    <usb-device vendor-id="6056" product-id="1" />
+    <usb-device vendor-id="1367" product-id="8200" />
+    <usb-device vendor-id="6790" product-id="29987" />
+    <usb-device vendor-id="1659" product-id="8963" />
+    <usb-device vendor-id="1659" product-id="9123" />
+    <usb-device vendor-id="1027" product-id="24557" />
+    <usb-device vendor-id="1027" product-id="6001" />
+    <usb-device vendor-id="1027" product-id="24577" />
+    <usb-device vendor-id="1027" product-id="24597" />
+    <usb-device vendor-id="4292" product-id="60000" />
+    <!-- Additional identifiers handled by the current transport implementation. -->
+    <usb-device vendor-id="1027" product-id="24592" />
+    <usb-device vendor-id="1027" product-id="24593" />
+    <usb-device vendor-id="1027" product-id="24596" />
+    <usb-device vendor-id="403" product-id="6001" />
+    <usb-device vendor-id="4292" product-id="60001" />
+    <usb-device vendor-id="4292" product-id="60016" />
+    <usb-device vendor-id="4292" product-id="60017" />
+    <usb-device vendor-id="6790" product-id="21795" />
+    <!-- Additional attachment identifiers present in the Xamarin reference filter. -->
+    <usb-device vendor-id="1659" product-id="9139" />
+    <usb-device vendor-id="1659" product-id="9155" />
+    <usb-device vendor-id="1659" product-id="9171" />
+    <usb-device vendor-id="1659" product-id="9187" />
+    <usb-device vendor-id="1659" product-id="9203" />
+    <usb-device vendor-id="403" product-id="6015" />
+    <!-- Standard CDC ACM interfaces also qualify without a vendor-specific identifier. -->
+    <usb-device class="2" subclass="2" />
+</resources>
