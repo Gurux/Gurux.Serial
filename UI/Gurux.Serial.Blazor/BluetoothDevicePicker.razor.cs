@@ -42,7 +42,7 @@ public partial class BluetoothDevicePicker : IDisposable, IAsyncDisposable
     /// <summary>Tracks the subscribed model when the containing draft is replaced.</summary>
     private BluetoothDeviceSelection? _subscribed;
     /// <summary>Stores a localized input rejection without changing source settings.</summary>
-    private string? error;
+    private string? _error;
     /// <summary>Prevents queued callbacks from rendering after removal.</summary>
     private bool _disposed;
 
@@ -70,26 +70,26 @@ public partial class BluetoothDevicePicker : IDisposable, IAsyncDisposable
     /// <returns>The discovery and native cleanup lifetime.</returns>
     private async Task Find()
     {
-        error = null;
+        _error = null;
         await Model.FindAsync();
     }
     /// <summary>Changes discovery protocol and discards feedback from previous inputs.</summary>
     /// <param name="args">The selected protocol identifier.</param>
     private void ChangeTransport(ChangeEventArgs args)
     {
-        error = null;
+        _error = null;
         if (Enum.TryParse(args.Value?.ToString(), out BluetoothSerialTransport transport)) { Model.Transport = transport; }
     }
     /// <summary>Uses a listed device without a second confirmation action.</summary>
     /// <param name="args">The selected native device identity.</param>
     private void SelectDevice(ChangeEventArgs args)
     {
-        error = null;
+        _error = null;
         try
         {
             if (args.Value is string id && !string.IsNullOrEmpty(id)) { Model.SelectDevice(id); }
         }
-        catch (ArgumentException) { error = Properties.Resources.BluetoothDeviceRequired; }
+        catch (ArgumentException) { _error = Properties.Resources.BluetoothDeviceRequired; }
     }
     /// <summary>Reads complete native services only after explicit activation, or cancels the active read.</summary>
     /// <returns>The metadata read and native cleanup lifetime.</returns>

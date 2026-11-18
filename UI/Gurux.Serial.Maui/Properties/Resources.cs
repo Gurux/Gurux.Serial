@@ -33,189 +33,173 @@ namespace Gurux.Serial.Maui.Properties;
 internal static class Resources
 {
     /// <summary>Gets the localized title for standard serial port and framing settings.</summary>
-    internal static string GeneralSettings => Manager.GetString(nameof(GeneralSettings), CultureInfo.CurrentUICulture)!;
+    internal static string GeneralSettings => _manager.GetString(nameof(GeneralSettings), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized title for Bluetooth discovery and profile settings.</summary>
-    internal static string BluetoothSettings => Manager.GetString(nameof(BluetoothSettings), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothSettings => _manager.GetString(nameof(BluetoothSettings), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized accessible description identifying the selected settings tab.</summary>
-    internal static string SelectedTabDescription => Manager.GetString(nameof(SelectedTabDescription), CultureInfo.CurrentUICulture)!;
+    internal static string SelectedTabDescription => _manager.GetString(nameof(SelectedTabDescription), CultureInfo.CurrentUICulture)!;
     /// <summary>Reads this assembly's settings resources.</summary>
-    private static readonly ResourceManager Manager = new("Gurux.Serial.Maui.Properties.Resources", typeof(Resources).Assembly);
+    private static readonly ResourceManager _manager = new("Gurux.Serial.Maui.Properties.Resources", typeof(Resources).Assembly);
     /// <summary>Gets the localized text: Media settings.</summary>
-    internal static string Title => Manager.GetString(nameof(Title), CultureInfo.CurrentUICulture)!;
+    internal static string Title => _manager.GetString(nameof(Title), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Save.</summary>
-    internal static string Save => Manager.GetString(nameof(Save), CultureInfo.CurrentUICulture)!;
+    internal static string Save => _manager.GetString(nameof(Save), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Cancel.</summary>
-    internal static string Cancel => Manager.GetString(nameof(Cancel), CultureInfo.CurrentUICulture)!;
+    internal static string Cancel => _manager.GetString(nameof(Cancel), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: This editor is already showing settings..</summary>
-    internal static string Busy => Manager.GetString(nameof(Busy), CultureInfo.CurrentUICulture)!;
+    internal static string Busy => _manager.GetString(nameof(Busy), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Close the media before editing settings..</summary>
-    internal static string Open => Manager.GetString(nameof(Open), CultureInfo.CurrentUICulture)!;
+    internal static string Open => _manager.GetString(nameof(Open), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: The media settings changed while this form was open. Reopen the form..</summary>
-    internal static string Changed => Manager.GetString(nameof(Changed), CultureInfo.CurrentUICulture)!;
+    internal static string Changed => _manager.GetString(nameof(Changed), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: This editor does not support the supplied media type..</summary>
-    internal static string WrongMedia => Manager.GetString(nameof(WrongMedia), CultureInfo.CurrentUICulture)!;
+    internal static string WrongMedia => _manager.GetString(nameof(WrongMedia), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: The settings owner must be a ContentPage or a NavigationPage showing a ContentPage..</summary>
-    internal static string Owner => Manager.GetString(nameof(Owner), CultureInfo.CurrentUICulture)!;
+    internal static string Owner => _manager.GetString(nameof(Owner), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: The parent must be a MauiMediaWindow from this settings library..</summary>
-    internal static string Parent => Manager.GetString(nameof(Parent), CultureInfo.CurrentUICulture)!;
+    internal static string Parent => _manager.GetString(nameof(Parent), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: The MAUI window must have a page..</summary>
-    internal static string WindowPage => Manager.GetString(nameof(WindowPage), CultureInfo.CurrentUICulture)!;
+    internal static string WindowPage => _manager.GetString(nameof(WindowPage), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: {0} must be a whole number..</summary>
-    internal static string WholeNumber => Manager.GetString(nameof(WholeNumber), CultureInfo.CurrentUICulture)!;
+    internal static string WholeNumber => _manager.GetString(nameof(WholeNumber), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Select a value for {0}..</summary>
-    internal static string SelectValue => Manager.GetString(nameof(SelectValue), CultureInfo.CurrentUICulture)!;
+    internal static string SelectValue => _manager.GetString(nameof(SelectValue), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: The settings could not be saved. Check the values and try again..</summary>
-    internal static string Invalid => Manager.GetString(nameof(Invalid), CultureInfo.CurrentUICulture)!;
+    internal static string Invalid => _manager.GetString(nameof(Invalid), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Port name.</summary>
-    internal static string PortName => Manager.GetString(nameof(PortName), CultureInfo.CurrentUICulture)!;
+    internal static string PortName => _manager.GetString(nameof(PortName), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Baud rate.</summary>
-    internal static string BaudRate => Manager.GetString(nameof(BaudRate), CultureInfo.CurrentUICulture)!;
+    internal static string BaudRate => _manager.GetString(nameof(BaudRate), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Data bits.</summary>
-    internal static string DataBits => Manager.GetString(nameof(DataBits), CultureInfo.CurrentUICulture)!;
+    internal static string DataBits => _manager.GetString(nameof(DataBits), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Parity.</summary>
-    internal static string Parity => Manager.GetString(nameof(Parity), CultureInfo.CurrentUICulture)!;
+    internal static string Parity => _manager.GetString(nameof(Parity), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Stop bits.</summary>
-    internal static string StopBits => Manager.GetString(nameof(StopBits), CultureInfo.CurrentUICulture)!;
+    internal static string StopBits => _manager.GetString(nameof(StopBits), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Handshake.</summary>
-    internal static string Handshake => Manager.GetString(nameof(Handshake), CultureInfo.CurrentUICulture)!;
+    internal static string Handshake => _manager.GetString(nameof(Handshake), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: DTR enabled.</summary>
-    internal static string Dtr => Manager.GetString(nameof(Dtr), CultureInfo.CurrentUICulture)!;
+    internal static string Dtr => _manager.GetString(nameof(Dtr), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: RTS enabled.</summary>
-    internal static string Rts => Manager.GetString(nameof(Rts), CultureInfo.CurrentUICulture)!;
+    internal static string Rts => _manager.GetString(nameof(Rts), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Phone number.</summary>
-    internal static string Phone => Manager.GetString(nameof(Phone), CultureInfo.CurrentUICulture)!;
+    internal static string Phone => _manager.GetString(nameof(Phone), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Initialization commands (one per line).</summary>
-    internal static string Commands => Manager.GetString(nameof(Commands), CultureInfo.CurrentUICulture)!;
+    internal static string Commands => _manager.GetString(nameof(Commands), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Connection timeout (seconds).</summary>
-    internal static string Timeout => Manager.GetString(nameof(Timeout), CultureInfo.CurrentUICulture)!;
+    internal static string Timeout => _manager.GetString(nameof(Timeout), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: SIM PIN.</summary>
-    internal static string Pin => Manager.GetString(nameof(Pin), CultureInfo.CurrentUICulture)!;
+    internal static string Pin => _manager.GetString(nameof(Pin), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Message encoding.</summary>
-    internal static string Encoding => Manager.GetString(nameof(Encoding), CultureInfo.CurrentUICulture)!;
+    internal static string Encoding => _manager.GetString(nameof(Encoding), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Protocol.</summary>
-    internal static string Protocol => Manager.GetString(nameof(Protocol), CultureInfo.CurrentUICulture)!;
+    internal static string Protocol => _manager.GetString(nameof(Protocol), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Host name.</summary>
-    internal static string Host => Manager.GetString(nameof(Host), CultureInfo.CurrentUICulture)!;
+    internal static string Host => _manager.GetString(nameof(Host), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Port.</summary>
-    internal static string Port => Manager.GetString(nameof(Port), CultureInfo.CurrentUICulture)!;
+    internal static string Port => _manager.GetString(nameof(Port), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Server.</summary>
-    internal static string Server => Manager.GetString(nameof(Server), CultureInfo.CurrentUICulture)!;
+    internal static string Server => _manager.GetString(nameof(Server), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: IPv6.</summary>
-    internal static string IPv6 => Manager.GetString(nameof(IPv6), CultureInfo.CurrentUICulture)!;
+    internal static string IPv6 => _manager.GetString(nameof(IPv6), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Maximum clients.</summary>
-    internal static string Clients => Manager.GetString(nameof(Clients), CultureInfo.CurrentUICulture)!;
+    internal static string Clients => _manager.GetString(nameof(Clients), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: Wait time (milliseconds).</summary>
-    internal static string Wait => Manager.GetString(nameof(Wait), CultureInfo.CurrentUICulture)!;
+    internal static string Wait => _manager.GetString(nameof(Wait), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: TCP keepalive.</summary>
-    internal static string KeepAlive => Manager.GetString(nameof(KeepAlive), CultureInfo.CurrentUICulture)!;
+    internal static string KeepAlive => _manager.GetString(nameof(KeepAlive), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: TCP keepalive idle (seconds).</summary>
-    internal static string Idle => Manager.GetString(nameof(Idle), CultureInfo.CurrentUICulture)!;
+    internal static string Idle => _manager.GetString(nameof(Idle), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: TCP keepalive interval (seconds).</summary>
-    internal static string Interval => Manager.GetString(nameof(Interval), CultureInfo.CurrentUICulture)!;
+    internal static string Interval => _manager.GetString(nameof(Interval), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized text: TCP keepalive retries.</summary>
-    internal static string Retries => Manager.GetString(nameof(Retries), CultureInfo.CurrentUICulture)!;
-    /// <summary>Gets the caption for refreshing paired Bluetooth devices and requesting connection permission.</summary>
-    internal static string RefreshBluetoothDevices => Manager.GetString(nameof(RefreshBluetoothDevices), System.Globalization.CultureInfo.CurrentUICulture)!;
+    internal static string Retries => _manager.GetString(nameof(Retries), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the message shown when Bluetooth connection access is denied.</summary>
-    internal static string BluetoothPermissionDenied => Manager.GetString(nameof(BluetoothPermissionDenied), System.Globalization.CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothPermissionDenied => _manager.GetString(nameof(BluetoothPermissionDenied), System.Globalization.CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: Bluetooth Classic (RFCOMM)</summary>
-    internal static string BluetoothClassic => Manager.GetString(nameof(BluetoothClassic), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothClassic => _manager.GetString(nameof(BluetoothClassic), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: Bluetooth Low Energy (GATT)</summary>
-    internal static string BluetoothLowEnergy => Manager.GetString(nameof(BluetoothLowEnergy), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothLowEnergy => _manager.GetString(nameof(BluetoothLowEnergy), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: Bluetooth transport</summary>
-    internal static string BluetoothTransport => Manager.GetString(nameof(BluetoothTransport), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothTransport => _manager.GetString(nameof(BluetoothTransport), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the caption for discovered and saved Bluetooth device choices.</summary>
-    internal static string BluetoothDevices => Manager.GetString(nameof(BluetoothDevices), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothDevices => _manager.GetString(nameof(BluetoothDevices), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: Bluetooth address or native device identifier</summary>
-    internal static string BluetoothIdentifier => Manager.GetString(nameof(BluetoothIdentifier), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothIdentifier => _manager.GetString(nameof(BluetoothIdentifier), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: RFCOMM channel</summary>
-    internal static string BluetoothChannel => Manager.GetString(nameof(BluetoothChannel), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothChannel => _manager.GetString(nameof(BluetoothChannel), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: BLE service UUID</summary>
-    internal static string BluetoothService => Manager.GetString(nameof(BluetoothService), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothService => _manager.GetString(nameof(BluetoothService), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: BLE notification characteristic UUID</summary>
-    internal static string BluetoothRead => Manager.GetString(nameof(BluetoothRead), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothRead => _manager.GetString(nameof(BluetoothRead), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: BLE write characteristic UUID</summary>
-    internal static string BluetoothWrite => Manager.GetString(nameof(BluetoothWrite), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothWrite => _manager.GetString(nameof(BluetoothWrite), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: BLE configuration characteristic UUID (optional)</summary>
-    internal static string BluetoothConfiguration => Manager.GetString(nameof(BluetoothConfiguration), CultureInfo.CurrentUICulture)!;
-    /// <summary>Gets the localized Bluetooth input text: BLE configuration bytes (hexadecimal, optional)</summary>
-    internal static string BluetoothConfigurationValue => Manager.GetString(nameof(BluetoothConfigurationValue), CultureInfo.CurrentUICulture)!;
-    /// <summary>Gets the localized Bluetooth input text: Refresh lists only devices already known to Windows. Pair or discover devices in Windows settings first. Classic requires the server channel from the device documentation. BLE requires a matching serial profile; UART settings are not applied.</summary>
-    internal static string BluetoothInstructions => Manager.GetString(nameof(BluetoothInstructions), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothConfiguration => _manager.GetString(nameof(BluetoothConfiguration), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the message shown when discovery finds no supported Bluetooth serial devices.</summary>
-    internal static string BluetoothNoDevices => Manager.GetString(nameof(BluetoothNoDevices), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothNoDevices => _manager.GetString(nameof(BluetoothNoDevices), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: Bluetooth devices could not be refreshed. Check Windows Bluetooth settings and try again.</summary>
-    internal static string BluetoothRefreshFailed => Manager.GetString(nameof(BluetoothRefreshFailed), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothRefreshFailed => _manager.GetString(nameof(BluetoothRefreshFailed), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized Bluetooth input text: The RFCOMM channel must be a whole number between 1 and 30.</summary>
-    internal static string BluetoothChannelInvalid => Manager.GetString(nameof(BluetoothChannelInvalid), CultureInfo.CurrentUICulture)!;
-    /// <summary>Gets the localized Bluetooth input text: Enter a valid, nonempty UUID for each required BLE service and characteristic.</summary>
-    internal static string BluetoothUuidInvalid => Manager.GetString(nameof(BluetoothUuidInvalid), CultureInfo.CurrentUICulture)!;
-    /// <summary>Gets the localized Bluetooth input text: BLE configuration bytes must contain an even number of hexadecimal digits without separators.</summary>
-    internal static string BluetoothConfigurationInvalid => Manager.GetString(nameof(BluetoothConfigurationInvalid), CultureInfo.CurrentUICulture)!;
-    /// <summary>Gets the localized Bluetooth input text: Enter a configuration characteristic UUID when supplying BLE configuration bytes.</summary>
-    internal static string BluetoothConfigurationRequired => Manager.GetString(nameof(BluetoothConfigurationRequired), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothChannelInvalid => _manager.GetString(nameof(BluetoothChannelInvalid), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the message for an invalid six-byte Classic Bluetooth address.</summary>
-    internal static string BluetoothAddressInvalid => Manager.GetString(nameof(BluetoothAddressInvalid), CultureInfo.CurrentUICulture)!;
-    /// <summary>Gets the localized label for an application-registered UART command generator.</summary>
-    internal static string BluetoothConfigurationProvider => Manager.GetString(nameof(BluetoothConfigurationProvider), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothAddressInvalid => _manager.GetString(nameof(BluetoothAddressInvalid), CultureInfo.CurrentUICulture)!;
 
-    /// <summary>Gets the localized validation message for a profile belonging to another device.</summary>
-    internal static string BluetoothProfileDeviceMismatch => Manager.GetString(nameof(BluetoothProfileDeviceMismatch), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized scan ble devices text.</summary>
-    internal static string ScanBleDevices => Manager.GetString(nameof(ScanBleDevices), CultureInfo.CurrentUICulture)!;
+    internal static string ScanBleDevices => _manager.GetString(nameof(ScanBleDevices), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the caption for stopping the current explicit Bluetooth search.</summary>
-    internal static string StopBleScan => Manager.GetString(nameof(StopBleScan), CultureInfo.CurrentUICulture)!;
+    internal static string StopBleScan => _manager.GetString(nameof(StopBleScan), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized ble scanning text.</summary>
-    internal static string BleScanning => Manager.GetString(nameof(BleScanning), CultureInfo.CurrentUICulture)!;
+    internal static string BleScanning => _manager.GetString(nameof(BleScanning), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized ble scan complete text.</summary>
-    internal static string BleScanComplete => Manager.GetString(nameof(BleScanComplete), CultureInfo.CurrentUICulture)!;
+    internal static string BleScanComplete => _manager.GetString(nameof(BleScanComplete), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized ble scan no devices text.</summary>
-    internal static string BleScanNoDevices => Manager.GetString(nameof(BleScanNoDevices), CultureInfo.CurrentUICulture)!;
+    internal static string BleScanNoDevices => _manager.GetString(nameof(BleScanNoDevices), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized ble device display text.</summary>
-    internal static string BleDeviceDisplay => Manager.GetString(nameof(BleDeviceDisplay), CultureInfo.CurrentUICulture)!;
+    internal static string BleDeviceDisplay => _manager.GetString(nameof(BleDeviceDisplay), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized ble scan failed text.</summary>
-    internal static string BleScanFailed => Manager.GetString(nameof(BleScanFailed), CultureInfo.CurrentUICulture)!;
+    internal static string BleScanFailed => _manager.GetString(nameof(BleScanFailed), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized ble scan permission denied text.</summary>
-    internal static string BleScanPermissionDenied => Manager.GetString(nameof(BleScanPermissionDenied), CultureInfo.CurrentUICulture)!;
+    internal static string BleScanPermissionDenied => _manager.GetString(nameof(BleScanPermissionDenied), CultureInfo.CurrentUICulture)!;
 
     /// <summary>Gets the localized save failure message with a placeholder for the actual reason.</summary>
-    internal static string InvalidDetails => Manager.GetString(nameof(InvalidDetails), CultureInfo.CurrentUICulture)!;
+    internal static string InvalidDetails => _manager.GetString(nameof(InvalidDetails), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the shared Bluetooth discovery button caption.</summary>
-    internal static string FindDevices => Manager.GetString(nameof(FindDevices), CultureInfo.CurrentUICulture)!;
+    internal static string FindDevices => _manager.GetString(nameof(FindDevices), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the explanation of serial UUID and device catalogue filtering for known devices.</summary>
-    internal static string FindKnownDevicesHint => Manager.GetString(nameof(FindKnownDevicesHint), CultureInfo.CurrentUICulture)!;
+    internal static string FindKnownDevicesHint => _manager.GetString(nameof(FindKnownDevicesHint), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the explanation of serial UUID and device catalogue filtering for nearby BLE devices.</summary>
-    internal static string FindBleDevicesHint => Manager.GetString(nameof(FindBleDevicesHint), CultureInfo.CurrentUICulture)!;
+    internal static string FindBleDevicesHint => _manager.GetString(nameof(FindBleDevicesHint), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the validation message identifying a device without a recognized GATT serial profile.</summary>
-    internal static string BluetoothProfileMissing => Manager.GetString(nameof(BluetoothProfileMissing), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothProfileMissing => _manager.GetString(nameof(BluetoothProfileMissing), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the complete collapsed disclosure caption, including its right-pointing indicator.</summary>
-    internal static string BluetoothDeviceInformation => Manager.GetString(nameof(BluetoothDeviceInformation), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothDeviceInformation => _manager.GetString(nameof(BluetoothDeviceInformation), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the accessible description of a collapsed device information section.</summary>
-    internal static string BluetoothInformationCollapsed => Manager.GetString(nameof(BluetoothInformationCollapsed), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothInformationCollapsed => _manager.GetString(nameof(BluetoothInformationCollapsed), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the accessible description of an expanded device information section.</summary>
-    internal static string BluetoothInformationExpanded => Manager.GetString(nameof(BluetoothInformationExpanded), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothInformationExpanded => _manager.GetString(nameof(BluetoothInformationExpanded), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the complete expanded disclosure caption, including its downward-pointing indicator.</summary>
-    internal static string BluetoothDeviceInformationExpanded => Manager.GetString(nameof(BluetoothDeviceInformationExpanded), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothDeviceInformationExpanded => _manager.GetString(nameof(BluetoothDeviceInformationExpanded), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized GATT information text: All GATT services on this device</summary>
-    internal static string BluetoothGattServices => Manager.GetString(nameof(BluetoothGattServices), CultureInfo.CurrentUICulture)!;
+    internal static string BluetoothGattServices => _manager.GetString(nameof(BluetoothGattServices), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized GATT information text: Read GATT services</summary>
-    internal static string ReadGattServices => Manager.GetString(nameof(ReadGattServices), CultureInfo.CurrentUICulture)!;
+    internal static string ReadGattServices => _manager.GetString(nameof(ReadGattServices), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized GATT information text: Cancel read</summary>
-    internal static string CancelGattRead => Manager.GetString(nameof(CancelGattRead), CultureInfo.CurrentUICulture)!;
+    internal static string CancelGattRead => _manager.GetString(nameof(CancelGattRead), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized GATT information text: Reading GATT services…</summary>
-    internal static string GattServicesLoading => Manager.GetString(nameof(GattServicesLoading), CultureInfo.CurrentUICulture)!;
+    internal static string GattServicesLoading => _manager.GetString(nameof(GattServicesLoading), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized GATT information text: The device returned no GATT services.</summary>
-    internal static string GattServicesEmpty => Manager.GetString(nameof(GattServicesEmpty), CultureInfo.CurrentUICulture)!;
+    internal static string GattServicesEmpty => _manager.GetString(nameof(GattServicesEmpty), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized GATT information text: Read the device to list all of its actual GATT service UUIDs. This briefly connects without applying UART settings.</summary>
-    internal static string GattServicesHint => Manager.GetString(nameof(GattServicesHint), CultureInfo.CurrentUICulture)!;
+    internal static string GattServicesHint => _manager.GetString(nameof(GattServicesHint), CultureInfo.CurrentUICulture)!;
     /// <summary>Gets the localized GATT information text: GATT services could not be read: {0}</summary>
-    internal static string GattServicesFailed => Manager.GetString(nameof(GattServicesFailed), CultureInfo.CurrentUICulture)!;
+    internal static string GattServicesFailed => _manager.GetString(nameof(GattServicesFailed), CultureInfo.CurrentUICulture)!;
 }

@@ -36,11 +36,11 @@ namespace Gurux.Serial;
 public sealed class AndroidUsbDeviceWatcher : IDisposable
 {
     /// <summary>Owns the application-level receiver registration without retaining an activity.</summary>
-    private readonly Context context;
+    private readonly Context _context;
     /// <summary>Receives USB topology broadcasts for this watcher.</summary>
-    private readonly UsbReceiver receiver;
+    private readonly UsbReceiver _receiver;
     /// <summary>Prevents notifications after receiver unregistration.</summary>
-    private int disposed;
+    private int _disposed;
     /// <summary>Occurs when Android reports a USB device attachment or detachment.</summary>
     public event EventHandler<AndroidUsbDeviceEventArgs>? DevicesChanged;
 
@@ -50,27 +50,27 @@ public sealed class AndroidUsbDeviceWatcher : IDisposable
     public AndroidUsbDeviceWatcher(Context context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        this.context = context.ApplicationContext ?? context;
-        receiver = new UsbReceiver(this);
+        this._context = context.ApplicationContext ?? context;
+        _receiver = new UsbReceiver(this);
         using var filter = new IntentFilter(UsbManager.ActionUsbDeviceAttached);
         filter.AddAction(UsbManager.ActionUsbDeviceDetached);
         if (OperatingSystem.IsAndroidVersionAtLeast(33))
         {
-            this.context.RegisterReceiver(receiver, filter, ReceiverFlags.NotExported);
+            this._context.RegisterReceiver(_receiver, filter, ReceiverFlags.NotExported);
         }
         else
         {
-            this.context.RegisterReceiver(receiver, filter);
+            this._context.RegisterReceiver(_receiver, filter);
         }
     }
 
     /// <summary>Unregisters the receiver and stops delivering device change notifications.</summary>
     public void Dispose()
     {
-        if (Interlocked.Exchange(ref disposed, 1) == 0)
+        if (Interlocked.Exchange(ref _disposed, 1) == 0)
         {
-            context.UnregisterReceiver(receiver);
-            receiver.Dispose();
+            _context.UnregisterReceiver(_receiver);
+            _receiver.Dispose();
             DevicesChanged = null;
         }
     }
@@ -80,7 +80,7 @@ public sealed class AndroidUsbDeviceWatcher : IDisposable
     /// <param name="isAttached">Whether the device was attached.</param>
     private void Notify(UsbDevice device, bool isAttached)
     {
-        if (Volatile.Read(ref disposed) == 0)
+        if (Volatile.Read(ref _disposed) == 0)
         {
             DevicesChanged?.Invoke(this, new AndroidUsbDeviceEventArgs(device, isAttached));
         }

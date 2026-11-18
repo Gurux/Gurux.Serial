@@ -34,43 +34,43 @@ namespace Gurux.Serial.Example;
 public sealed class ExampleSession : IAsyncDisposable
 {
     /// <summary>Clears retained activity without changing received payloads, connection state or traffic counters.</summary>
-    public void ClearActivity() => log.Clear();
+    public void ClearActivity() => _log.Clear();
     /// <summary>Serializes connection and send operations.</summary>
-    private readonly SemaphoreSlim operations = new(1, 1);
+    private readonly SemaphoreSlim _operations = new(1, 1);
     /// <summary>Protects cancellation and disposal state.</summary>
-    private readonly object sync = new();
+    private readonly object _sync = new();
     /// <summary>Stores the bounded activity history.</summary>
-    private readonly SessionLog log = new();
+    private readonly SessionLog _log = new();
     /// <summary>Cancels active operations when closing.</summary>
-    private CancellationTokenSource lifetime = new();
+    private CancellationTokenSource _lifetime = new();
     /// <summary>Tracks whether disposal has started.</summary>
-    private bool disposed;
+    private bool _disposed;
     /// <summary>Tracks the active serialized operation.</summary>
-    private int busy;
+    private int _busy;
     /// <summary>Stores received frames independently of the activity history.</summary>
-    private readonly Queue<byte[]> received = new();
+    private readonly Queue<byte[]> _received = new();
     /// <summary>Limits retained payload storage to 64 KiB.</summary>
-    private int receivedSize;
+    private int _receivedSize;
     /// <summary>Contains the automatic framing configuration, or null for legacy event reception.</summary>
-    private ReceiveParameters<byte[]>? receiveOptions;
+    private ReceiveParameters<byte[]>? _receiveOptions;
     /// <summary>Completes after the current connection's receive loop has stopped.</summary>
-    private Task receiver = Task.CompletedTask;
+    private Task _receiver = Task.CompletedTask;
     /// <summary>Stores the atomic receive echo option.</summary>
-    private int echo;
+    private int _echo;
     /// <summary>Gets or sets whether automatically received bytes are sent back unchanged.</summary>
     public bool Echo
     {
-        get => Volatile.Read(ref echo) != 0;
-        set => Volatile.Write(ref echo, value ? 1 : 0);
+        get => Volatile.Read(ref _echo) != 0;
+        set => Volatile.Write(ref _echo, value ? 1 : 0);
     }
 
     /// <summary>Clears retained received payloads without changing the connection, counters or activity history.</summary>
     public void ClearReceived()
     {
-        lock (sync)
+        lock (_sync)
         {
-            received.Clear();
-            receivedSize = 0;
+            _received.Clear();
+            _receivedSize = 0;
         }
     }
     /// <summary>Formats the bounded received history without modifying its original bytes.</summary>
@@ -78,9 +78,9 @@ public sealed class ExampleSession : IAsyncDisposable
     /// <returns>Received frames separated by platform line endings.</returns>
     public string Received(bool hex = false)
     {
-        lock (sync)
+        lock (_sync)
         {
-            return string.Join(Environment.NewLine, received.Select(data => ExampleDataDisplay.Format(data, hex)));
+            return string.Join(Environment.NewLine, _received.Select(data => ExampleDataDisplay.Format(data, hex)));
         }
     }
 
@@ -106,14 +106,14 @@ public sealed class ExampleSession : IAsyncDisposable
         {
             throw new FormatException(ExampleResources.InvalidReplySettings);
         }
-        lock (sync)
+        lock (_sync)
         {
-            ObjectDisposedException.ThrowIf(disposed, this);
+            ObjectDisposedException.ThrowIf(_disposed, this);
             if (Media.IsOpen || IsBusy)
             {
                 throw new InvalidOperationException(ExampleResources.CloseBeforeReplySettings);
             }
-            receiveOptions = new ReceiveParameters<byte[]>
+            _receiveOptions = new ReceiveParameters<byte[]>
             {
                 Count = count == 0 && marker is null ? 1 : count,
                 Eop = marker,
@@ -154,7 +154,7 @@ public sealed class ExampleSession : IAsyncDisposable
                             await RunAsync(async token =>
                             {
                                 await Media.SendAsync(bytes, cancellationToken: token).ConfigureAwait(false);
-                                log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Tx, ExampleDataDisplay.Format(bytes)));
+                                _log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Tx, ExampleDataDisplay.Format(bytes)));
                                 return true;
                             }, cancellationToken).ConfigureAwait(false);
                         }
@@ -168,7 +168,7 @@ public sealed class ExampleSession : IAsyncDisposable
             {
                 if (!cancellationToken.IsCancellationRequested)
                 {
-                    log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Error, ex.Message));
+                    _log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Error, ex.Message));
                 }
             }
         }
@@ -193,9 +193,9 @@ public sealed class ExampleSession : IAsyncDisposable
         return selectedPortAvailable;
     }
     /// <summary>Gets whether an open or send operation is running.</summary>
-    public bool IsBusy => Volatile.Read(ref busy) != 0;
+    public bool IsBusy => Volatile.Read(ref _busy) != 0;
     /// <summary>Gets a snapshot of recent activity.</summary>
-    public IReadOnlyList<string> Log => log.Snapshot;
+    public IReadOnlyList<string> Log => _log.Snapshot;
     /// <summary>Creates the serial media using the platform transport when supplied.</summary>
     /// <param name="serialFactory">An optional platform serial stream factory.</param>
     public ExampleSession(Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? serialFactory = null)
@@ -216,29 +216,29 @@ public sealed class ExampleSession : IAsyncDisposable
     {
         if (args.Data is byte[] bytes)
         {
-            lock (sync)
+            lock (_sync)
             {
                 byte[] retained = bytes.Length > 65536 ? bytes[^65536..] : bytes.ToArray();
-                received.Enqueue(retained);
-                receivedSize += retained.Length;
-                while (received.Count > 500 || receivedSize > 65536)
+                _received.Enqueue(retained);
+                _receivedSize += retained.Length;
+                while (_received.Count > 500 || _receivedSize > 65536)
                 {
-                    receivedSize -= received.Dequeue().Length;
+                    _receivedSize -= _received.Dequeue().Length;
                 }
             }
-            log.Add(ExampleDataDisplay.IsAscii(bytes)
+            _log.Add(ExampleDataDisplay.IsAscii(bytes)
                 ? string.Format(CultureInfo.CurrentCulture, ExampleResources.RxBytes, args.SenderInfo, Convert.ToHexString(bytes), ExampleDataDisplay.Format(bytes))
                 : string.Format(CultureInfo.CurrentCulture, ExampleResources.RxData, args.SenderInfo, ExampleDataDisplay.Format(bytes)));
         }
         else
         {
-            log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.RxData, args.SenderInfo, args.Data));
+            _log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.RxData, args.SenderInfo, args.Data));
         }
     }
     /// <summary>Records transport errors for the native activity view.</summary>
     /// <param name="sender">The originating serial media.</param>
     /// <param name="args">The reported transport error.</param>
-    private void Error(object? sender, MediaErrorEventArgs args) => log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Error, args.Exception.Message));
+    private void Error(object? sender, MediaErrorEventArgs args) => _log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Error, args.Exception.Message));
     /// <summary>Runs one operation under the session cancellation lifetime.</summary>
     /// <typeparam name="T">The operation result type.</typeparam>
     /// <param name="action">The asynchronous operation.</param>
@@ -248,12 +248,12 @@ public sealed class ExampleSession : IAsyncDisposable
     private async Task<T> RunAsync<T>(Func<CancellationToken, Task<T>> action, CancellationToken cancellationToken)
     {
         CancellationToken token;
-        lock (sync) { ObjectDisposedException.ThrowIf(disposed, this); token = lifetime.Token; }
+        lock (_sync) { ObjectDisposedException.ThrowIf(_disposed, this); token = _lifetime.Token; }
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(token, cancellationToken);
-        await operations.WaitAsync(linked.Token).ConfigureAwait(false);
-        Interlocked.Exchange(ref busy, 1);
+        await _operations.WaitAsync(linked.Token).ConfigureAwait(false);
+        Interlocked.Exchange(ref _busy, 1);
         try { linked.Token.ThrowIfCancellationRequested(); return await action(linked.Token).ConfigureAwait(false); }
-        finally { Interlocked.Exchange(ref busy, 0); operations.Release(); }
+        finally { Interlocked.Exchange(ref _busy, 0); _operations.Release(); }
     }
     /// <summary>Opens the selected serial transport and includes requested settings when the driver rejects an argument.</summary>
     /// <param name="cancellationToken">Cancels the open operation.</param>
@@ -265,7 +265,7 @@ public sealed class ExampleSession : IAsyncDisposable
         {
             return true;
         }
-        IDisposable? scope = receiveOptions is not null ? Media.BeginSynchronous() : null;
+        IDisposable? scope = _receiveOptions is not null ? Media.BeginSynchronous() : null;
         try
         {
             try
@@ -279,14 +279,14 @@ public sealed class ExampleSession : IAsyncDisposable
                     Media.DataBits, Media.Parity, Media.StopBits, Media.Handshake,
                     Media.DtrEnable, Media.RtsEnable, ex.Message), ex);
             }
-            lock (sync)
+            lock (_sync)
             {
-                received.Clear();
-                receivedSize = 0;
+                _received.Clear();
+                _receivedSize = 0;
             }
             if (scope is not null)
             {
-                receiver = ReceiveLoopAsync(receiveOptions!, scope, lifetime.Token);
+                _receiver = ReceiveLoopAsync(_receiveOptions!, scope, _lifetime.Token);
                 scope = null;
             }
         }
@@ -294,24 +294,24 @@ public sealed class ExampleSession : IAsyncDisposable
         {
             scope?.Dispose();
         }
-        log.Add(ExampleResources.Opened);
+        _log.Add(ExampleResources.Opened);
         return true;
     }, cancellationToken);
     /// <summary>Cancels active work and closes the serial transport.</summary>
     /// <returns>A task completing after active work and transport shutdown finish.</returns>
     public async Task CloseAsync()
     {
-        lock (sync) { lifetime.Cancel(); }
+        lock (_sync) { _lifetime.Cancel(); }
         var closing = Media.CloseAsync();
-        await operations.WaitAsync().ConfigureAwait(false);
+        await _operations.WaitAsync().ConfigureAwait(false);
         try
         {
             await closing.ConfigureAwait(false);
-            await receiver.ConfigureAwait(false);
-            lock (sync) { lifetime.Dispose(); lifetime = new(); }
-            log.Add(ExampleResources.ClosedLog);
+            await _receiver.ConfigureAwait(false);
+            lock (_sync) { _lifetime.Dispose(); _lifetime = new(); }
+            _log.Add(ExampleResources.ClosedLog);
         }
-        finally { operations.Release(); }
+        finally { _operations.Release(); }
     }
     /// <summary>Sends text or hexadecimal bytes and optionally waits for a framed reply.</summary>
     /// <param name="text">The UTF-8 text or hexadecimal bytes to send; in text mode, literal \r and \n sequences become carriage returns and line feeds.</param>
@@ -331,19 +331,19 @@ public sealed class ExampleSession : IAsyncDisposable
             using var scope = receiveReply ? Media.BeginSynchronous() : null;
             if (receiveReply) { Media.ResetSynchronousBuffer(); }
             await Media.SendAsync(data, cancellationToken: token).ConfigureAwait(false);
-            log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Tx, ExampleDataDisplay.Format(data, hex)));
+            _log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Tx, ExampleDataDisplay.Format(data, hex)));
             if (!receiveReply) { return null; }
             var parameters = new ReceiveParameters<byte[]> { Count = count, WaitTime = waitTime, Eop = string.IsNullOrEmpty(eop) ? null : (hex ? Convert.FromHexString(string.Concat(eop.Where(c => !char.IsWhiteSpace(c)))) : Encoding.UTF8.GetBytes(eop)), AllData = count == 0 && string.IsNullOrEmpty(eop) };
             if (!await Media.ReceiveAsync(parameters, token).ConfigureAwait(false)) { throw new TimeoutException(ExampleResources.Timeout); }
             var reply = parameters.Reply ?? [];
             var result = ExampleDataDisplay.Format(reply, hex);
-            log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Reply, result));
+            _log.Add(string.Format(CultureInfo.CurrentCulture, ExampleResources.Reply, result));
             return result;
         }, cancellationToken);
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        lock (sync) { if (disposed) { return; } disposed = true; }
+        lock (_sync) { if (_disposed) { return; } _disposed = true; }
         await CloseAsync().ConfigureAwait(false);
         Media.OnReceived -= Received;
         Media.OnError -= Error;

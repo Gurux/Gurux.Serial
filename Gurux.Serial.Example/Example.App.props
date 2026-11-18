@@ -13,6 +13,8 @@
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <!-- Keep nested example test builds out of application content and assembly candidates. -->
+    <DefaultItemExcludes>$(DefaultItemExcludes);**/bin/**;**/obj/**;**/Tests/**;**/tests/**</DefaultItemExcludes>
     <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
     <EnableDefaultMauiItems>false</EnableDefaultMauiItems>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>

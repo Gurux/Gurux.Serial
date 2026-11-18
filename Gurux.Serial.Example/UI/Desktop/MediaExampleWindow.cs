@@ -44,139 +44,139 @@ namespace Gurux.Serial.Example.Desktop;
 public sealed class MediaExampleWindow : Window, IAsyncDisposable
 {
     /// <summary>Displays connection state and selected endpoints in the fixed bottom status bar.</summary>
-    private readonly TextBlock mediaStatus = new() { Name = "MediaStatus" };
+    private readonly TextBlock _mediaStatus = new() { Name = "MediaStatus" };
     /// <summary>Shows indeterminate connection progress only while the transport is opening or closing.</summary>
-    private readonly ProgressBar connectionProgress = new() { Name = "ConnectionProgress", IsIndeterminate = true, IsVisible = false, Height = 4 };
+    private readonly ProgressBar _connectionProgress = new() { Name = "ConnectionProgress", IsIndeterminate = true, IsVisible = false, Height = 4 };
 
     /// <summary>Persists this application's media and outgoing data preferences.</summary>
-    private readonly ExampleSettingsStore preferences = new();
+    private readonly ExampleSettingsStore _preferences = new();
     /// <summary>Completes when startup preferences have been applied on the UI thread.</summary>
-    private Task preferencesLoading = Task.CompletedTask;
+    private Task _preferencesLoading = Task.CompletedTask;
     /// <summary>Tracks the latest queued write so shutdown waits for the final disk update.</summary>
-    private Task preferencesSaving = Task.CompletedTask;
+    private Task _preferencesSaving = Task.CompletedTask;
     /// <summary>Prevents persistence until startup restoration has completed.</summary>
-    private bool preferencesReady;
+    private bool _preferencesReady;
     /// <summary>Reserves navigation and media commands while the modal settings editor owns input.</summary>
-    private bool settingsShowing;
+    private bool _settingsShowing;
     /// <summary>Tracks the most recently requested snapshot and avoids saving unchanged controls.</summary>
-    private string? preferencesSnapshot;
+    private string? _preferencesSnapshot;
 
     /// <summary>Stores the latest transport connection phase independently of command activity.</summary>
-    private int connectionPhase;
+    private int _connectionPhase;
     /// <summary>Prevents callbacks from refreshing disposed resources.</summary>
-    private int shuttingDown;
+    private int _shuttingDown;
     /// <summary>Cancels UI operations during shutdown.</summary>
-    private readonly CancellationTokenSource lifetime = new();
+    private readonly CancellationTokenSource _lifetime = new();
     /// <summary>Tracks discovery of the selected serial port without blocking the UI thread.</summary>
-    private readonly global::Gurux.Serial.SerialPortAvailability portAvailability = new();
+    private readonly global::Gurux.Serial.SerialPortAvailability _portAvailability = new();
     /// <summary>Owns the serial connection lifecycle.</summary>
-    private readonly ExampleSession session;
+    private readonly ExampleSession _session;
     /// <summary>Allows closing an open connection, including canceling an active reply.</summary>
-    private Button? closeButton;
+    private Button? _closeButton;
     /// <summary>Tracks commands whose availability depends on connection state.</summary>
-    private readonly List<Button> unsafeButtons = [];
+    private readonly List<Button> _unsafeButtons = [];
     /// <summary>Tracks the single shutdown operation.</summary>
-    private Task? disposal;
+    private Task? _disposal;
     /// <summary>Refreshes connection state on the UI thread.</summary>
-    private readonly DispatcherTimer timer;
+    private readonly DispatcherTimer _timer;
     /// <summary>Displays the current connection state.</summary>
-    private readonly TextBlock state = new() { Name = "ConnectionState" };
+    private readonly TextBlock _state = new() { Name = "ConnectionState" };
     /// <summary>Displays action errors and replies.</summary>
-    private readonly TextBlock error = new() { Name = "ActionError", TextWrapping = global::Avalonia.Media.TextWrapping.Wrap };
+    private readonly TextBlock _error = new() { Name = "ActionError", TextWrapping = global::Avalonia.Media.TextWrapping.Wrap };
     /// <summary>Displays the bounded activity history.</summary>
-    private readonly TextBox log = new() { Name = "ActivityLog", IsReadOnly = true, AcceptsReturn = true, MinHeight = 220 };
+    private readonly TextBox _log = new() { Name = "ActivityLog", IsReadOnly = true, AcceptsReturn = true, MinHeight = 220 };
     /// <summary>Contains the outgoing payload.</summary>
-    private readonly TextBox text = new() { Name = "SendText", PlaceholderText = ExampleResources.SendPlaceholder };
+    private readonly TextBox _text = new() { Name = "SendText", PlaceholderText = ExampleResources.SendPlaceholder };
     /// <summary>Contains the optional reply terminator.</summary>
-    private readonly TextBox eop = new() { Name = "ReplyEop", PlaceholderText = ExampleResources.EopPlaceholder };
+    private readonly TextBox _eop = new() { Name = "ReplyEop", PlaceholderText = ExampleResources.EopPlaceholder };
     /// <summary>Contains the minimum reply byte count.</summary>
-    private readonly TextBox count = new() { Name = "ReplyCount", Text = "0" };
+    private readonly TextBox _count = new() { Name = "ReplyCount", Text = "0" };
     /// <summary>Contains the reply timeout in milliseconds.</summary>
-    private readonly TextBox timeout = new() { Name = "ReplyTimeout", Text = "5000" };
+    private readonly TextBox _timeout = new() { Name = "ReplyTimeout", Text = "5000" };
     /// <summary>Selects hexadecimal data encoding.</summary>
-    private readonly ToggleSwitch hex = new() { Name = "HexMode", Content = ExampleResources.Hexadecimal, OnContent = null, OffContent = null };
+    private readonly ToggleSwitch _hex = new() { Name = "HexMode", Content = ExampleResources.Hexadecimal, OnContent = null, OffContent = null };
     /// <summary>Selects whether received bytes are sent back unchanged.</summary>
-    private readonly ToggleSwitch echo = new() { Name = "Echo", Content = ExampleResources.Echo, OnContent = null, OffContent = null };
+    private readonly ToggleSwitch _echo = new() { Name = "Echo", Content = ExampleResources.Echo, OnContent = null, OffContent = null };
     /// <summary>Displays received frames independently of diagnostic activity.</summary>
-    private readonly TextBox received = new() { Name = "ReceivedData", IsReadOnly = true, AcceptsReturn = true, MinHeight = 220 };
+    private readonly TextBox _received = new() { Name = "ReceivedData", IsReadOnly = true, AcceptsReturn = true, MinHeight = 220 };
     /// <summary>Contains the connection and payload controls.</summary>
-    private readonly StackPanel dataView = new() { Name = "DataView", Spacing = 12 };
+    private readonly StackPanel _dataView = new() { Name = "DataView", Spacing = 12 };
     /// <summary>Contains receive framing controls.</summary>
-    private readonly StackPanel communicationView = new() { Name = "CommunicationView", Spacing = 12, IsVisible = false };
+    private readonly StackPanel _communicationView = new() { Name = "CommunicationView", Spacing = 12, IsVisible = false };
     /// <summary>Contains the activity history displayed by its own navigation item.</summary>
-    private readonly StackPanel activityView = new() { Name = "ActivityView", Spacing = 12, IsVisible = false };
+    private readonly StackPanel _activityView = new() { Name = "ActivityView", Spacing = 12, IsVisible = false };
     /// <summary>Displays the desktop's persistent connection, view and settings menus.</summary>
-    private readonly Menu applicationMenu = new() { Name = "ApplicationMenu" };
+    private readonly Menu _applicationMenu = new() { Name = "ApplicationMenu" };
     /// <summary>Mirrors whether the connection can currently be opened.</summary>
-    private readonly MenuItem openMenuItem = new() { Name = "OpenMenu" };
+    private readonly MenuItem _openMenuItem = new() { Name = "OpenMenu" };
     /// <summary>Mirrors whether the connection can currently be closed.</summary>
-    private readonly MenuItem closeMenuItem = new() { Name = "CloseMenu" };
+    private readonly MenuItem _closeMenuItem = new() { Name = "CloseMenu" };
     /// <summary>Allows media configuration while the connection is closed and idle.</summary>
-    private readonly MenuItem settingsMenuItem = new() { Name = "Settings" };
+    private readonly MenuItem _settingsMenuItem = new() { Name = "Settings" };
     /// <summary>Creates the native serial example and closes its window after asynchronous cleanup, including when cleanup fails.</summary>
     /// <param name="serialFactory">An optional platform serial stream factory.</param>
     public MediaExampleWindow(Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? serialFactory = null)
     {
         Title = ExampleResources.Title;
-        session = new(serialFactory);
+        _session = new(serialFactory);
         ExampleLayout.ConfigureWindow(this);
-        var body = ExampleLayout.CreateBody(state);
-        global::Avalonia.Automation.AutomationProperties.SetName(connectionProgress, ExampleSettingsResources.ConnectionBusy);
-        body.Children.Add(connectionProgress);
+        var body = ExampleLayout.CreateBody(_state);
+        global::Avalonia.Automation.AutomationProperties.SetName(_connectionProgress, ExampleSettingsResources.ConnectionBusy);
+        body.Children.Add(_connectionProgress);
         CreateDesktopMenu();
-        var connection = ExampleLayout.Toolbar(dataView);
+        var connection = ExampleLayout.Toolbar(_dataView);
         AddButton(connection, "Open", ExampleResources.Open, OpenConnectionAsync, true);
-        AddButton(connection, "Close", ExampleResources.Close, () => session.CloseAsync());
-        text.FontFamily = new global::Avalonia.Media.FontFamily("Cascadia Mono, DejaVu Sans Mono, Consolas, Menlo, monospace");
-        var payload = ExampleLayout.Field(ExampleSettingsResources.PayloadLabel, text);
+        AddButton(connection, "Close", ExampleResources.Close, () => _session.CloseAsync());
+        _text.FontFamily = new global::Avalonia.Media.FontFamily("Cascadia Mono, DejaVu Sans Mono, Consolas, Menlo, monospace");
+        var payload = ExampleLayout.Field(ExampleSettingsResources.PayloadLabel, _text);
         payload.MaxWidth = double.PositiveInfinity;
         payload.HorizontalAlignment = HorizontalAlignment.Stretch;
         var exchange = new StackPanel { Spacing = 10 };
         exchange.Children.Add(payload);
-        var actions = ExampleLayout.Row(hex, echo);
-        echo.IsCheckedChanged += (_, _) => session.Echo = echo.IsChecked == true;
+        var actions = ExampleLayout.Row(_hex, _echo);
+        _echo.IsCheckedChanged += (_, _) => _session.Echo = _echo.IsChecked == true;
         exchange.Children.Add(actions);
-        dataView.Children.Add(ExampleLayout.Group(ExampleResources.Data, exchange));
-        ExampleLayout.ConfigureLog(received);
-        dataView.Children.Add(ExampleLayout.Group(ExampleResources.ReceivedData, received));
-        count.Width = 140;
-        eop.Width = 180;
-        timeout.Width = 140;
+        _dataView.Children.Add(ExampleLayout.Group(ExampleResources.Data, exchange));
+        ExampleLayout.ConfigureLog(_received);
+        _dataView.Children.Add(ExampleLayout.Group(ExampleResources.ReceivedData, _received));
+        _count.Width = 140;
+        _eop.Width = 180;
+        _timeout.Width = 140;
         var replySettings = new StackPanel { Spacing = 10 };
         replySettings.Children.Add(new TextBlock { Text = ExampleResources.CloseBeforeReplySettings, TextWrapping = global::Avalonia.Media.TextWrapping.Wrap });
         replySettings.Children.Add(ExampleLayout.Row(
-            ExampleLayout.Field(ExampleSettingsResources.CountLabel, count),
-            ExampleLayout.Field(ExampleSettingsResources.TerminatorLabel, eop),
-            ExampleLayout.Field(ExampleSettingsResources.TimeoutLabel, timeout)));
-        communicationView.Children.Add(ExampleLayout.Group(ExampleSettingsResources.ReplyGroup, replySettings));
+            ExampleLayout.Field(ExampleSettingsResources.CountLabel, _count),
+            ExampleLayout.Field(ExampleSettingsResources.TerminatorLabel, _eop),
+            ExampleLayout.Field(ExampleSettingsResources.TimeoutLabel, _timeout)));
+        _communicationView.Children.Add(ExampleLayout.Group(ExampleSettingsResources.ReplyGroup, replySettings));
         AddButton(actions, "Send", ExampleResources.Send, async () =>
         {
-            await session.SendAsync(text.Text ?? "", hex.IsChecked == true, cancellationToken: lifetime.Token);
+            await _session.SendAsync(_text.Text ?? "", _hex.IsChecked == true, cancellationToken: _lifetime.Token);
         }, true);
-        AddButton(actions, "Clear", ExampleResources.Clear, () => { session.ClearReceived(); return Task.CompletedTask; });
-        body.Children.Add(dataView);
-        body.Children.Add(communicationView);
-        body.Children.Add(activityView);
-        body.Children.Add(error);
-        ExampleLayout.ConfigureLog(log);
+        AddButton(actions, "Clear", ExampleResources.Clear, () => { _session.ClearReceived(); return Task.CompletedTask; });
+        body.Children.Add(_dataView);
+        body.Children.Add(_communicationView);
+        body.Children.Add(_activityView);
+        body.Children.Add(_error);
+        ExampleLayout.ConfigureLog(_log);
         var activityActions = ExampleLayout.Row();
-        AddButton(activityActions, "ClearActivity", ExampleResources.Clear, () => { session.ClearActivity(); return Task.CompletedTask; });
-        activityView.Children.Add(activityActions);
-        activityView.Children.Add(ExampleLayout.Group(ExampleSettingsResources.ActivityGroup, log));
+        AddButton(activityActions, "ClearActivity", ExampleResources.Clear, () => { _session.ClearActivity(); return Task.CompletedTask; });
+        _activityView.Children.Add(activityActions);
+        _activityView.Children.Add(ExampleLayout.Group(ExampleSettingsResources.ActivityGroup, _log));
         var frame = new Grid { RowDefinitions = new RowDefinitions("Auto,*") };
-        frame.Children.Add(applicationMenu);
-        var content = ExampleLayout.WithStatus(body, mediaStatus);
+        frame.Children.Add(_applicationMenu);
+        var content = ExampleLayout.WithStatus(body, _mediaStatus);
         Grid.SetRow(content, 1);
         frame.Children.Add(content);
         Content = frame;
-        timer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Background, (_, _) => Refresh());
-        Volatile.Write(ref connectionPhase, (int)(session.Media.IsOpen ? MediaState.Open : MediaState.Closed));
-        session.Media.OnMediaStateChange += MediaStateChanged;
-        timer.Start(); Refresh();
-        preferencesLoading = RestorePreferencesAsync();
+        _timer = new DispatcherTimer(TimeSpan.FromMilliseconds(200), DispatcherPriority.Background, (_, _) => Refresh());
+        Volatile.Write(ref _connectionPhase, (int)(_session.Media.IsOpen ? MediaState.Open : MediaState.Closed));
+        _session.Media.OnMediaStateChange += MediaStateChanged;
+        _timer.Start(); Refresh();
+        _preferencesLoading = RestorePreferencesAsync();
         Closing += async (_, args) =>
         {
-            if (disposal is null)
+            if (_disposal is null)
             {
                 args.Cancel = true;
                 await RunAsync(async () =>
@@ -192,11 +192,11 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
                     }
                 });
             }
-            else if (!disposal.IsCompleted) { args.Cancel = true; }
+            else if (!_disposal.IsCompleted) { args.Cancel = true; }
         };
     }
     /// <summary>Gets whether preferences are restored and no settings editor or shutdown owns input.</summary>
-    private bool CanNavigate => preferencesReady && !settingsShowing && Volatile.Read(ref shuttingDown) == 0;
+    private bool CanNavigate => _preferencesReady && !_settingsShowing && Volatile.Read(ref _shuttingDown) == 0;
     /// <summary>Switches existing sections only while navigation owns input, preserving the media session and controls.</summary>
     /// <param name="section">The existing data, communication settings or activity section to display.</param>
     private void ShowSection(Control section)
@@ -205,22 +205,22 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
         {
             return;
         }
-        dataView.IsVisible = ReferenceEquals(section, dataView);
-        communicationView.IsVisible = ReferenceEquals(section, communicationView);
-        activityView.IsVisible = ReferenceEquals(section, activityView);
+        _dataView.IsVisible = ReferenceEquals(section, _dataView);
+        _communicationView.IsVisible = ReferenceEquals(section, _communicationView);
+        _activityView.IsVisible = ReferenceEquals(section, _activityView);
     }
     /// <summary>Builds the native desktop menu without replacing the session or its content sections.</summary>
     private void CreateDesktopMenu()
     {
-        applicationMenu.ItemsSource = new MenuItem[]
+        _applicationMenu.ItemsSource = new MenuItem[]
         {
             new()
             {
                 Name = "ConnectionMenu", Header = ExampleResources.ConnectionMenu,
                 ItemsSource = new[]
                 {
-                    MenuAction(openMenuItem, ExampleResources.Open, OpenConnectionAsync),
-                    MenuAction(closeMenuItem, ExampleResources.Close, session.CloseAsync)
+                    MenuAction(_openMenuItem, ExampleResources.Open, OpenConnectionAsync),
+                    MenuAction(_closeMenuItem, ExampleResources.Close, _session.CloseAsync)
                 }
             },
             new()
@@ -228,8 +228,8 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
                 Name = "ViewMenu", Header = ExampleResources.ViewMenu,
                 ItemsSource = new[]
                 {
-                    MenuAction(new MenuItem { Name = "DataNavigation" }, ExampleResources.Data, () => { ShowSection(dataView); return Task.CompletedTask; }),
-                    MenuAction(new MenuItem { Name = "ActivityNavigation" }, ExampleSettingsResources.ActivityGroup, () => { ShowSection(activityView); return Task.CompletedTask; })
+                    MenuAction(new MenuItem { Name = "DataNavigation" }, ExampleResources.Data, () => { ShowSection(_dataView); return Task.CompletedTask; }),
+                    MenuAction(new MenuItem { Name = "ActivityNavigation" }, ExampleSettingsResources.ActivityGroup, () => { ShowSection(_activityView); return Task.CompletedTask; })
                 }
             },
             new()
@@ -237,8 +237,8 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
                 Name = "SettingsMenu", Header = ExampleResources.Settings,
                 ItemsSource = new[]
                 {
-                    MenuAction(settingsMenuItem, ExampleResources.MediaSettings, EditMediaSettingsAsync),
-                    MenuAction(new MenuItem { Name = "CommunicationNavigation" }, ExampleResources.CommunicationSettings, () => { ShowSection(communicationView); return Task.CompletedTask; })
+                    MenuAction(_settingsMenuItem, ExampleResources.MediaSettings, EditMediaSettingsAsync),
+                    MenuAction(new MenuItem { Name = "CommunicationNavigation" }, ExampleResources.CommunicationSettings, () => { ShowSection(_communicationView); return Task.CompletedTask; })
                 }
             }
         };
@@ -253,7 +253,7 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
         item.Header = caption;
         item.Click += async (_, _) =>
         {
-            if (CanNavigate && item.IsEnabled && applicationMenu.IsEnabled)
+            if (CanNavigate && item.IsEnabled && _applicationMenu.IsEnabled)
             {
                 await RunAsync(action);
             }
@@ -267,29 +267,29 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
     /// <exception cref="OperationCanceledException">Shutdown cancels opening.</exception>
     private Task OpenConnectionAsync()
     {
-        session.ConfigureReceive(hex.IsChecked == true, eop.Text,
-            int.Parse(count.Text ?? "0", CultureInfo.CurrentCulture),
-            int.Parse(timeout.Text ?? "5000", CultureInfo.CurrentCulture));
-        return session.OpenAsync(lifetime.Token);
+        _session.ConfigureReceive(_hex.IsChecked == true, _eop.Text,
+            int.Parse(_count.Text ?? "0", CultureInfo.CurrentCulture),
+            int.Parse(_timeout.Text ?? "5000", CultureInfo.CurrentCulture));
+        return _session.OpenAsync(_lifetime.Token);
     }
     /// <summary>Shows the closed connection's settings editor while reserving menu input until it closes.</summary>
     /// <returns>A task completing after accepted settings, cancellation, or an ignored unavailable action.</returns>
     /// <exception cref="OperationCanceledException">Application shutdown cancels the editor.</exception>
     private async Task EditMediaSettingsAsync()
     {
-        if (!CanNavigate || session.IsBusy || (MediaState)Volatile.Read(ref connectionPhase) != MediaState.Closed)
+        if (!CanNavigate || _session.IsBusy || (MediaState)Volatile.Read(ref _connectionPhase) != MediaState.Closed)
         {
             return;
         }
-        settingsShowing = true;
+        _settingsShowing = true;
         Refresh();
         try
         {
-            await new AvaloniaMediaSettingsEditor(this).ShowAsync(session.Media, cancellationToken: lifetime.Token);
+            await new AvaloniaMediaSettingsEditor(this).ShowAsync(_session.Media, cancellationToken: _lifetime.Token);
         }
         finally
         {
-            settingsShowing = false;
+            _settingsShowing = false;
             Refresh();
         }
     }
@@ -298,11 +298,11 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
     /// <param name="args">The new media state.</param>
     private void MediaStateChanged(object? sender, MediaStateEventArgs args)
     {
-        if (Volatile.Read(ref shuttingDown) != 0 || args.State == MediaState.Changed)
+        if (Volatile.Read(ref _shuttingDown) != 0 || args.State == MediaState.Changed)
         {
             return;
         }
-        Volatile.Write(ref connectionPhase, (int)args.State);
+        Volatile.Write(ref _connectionPhase, (int)args.State);
         if (Dispatcher.UIThread.CheckAccess())
         {
             RefreshMediaState();
@@ -315,7 +315,7 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
     /// <summary>Ignores queued transport notifications after shutdown begins.</summary>
     private void RefreshMediaState()
     {
-        if (Volatile.Read(ref shuttingDown) == 0)
+        if (Volatile.Read(ref _shuttingDown) == 0)
         {
             Refresh();
         }
@@ -330,84 +330,84 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
     {
         var button = new Button { Name = name, Content = caption, HorizontalAlignment = HorizontalAlignment.Left };
         ExampleLayout.ConfigureAction(button, name is "Open" or "Send");
-        if (name == "Close") { closeButton = button; }
+        if (name == "Close") { _closeButton = button; }
         button.Click += async (_, _) => await RunAsync(action);
         parent.Children.Add(button);
-        if (unsafeAction) { unsafeButtons.Add(button); }
+        if (unsafeAction) { _unsafeButtons.Add(button); }
     }
     /// <summary>Executes a command and reports any failure in the native view.</summary>
     /// <param name="action">The asynchronous action to execute.</param>
     /// <returns>A task completing after the UI state is refreshed.</returns>
     private async Task RunAsync(Func<Task> action)
     {
-        try { error.Text = ""; Task operation = action(); Refresh(); await operation; }
-        catch (OperationCanceledException) { error.Text = ExampleResources.Canceled; }
-        catch (Exception ex) { error.Text = ex.Message; }
+        try { _error.Text = ""; Task operation = action(); Refresh(); await operation; }
+        catch (OperationCanceledException) { _error.Text = ExampleResources.Canceled; }
+        catch (Exception ex) { _error.Text = ex.Message; }
         finally { Refresh(); }
     }
     /// <summary>Refreshes connection status, selected serial port availability, commands and activity history.</summary>
     private void Refresh()
     {
-        if (Volatile.Read(ref shuttingDown) != 0)
+        if (Volatile.Read(ref _shuttingDown) != 0)
         {
-            connectionProgress.IsVisible = false;
-            applicationMenu.IsEnabled = false;
-            openMenuItem.IsEnabled = false;
-            closeMenuItem.IsEnabled = false;
-            settingsMenuItem.IsEnabled = false;
-            if (closeButton is not null) { closeButton.IsEnabled = false; }
-            foreach (var button in unsafeButtons) { button.IsEnabled = false; }
+            _connectionProgress.IsVisible = false;
+            _applicationMenu.IsEnabled = false;
+            _openMenuItem.IsEnabled = false;
+            _closeMenuItem.IsEnabled = false;
+            _settingsMenuItem.IsEnabled = false;
+            if (_closeButton is not null) { _closeButton.IsEnabled = false; }
+            foreach (var button in _unsafeButtons) { button.IsEnabled = false; }
             return;
         }
-        applicationMenu.IsEnabled = CanNavigate;
-        MediaState phase = (MediaState)Volatile.Read(ref connectionPhase);
-        connectionProgress.IsVisible = phase is MediaState.Opening or MediaState.Closing;
+        _applicationMenu.IsEnabled = CanNavigate;
+        MediaState phase = (MediaState)Volatile.Read(ref _connectionPhase);
+        _connectionProgress.IsVisible = phase is MediaState.Opening or MediaState.Closing;
         bool closed = phase == MediaState.Closed;
-        bool busy = session.IsBusy;
+        bool busy = _session.IsBusy;
         bool open = phase == MediaState.Open;
-        count.IsEnabled = closed && !busy;
-        eop.IsEnabled = closed && !busy;
-        timeout.IsEnabled = closed && !busy;
-        if (closed && !busy && !lifetime.IsCancellationRequested)
+        _count.IsEnabled = closed && !busy;
+        _eop.IsEnabled = closed && !busy;
+        _timeout.IsEnabled = closed && !busy;
+        if (closed && !busy && !_lifetime.IsCancellationRequested)
         {
-            _ = portAvailability.RefreshAsync(session.Media.PortName, lifetime.Token);
+            _ = _portAvailability.RefreshAsync(_session.Media.PortName, _lifetime.Token);
         }
-        ExampleLayout.UpdateStatus(state, open, busy);
-        ExampleLayout.UpdateError(error);
-        if (closeButton is not null) { closeButton.IsEnabled = open; }
-        foreach (var button in unsafeButtons)
+        ExampleLayout.UpdateStatus(_state, open, busy);
+        ExampleLayout.UpdateError(_error);
+        if (_closeButton is not null) { _closeButton.IsEnabled = open; }
+        foreach (var button in _unsafeButtons)
         {
             button.IsEnabled = !busy && (button.Name is "Settings" or "RightSettings" or "Open" ? closed : open)
-                && (button.Name != "Open" || (!lifetime.IsCancellationRequested && session.CanAttemptOpen(portAvailability.IsAvailable)));
+                && (button.Name != "Open" || (!_lifetime.IsCancellationRequested && _session.CanAttemptOpen(_portAvailability.IsAvailable)));
         }
-        openMenuItem.IsEnabled = preferencesReady && unsafeButtons.Any(button => button.Name == "Open" && button.IsEnabled);
-        closeMenuItem.IsEnabled = preferencesReady && closeButton?.IsEnabled == true;
-        settingsMenuItem.IsEnabled = preferencesReady && closed && !busy;
-        string snapshot = string.Join(Environment.NewLine, session.Log);
-        if (log.Text != snapshot) { log.Text = snapshot; }
-        string receivedSnapshot = session.Received(hex.IsChecked == true);
-        if (received.Text != receivedSnapshot) { received.Text = receivedSnapshot; }
+        _openMenuItem.IsEnabled = _preferencesReady && _unsafeButtons.Any(button => button.Name == "Open" && button.IsEnabled);
+        _closeMenuItem.IsEnabled = _preferencesReady && _closeButton?.IsEnabled == true;
+        _settingsMenuItem.IsEnabled = _preferencesReady && closed && !busy;
+        string snapshot = string.Join(Environment.NewLine, _session.Log);
+        if (_log.Text != snapshot) { _log.Text = snapshot; }
+        string receivedSnapshot = _session.Received(_hex.IsChecked == true);
+        if (_received.Text != receivedSnapshot) { _received.Text = receivedSnapshot; }
         _ = SavePreferencesAsync();
-        mediaStatus.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, StatusResources.StatusSerial,
-            session.Media.IsOpen ? StatusResources.StatusOpen : StatusResources.StatusClosed,
-            string.IsNullOrWhiteSpace(session.Media.PortName) ? StatusResources.StatusNotConfigured : session.Media.PortName);
+        _mediaStatus.Text = string.Format(System.Globalization.CultureInfo.CurrentCulture, StatusResources.StatusSerial,
+            _session.Media.IsOpen ? StatusResources.StatusOpen : StatusResources.StatusClosed,
+            string.IsNullOrWhiteSpace(_session.Media.PortName) ? StatusResources.StatusNotConfigured : _session.Media.PortName);
 
     }
     /// <inheritdoc/>
-    public ValueTask DisposeAsync() => new(disposal ??= DisposeCoreAsync());
+    public ValueTask DisposeAsync() => new(_disposal ??= DisposeCoreAsync());
     /// <summary>Stops UI refresh and releases the owned serial connection.</summary>
     /// <returns>A task completing after transport and cancellation cleanup.</returns>
     private async Task DisposeCoreAsync()
     {
-        Volatile.Write(ref shuttingDown, 1);
-        session.Media.OnMediaStateChange -= MediaStateChanged;
+        Volatile.Write(ref _shuttingDown, 1);
+        _session.Media.OnMediaStateChange -= MediaStateChanged;
         if (Dispatcher.UIThread.CheckAccess()) { Refresh(); }
         else { Dispatcher.UIThread.Post(Refresh); }
-        timer.Stop(); lifetime.Cancel();
-        await preferencesLoading;
+        _timer.Stop(); _lifetime.Cancel();
+        await _preferencesLoading;
         await SavePreferencesAsync();
-        await session.DisposeAsync();
-        lifetime.Dispose();
+        await _session.DisposeAsync();
+        _lifetime.Dispose();
     }
     /// <summary>Captures media configuration and outgoing controls without opening a connection.</summary>
     /// <returns>A detached JSON object containing this view's persistent preferences.</returns>
@@ -415,13 +415,13 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
     {
         var values = new JsonObject
         {
-            ["Media"] = JsonNode.Parse(session.Media.JsonSettings ?? "{}"),
-            ["SendText"] = text.Text ?? "",
-            ["Hex"] = hex.IsChecked == true,
-            ["Echo"] = echo.IsChecked == true,
-            ["ReplyEop"] = eop.Text ?? "",
-            ["ReplyCount"] = count.Text ?? "",
-            ["ReplyTimeout"] = timeout.Text ?? ""
+            ["Media"] = JsonNode.Parse(_session.Media.JsonSettings ?? "{}"),
+            ["SendText"] = _text.Text ?? "",
+            ["Hex"] = _hex.IsChecked == true,
+            ["Echo"] = _echo.IsChecked == true,
+            ["ReplyEop"] = _eop.Text ?? "",
+            ["ReplyCount"] = _count.Text ?? "",
+            ["ReplyTimeout"] = _timeout.Text ?? ""
         };
         return values;
     }
@@ -430,13 +430,13 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
     /// <param name="values">The saved preferences; missing entries retain their current defaults.</param>
     private void ApplyPreferences(JsonObject values)
     {
-        if (values["Media"] is JsonObject media) { session.Media.JsonSettings = media.ToJsonString(); }
-        text.Text = values["SendText"]?.GetValue<string>() ?? text.Text;
-        hex.IsChecked = values["Hex"]?.GetValue<bool>() ?? (hex.IsChecked == true);
-        echo.IsChecked = values["Echo"]?.GetValue<bool>() ?? false;
-        eop.Text = values["ReplyEop"]?.GetValue<string>() ?? eop.Text;
-        count.Text = values["ReplyCount"]?.GetValue<string>() ?? count.Text;
-        timeout.Text = values["ReplyTimeout"]?.GetValue<string>() ?? timeout.Text;
+        if (values["Media"] is JsonObject media) { _session.Media.JsonSettings = media.ToJsonString(); }
+        _text.Text = values["SendText"]?.GetValue<string>() ?? _text.Text;
+        _hex.IsChecked = values["Hex"]?.GetValue<bool>() ?? (_hex.IsChecked == true);
+        _echo.IsChecked = values["Echo"]?.GetValue<bool>() ?? false;
+        _eop.Text = values["ReplyEop"]?.GetValue<string>() ?? _eop.Text;
+        _count.Text = values["ReplyCount"]?.GetValue<string>() ?? _count.Text;
+        _timeout.Text = values["ReplyTimeout"]?.GetValue<string>() ?? _timeout.Text;
     }
 
     /// <summary>Restores preferences asynchronously before enabling interaction and keeps defaults if loading fails.</summary>
@@ -447,18 +447,18 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
         JsonObject defaults = CapturePreferences();
         try
         {
-            JsonObject? values = await preferences.LoadAsync();
-            if (System.Threading.Volatile.Read(ref shuttingDown) != 0) { return; }
+            JsonObject? values = await _preferences.LoadAsync();
+            if (System.Threading.Volatile.Read(ref _shuttingDown) != 0) { return; }
             if (values is not null) { ApplyPreferences(values); }
         }
         catch (Exception ex)
         {
-            if (System.Threading.Volatile.Read(ref shuttingDown) != 0) { return; }
+            if (System.Threading.Volatile.Read(ref _shuttingDown) != 0) { return; }
             ApplyPreferences(defaults);
-            error.Text = ex.Message;
+            _error.Text = ex.Message;
         }
-        preferencesSnapshot = CapturePreferences().ToJsonString();
-        preferencesReady = true;
+        _preferencesSnapshot = CapturePreferences().ToJsonString();
+        _preferencesReady = true;
         IsEnabled = true;
         Refresh();
     }
@@ -472,21 +472,21 @@ public sealed class MediaExampleWindow : Window, IAsyncDisposable
             await Dispatcher.UIThread.InvokeAsync(SavePreferencesAsync);
             return;
         }
-        if (!preferencesReady) { return; }
+        if (!_preferencesReady) { return; }
         string? snapshot = null;
         try
         {
             JsonObject values = CapturePreferences();
             snapshot = values.ToJsonString();
-            if (snapshot == preferencesSnapshot) { await preferencesSaving; return; }
-            preferencesSnapshot = snapshot;
-            preferencesSaving = preferences.SaveAsync(values);
-            await preferencesSaving;
+            if (snapshot == _preferencesSnapshot) { await _preferencesSaving; return; }
+            _preferencesSnapshot = snapshot;
+            _preferencesSaving = _preferences.SaveAsync(values);
+            await _preferencesSaving;
         }
         catch (Exception ex)
         {
-            if (preferencesSnapshot == snapshot) { preferencesSnapshot = null; }
-            error.Text = ex.Message;
+            if (_preferencesSnapshot == snapshot) { _preferencesSnapshot = null; }
+            _error.Text = ex.Message;
         }
     }
 

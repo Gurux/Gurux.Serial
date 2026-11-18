@@ -35,9 +35,9 @@ namespace Gurux.Serial.Maui;
 public sealed class MediaSettingsView : ContentView, IDisposable, IAsyncDisposable
 {
     /// <summary>Owns the detached media copy and the native input controls.</summary>
-    private readonly MediaSettingsDraft draft;
+    private readonly MediaSettingsDraft _draft;
     /// <summary>Prevents access after the embedded editing session ends.</summary>
-    private bool disposed;
+    private bool _disposed;
 
     /// <summary>Creates native controls for a closed media without opening its transport.</summary>
     /// <param name="media">The caller-owned media that receives settings only when committed.</param>
@@ -51,8 +51,8 @@ public sealed class MediaSettingsView : ContentView, IDisposable, IAsyncDisposab
         {
             throw new ArgumentException(SettingsResources.WrongMedia, nameof(media));
         }
-        draft = new MediaSettingsDraft(source);
-        Content = draft.Form;
+        _draft = new MediaSettingsDraft(source);
+        Content = _draft.Form;
     }
 
     /// <summary>Validates current native inputs and copies them to the supplied closed media.</summary>
@@ -62,17 +62,17 @@ public sealed class MediaSettingsView : ContentView, IDisposable, IAsyncDisposab
     /// <exception cref="InvalidOperationException">The media is open, changed externally, or has invalid settings.</exception>
     public void Commit()
     {
-        ObjectDisposedException.ThrowIf(disposed, this);
-        draft.Commit();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _draft.Commit();
     }
 
     /// <summary>Releases the detached settings session without applying pending inputs.</summary>
     public void Dispose()
     {
-        if (!disposed)
+        if (!_disposed)
         {
-            disposed = true;
-            draft.Dispose();
+            _disposed = true;
+            _draft.Dispose();
             Content = null;
         }
     }
@@ -80,8 +80,8 @@ public sealed class MediaSettingsView : ContentView, IDisposable, IAsyncDisposab
     /// <returns>Completion after metadata cleanup and view disposal.</returns>
     public async ValueTask DisposeAsync()
     {
-        disposed = true;
-        try { await draft.DisposeAsync(); }
+        _disposed = true;
+        try { await _draft.DisposeAsync(); }
         finally { Content = null; }
     }
 }

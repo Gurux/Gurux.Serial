@@ -32,26 +32,26 @@ internal sealed class SessionLog
     /// <summary>Removes retained activity entries atomically while allowing subsequent logging.</summary>
     public void Clear()
     {
-        lock (sync)
+        lock (_sync)
         {
-            entries.Clear();
+            _entries.Clear();
         }
     }
 
     /// <summary>Protects the activity entries.</summary>
-    private readonly object sync = new();
+    private readonly object _sync = new();
     /// <summary>Contains the most recent activity entries.</summary>
-    private readonly Queue<string> entries = new();
+    private readonly Queue<string> _entries = new();
     /// <summary>Gets an independent copy of the current activity history.</summary>
-    public IReadOnlyList<string> Snapshot { get { lock (sync) { return entries.ToArray(); } } }
+    public IReadOnlyList<string> Snapshot { get { lock (_sync) { return _entries.ToArray(); } } }
     /// <summary>Appends a timestamped entry and discards entries beyond the history limit.</summary>
     /// <param name="text">The localized activity description.</param>
     public void Add(string text)
     {
-        lock (sync)
+        lock (_sync)
         {
-            entries.Enqueue(string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0:HH:mm:ss} {1}", DateTime.Now, text));
-            while (entries.Count > 500) { entries.Dequeue(); }
+            _entries.Enqueue(string.Format(System.Globalization.CultureInfo.CurrentCulture, "{0:HH:mm:ss} {1}", DateTime.Now, text));
+            while (_entries.Count > 500) { _entries.Dequeue(); }
         }
     }
 }

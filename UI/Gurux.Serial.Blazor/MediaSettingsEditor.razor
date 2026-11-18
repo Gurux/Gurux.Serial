@@ -28,11 +28,11 @@
 *@
 @implements IDisposable
 @implements IAsyncDisposable
-@if (draft is not null && !finished)
+@if (_draft is not null && !_finished)
 {
     <MediaAppearance>
         <section class="container py-3" aria-label="@Properties.Resources.MediaSettings">
-            <MediaSettingsForm @key="draft" Draft="draft" Completed="Finish" CancellationToken="CancellationToken" />
+            <MediaSettingsForm @key="_draft" Draft="_draft" Completed="Finish" CancellationToken="CancellationToken" />
         </section>
     </MediaAppearance>
 }
@@ -47,53 +47,53 @@
     /// <remarks>When omitted, the editor uses the serial transport's platform port discovery.</remarks>
     [Parameter] public Func<string[]>? PortNamesProvider { get; set; }
     /// <summary>Tracks the caller-owned media for replacement detection.</summary>
-    private Gurux.Common.IGXMedia? source;
+    private Gurux.Common.IGXMedia? _source;
     /// <summary>Owns the current settings transaction.</summary>
-    private MediaSettingsDraft? draft;
+    private MediaSettingsDraft? _draft;
     /// <summary>Disconnects the cancellation callback during cleanup.</summary>
-    private CancellationTokenRegistration registration;
+    private CancellationTokenRegistration _registration;
     /// <summary>Tracks which token owns the active registration.</summary>
-    private CancellationToken registeredToken;
+    private CancellationToken _registeredToken;
     /// <summary>Prevents duplicate completion notifications.</summary>
-    private bool finished;
+    private bool _finished;
     /// <summary>Serializes cleanup before a replacement draft can be installed.</summary>
-    private Task replacementCleanup = Task.CompletedTask;
+    private Task _replacementCleanup = Task.CompletedTask;
     /// <summary>Rejects stale parameter continuations after a newer replacement request.</summary>
-    private long replacementVersion;
+    private long _replacementVersion;
     /// <summary>Prevents callbacks after disposal.</summary>
-    private bool disposed;
+    private bool _disposed;
 
     /// <inheritdoc/>
     protected override async Task OnParametersSetAsync()
     {
         ArgumentNullException.ThrowIfNull(Media);
         var requestedMedia = Media;
-        if (!ReferenceEquals(source, requestedMedia))
+        if (!ReferenceEquals(_source, requestedMedia))
         {
-            long version = ++replacementVersion;
-            registration.Dispose();
-            registration = default;
-            var previousDraft = draft;
-            draft = null;
-            source = null;
-            if (previousDraft is not null) { replacementCleanup = CleanupReplacementAsync(replacementCleanup, previousDraft); }
-            await replacementCleanup;
-            if (disposed || version != replacementVersion || !ReferenceEquals(Media, requestedMedia)) { return; }
-            finished = false;
-            draft = MediaSettingsDraft.Create(requestedMedia, PortNamesProvider?.Invoke() ?? Gurux.Serial.GXSerial.GetPortNames());
-            source = requestedMedia;
+            long version = ++_replacementVersion;
+            _registration.Dispose();
+            _registration = default;
+            var previousDraft = _draft;
+            _draft = null;
+            _source = null;
+            if (previousDraft is not null) { _replacementCleanup = CleanupReplacementAsync(_replacementCleanup, previousDraft); }
+            await _replacementCleanup;
+            if (_disposed || version != _replacementVersion || !ReferenceEquals(Media, requestedMedia)) { return; }
+            _finished = false;
+            _draft = MediaSettingsDraft.Create(requestedMedia, PortNamesProvider?.Invoke() ?? Gurux.Serial.GXSerial.GetPortNames());
+            _source = requestedMedia;
         }
-        if (registeredToken != CancellationToken || registration == default)
+        if (_registeredToken != CancellationToken || _registration == default)
         {
-            registration.Dispose();
-            registeredToken = CancellationToken;
-            var currentDraft = draft;
+            _registration.Dispose();
+            _registeredToken = CancellationToken;
+            var currentDraft = _draft;
             var currentToken = CancellationToken;
-            registration = CancellationToken.Register(() =>
+            _registration = CancellationToken.Register(() =>
             {
                 _ = InvokeAsync(async () =>
                 {
-                    if (!disposed && ReferenceEquals(draft, currentDraft) && currentToken == CancellationToken) { await Finish(false); StateHasChanged(); }
+                    if (!_disposed && ReferenceEquals(_draft, currentDraft) && currentToken == CancellationToken) { await Finish(false); StateHasChanged(); }
                 });
             });
         }
@@ -112,26 +112,26 @@
     /// <returns>A task completing after the host callback.</returns>
     private async Task Finish(bool accepted)
     {
-        if (disposed || finished) { return; }
-        finished = true;
-        var acceptedDraft = draft;
+        if (_disposed || _finished) { return; }
+        _finished = true;
+        var acceptedDraft = _draft;
         if (acceptedDraft is not null) { await acceptedDraft.DisposeAsync(); }
-        if (!disposed && ReferenceEquals(draft, acceptedDraft)) { await Completed.InvokeAsync(accepted); }
+        if (!_disposed && ReferenceEquals(_draft, acceptedDraft)) { await Completed.InvokeAsync(accepted); }
     }
     /// <summary>Discards pending edits and unregisters cancellation.</summary>
     public void Dispose()
     {
-        disposed = true;
-        ++replacementVersion;
-        registration.Dispose();
-        draft?.Dispose();
+        _disposed = true;
+        ++_replacementVersion;
+        _registration.Dispose();
+        _draft?.Dispose();
     }
     /// <summary>Discards the editor and awaits metadata cleanup before its owner can open another transport.</summary>
     /// <returns>Completion after native metadata cleanup.</returns>
     public async ValueTask DisposeAsync()
     {
         Dispose();
-        await replacementCleanup;
-        if (draft is not null) { await draft.DisposeAsync(); }
+        await _replacementCleanup;
+        if (_draft is not null) { await _draft.DisposeAsync(); }
     }
 }

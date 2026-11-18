@@ -2,7 +2,7 @@
 
 This application owns its Core, UI/Desktop (Avalonia), UI/Maui, Host and Android
 transport-selection source. It references the serial transport and serial settings
-adapters from source.
+adapters from published NuGet packages. Only this example's Core controller uses a local project reference.
 
 Open one serial connection, send text or hexadecimal bytes, and optionally wait
 for a reply using a byte count, end marker and timeout.

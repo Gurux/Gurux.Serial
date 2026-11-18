@@ -61,12 +61,12 @@
         </div>
     }
     <BluetoothDevicePicker Model="Draft.Bluetooth" Changed="BluetoothChanged" CancellationToken="CancellationToken" />
-    @if (error is not null) { <p role="alert" class="text-danger">@error</p> }
+    @if (_error is not null) { <p role="alert" class="text-danger">@_error</p> }
     @if (!Embedded)
     {
     <div class="d-flex gap-2">
-        <button type="submit" class="btn btn-primary" disabled="@(completed || !Draft.CanSave)">@Properties.Resources.Save</button>
-        <button type="button" class="btn btn-secondary" @onclick="Cancel" disabled="@completed">@Properties.Resources.Cancel</button>
+        <button type="submit" class="btn btn-primary" disabled="@(_completed || !Draft.CanSave)">@Properties.Resources.Save</button>
+        <button type="button" class="btn btn-secondary" @onclick="Cancel" disabled="@_completed">@Properties.Resources.Cancel</button>
     </div>
     }
 </EditForm>
@@ -80,26 +80,26 @@
     /// <summary>Cancels this editing session without saving.</summary>
     [Parameter] public CancellationToken CancellationToken { get; set; }
     /// <summary>Stores a localized validation message.</summary>
-    private string? error;
+    private string? _error;
     /// <summary>Prevents duplicate form submissions.</summary>
-    private bool completed;
+    private bool _completed;
     /// <summary>Refreshes general port controls and Save availability after direct Bluetooth selection.</summary>
     private void BluetoothChanged() => StateHasChanged();
     /// <summary>Validates and commits the staged values.</summary>
     /// <returns>A task completing after save notification.</returns>
     private async Task Save()
     {
-        if (completed || Embedded) { return; }
+        if (_completed || Embedded) { return; }
         try
         {
             CancellationToken.ThrowIfCancellationRequested();
             Draft.Commit();
-            completed = true;
+            _completed = true;
             await Completed.InvokeAsync(true);
         }
         catch (Exception failure)
         {
-            error = string.Format(System.Globalization.CultureInfo.CurrentCulture,
+            _error = string.Format(System.Globalization.CultureInfo.CurrentCulture,
                 Properties.Resources.InvalidSettingsDetails, failure.Message);
         }
     }
@@ -107,8 +107,8 @@
     /// <returns>A task completing after cancellation notification.</returns>
     private async Task Cancel()
     {
-        if (completed) { return; }
-        completed = true;
+        if (_completed) { return; }
+        _completed = true;
         await Completed.InvokeAsync(false);
     }
 }

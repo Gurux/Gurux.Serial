@@ -32,17 +32,17 @@ namespace Gurux.Serial.Example.Maui;
 public sealed class MediaExampleApplication : Application
 {
     /// <summary>The optional platform serial stream factory passed to each window.</summary>
-    private readonly Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? serialFactory;
+    private readonly Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? _serialFactory;
     /// <summary>Creates an application using the supplied platform transport.</summary>
     /// <param name="serialFactory">An optional platform serial stream factory.</param>
     public MediaExampleApplication(Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? serialFactory = null)
     {
-        this.serialFactory = serialFactory;
+        this._serialFactory = serialFactory;
     }
     /// <inheritdoc/>
     protected override Window CreateWindow(IActivationState? activationState)
     {
-        var page = new MediaExamplePage(serialFactory);
+        var page = new MediaExamplePage(_serialFactory);
         var window = new Window(new NavigationPage(page)) { Title = global::Gurux.Serial.Example.Properties.ExampleResources.Title };
         if (OperatingSystem.IsWindows())
         {

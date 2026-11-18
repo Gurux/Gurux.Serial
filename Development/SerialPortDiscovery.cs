@@ -32,10 +32,10 @@ namespace Gurux.Serial;
 internal static class SerialPortDiscovery
 {
     /// <summary>Compares digit sequences numerically so COM3 precedes COM10 independently of the UI culture.</summary>
-    private static readonly StringComparer NaturalNameComparer = StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering);
+    private static readonly StringComparer _naturalNameComparer = StringComparer.Create(CultureInfo.InvariantCulture, CompareOptions.NumericOrdering);
 
     /// <summary>Identifies conventional Linux UART, USB serial and embedded serial device-node families.</summary>
-    private static readonly string[] LinuxSerialPrefixes = ["ttyS", "ttyUSB", "ttyACM", "ttyAMA", "ttymxc"];
+    private static readonly string[] _linuxSerialPrefixes = ["ttyS", "ttyUSB", "ttyACM", "ttyAMA", "ttymxc"];
 
     /// <summary>Combines runtime discovery with existing numbered Linux serial device nodes without opening them.</summary>
     /// <param name="enumeratePlatformPorts">Returns the runtime-discovered port names, including driver-specific families.</param>
@@ -65,7 +65,7 @@ internal static class SerialPortDiscovery
             foreach (string path in Directory.EnumerateFiles(deviceDirectory))
             {
                 string name = Path.GetFileName(path);
-                foreach (string prefix in LinuxSerialPrefixes)
+                foreach (string prefix in _linuxSerialPrefixes)
                 {
                     if (name.StartsWith(prefix, StringComparison.Ordinal) && name.Length > prefix.Length
                         && name.AsSpan(prefix.Length).IndexOfAnyExceptInRange('0', '9') < 0 && File.Exists(path))
@@ -93,7 +93,7 @@ internal static class SerialPortDiscovery
     internal static string[] SortPortNames(IEnumerable<string> portNames)
     {
         ArgumentNullException.ThrowIfNull(portNames);
-        return portNames.OrderBy(name => name, NaturalNameComparer).ThenBy(name => name, StringComparer.Ordinal).ToArray();
+        return portNames.OrderBy(name => name, _naturalNameComparer).ThenBy(name => name, StringComparer.Ordinal).ToArray();
     }
 
     /// <summary>Checks physical ports, native known devices or the recent explicit BLE discovery cache without starting a scan.</summary>

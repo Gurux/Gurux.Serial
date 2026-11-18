@@ -41,7 +41,6 @@
   <data name="BluetoothClassic" xml:space="preserve"><value>Bluetooth Classic (RFCOMM)</value></data>
   <data name="BluetoothLowEnergy" xml:space="preserve"><value>Bluetooth Low Energy (GATT)</value></data>
   <data name="BluetoothProtocol" xml:space="preserve"><value>Bluetooth protocol</value></data>
-  <data name="BluetoothDiscover" xml:space="preserve"><value>Find known Bluetooth devices</value></data>
   <data name="BluetoothDevices" xml:space="preserve"><value>Bluetooth devices</value></data>
   <data name="BluetoothIdentifier" xml:space="preserve"><value>Device identifier or Bluetooth address</value></data>
   <data name="BluetoothChannel" xml:space="preserve"><value>RFCOMM channel (1–30)</value></data>
@@ -49,17 +48,12 @@
   <data name="BluetoothRead" xml:space="preserve"><value>BLE notification or indication UUID</value></data>
   <data name="BluetoothWrite" xml:space="preserve"><value>BLE write UUID</value></data>
   <data name="BluetoothConfiguration" xml:space="preserve"><value>Optional BLE configuration UUID</value></data>
-  <data name="BluetoothPayload" xml:space="preserve"><value>Optional BLE configuration bytes (hexadecimal)</value></data>
   <data name="BluetoothDiscovering" xml:space="preserve"><value>Finding known Bluetooth devices…</value></data>
   <data name="BluetoothDeviceDisplay" xml:space="preserve"><value>{0} ({1})</value></data>
   <data name="BluetoothNoDevices" xml:space="preserve"><value>No supported Bluetooth devices were found.</value></data>
   <data name="BluetoothDiscoveryCanceled" xml:space="preserve"><value>Bluetooth device discovery was canceled or timed out.</value></data>
   <data name="BluetoothDiscoveryFailed" xml:space="preserve"><value>Bluetooth devices could not be listed: {0}</value></data>
   <data name="BluetoothChannelInvalid" xml:space="preserve"><value>The RFCOMM channel must be a whole number from 1 to 30.</value></data>
-  <data name="BluetoothProfileInvalid" xml:space="preserve"><value>Enter valid, nonempty service, receive and write UUIDs, and a valid configuration UUID when provided.</value></data>
-  <data name="BluetoothPayloadInvalid" xml:space="preserve"><value>Configuration bytes must be hexadecimal, contain at most 512 bytes, and have a configuration UUID.</value></data>
-  <data name="BluetoothConfigurationProvider" xml:space="preserve"><value>Configuration command provider</value></data>
-  <data name="BluetoothProfileDeviceMismatch" xml:space="preserve"><value>Select the Bluetooth device before saving its profile.</value></data>
   <data name="ScanBleDevices" xml:space="preserve"><value>Find BLE devices</value></data>
   <data name="StopBleScan" xml:space="preserve"><value>Stop search</value></data>
   <data name="BleScanning" xml:space="preserve"><value>Searching for BLE devices…</value></data>

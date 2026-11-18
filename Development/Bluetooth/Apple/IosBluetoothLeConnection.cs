@@ -35,59 +35,59 @@ namespace Gurux.Serial;
 internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
 {
     /// <summary>Serializes all native state and callbacks.</summary>
-    private readonly DispatchQueue queue = new("fi.gurux.serial.ble.connection");
+    private readonly DispatchQueue _queue = new("fi.gurux.serial.ble.connection");
     /// <summary>Wakes pending native operations when ownership ends.</summary>
-    private readonly CancellationTokenSource lifetime = new();
+    private readonly CancellationTokenSource _lifetime = new();
     /// <summary>Delivers notification payloads to the bounded stream.</summary>
-    private readonly Action<byte[]> received;
+    private readonly Action<byte[]> _received;
     /// <summary>Reports native failures to the stream.</summary>
-    private readonly Action<Exception> failed;
+    private readonly Action<Exception> _failed;
     /// <summary>Signals the initial powered-on state.</summary>
-    private readonly TaskCompletionSource powered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _powered = new(TaskCreationOptions.RunContinuationsAsynchronously);
     /// <summary>Signals connection establishment.</summary>
-    private readonly TaskCompletionSource connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
     /// <summary>Signals the current service discovery pass; replaced on the native queue before an unfiltered fallback pass.</summary>
-    private TaskCompletionSource services = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private TaskCompletionSource _services = new(TaskCreationOptions.RunContinuationsAsynchronously);
     /// <summary>Signals characteristic discovery completion.</summary>
-    private readonly TaskCompletionSource characteristics = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _characteristics = new(TaskCreationOptions.RunContinuationsAsynchronously);
     /// <summary>Signals successful notification subscription.</summary>
-    private readonly TaskCompletionSource subscribed = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource _subscribed = new(TaskCreationOptions.RunContinuationsAsynchronously);
     /// <summary>Owns the central manager until cleanup completes.</summary>
-    private CBCentralManager? manager;
+    private CBCentralManager? _manager;
     /// <summary>Retains the connected peripheral independently of discovery callbacks.</summary>
-    private CBPeripheral? peripheral;
+    private CBPeripheral? _peripheral;
     /// <summary>Receives notifications.</summary>
-    private CBCharacteristic? read;
+    private CBCharacteristic? _read;
     /// <summary>Accepts serial payloads.</summary>
-    private CBCharacteristic? write;
+    private CBCharacteristic? _write;
     /// <summary>Matches the acknowledged write currently awaiting completion.</summary>
-    private CBCharacteristic? writing;
+    private CBCharacteristic? _writing;
     /// <summary>Signals completion of the current acknowledged write.</summary>
-    private TaskCompletionSource? written;
+    private TaskCompletionSource? _written;
     /// <summary>Signals availability of native output buffer space.</summary>
-    private TaskCompletionSource? writable;
+    private TaskCompletionSource? _writable;
     /// <summary>Records the negotiated output payload size.</summary>
-    private int maxWriteSize = 20;
+    private int _maxWriteSize = 20;
     /// <summary>Prevents repeated failure reports.</summary>
-    private int failureReported;
+    private int _failureReported;
     /// <summary>Serializes cleanup task publication.</summary>
-    private readonly object cleanupSync = new();
+    private readonly object _cleanupSync = new();
     /// <summary>Allows concurrent disposers to await the same cleanup.</summary>
-    private Task? cleanup;
+    private Task? _cleanup;
     /// <summary>Rejects work once disposal begins.</summary>
-    private int disposed;
+    private int _disposed;
 
     /// <summary>Creates a native connection owner before any callbacks are registered.</summary>
     /// <param name="received">Receives independent notification buffers.</param>
     /// <param name="failed">Receives terminal transport errors.</param>
     private IosBluetoothLeConnection(Action<byte[]> received, Action<Exception> failed)
     {
-        this.received = received;
-        this.failed = failed;
+        this._received = received;
+        this._failed = failed;
     }
 
     /// <inheritdoc/>
-    public int MaxWriteSize => Volatile.Read(ref maxWriteSize);
+    public int MaxWriteSize => Volatile.Read(ref _maxWriteSize);
 
     /// <summary>Retrieves a discovered peripheral and opens its preferred serial profile or a named catalogue fallback when the preferred service is absent.</summary>
     /// <param name="deviceId">The CoreBluetooth peripheral UUID.</param>
@@ -122,49 +122,49 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
     /// <returns>Completion when notifications and optional configuration are ready.</returns>
     private async Task InitializeAsync(string deviceId, BluetoothLeProfile profile, CancellationToken cancellationToken, SerialPortSettings settings)
     {
-        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lifetime.Token);
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
         CancellationToken token = cancel.Token;
         await OnQueueAsync(() =>
         {
-            manager = new CBCentralManager(null, queue);
-            manager.UpdatedState += (_, _) =>
+            _manager = new CBCentralManager(null, _queue);
+            _manager.UpdatedState += (_, _) =>
             {
-                if (manager.State == CBManagerState.PoweredOn)
+                if (_manager.State == CBManagerState.PoweredOn)
                 {
-                    powered.TrySetResult();
+                    _powered.TrySetResult();
                 }
-                else if (powered.Task.IsCompleted || (manager.State != CBManagerState.Unknown && manager.State != CBManagerState.Resetting))
+                else if (_powered.Task.IsCompleted || (_manager.State != CBManagerState.Unknown && _manager.State != CBManagerState.Resetting))
                 {
                     ReportFailure(new IOException(Properties.Resources.Get("BluetoothUnavailable")));
                 }
             };
-            manager.ConnectedPeripheral += (_, _) => connected.TrySetResult();
-            manager.FailedToConnectPeripheral += (_, args) => ReportFailure(NativeError(args.Error));
-            manager.DisconnectedPeripheral += (_, args) => ReportFailure(NativeError(args.Error));
+            _manager.ConnectedPeripheral += (_, _) => _connected.TrySetResult();
+            _manager.FailedToConnectPeripheral += (_, args) => ReportFailure(NativeError(args.Error));
+            _manager.DisconnectedPeripheral += (_, args) => ReportFailure(NativeError(args.Error));
         }).ConfigureAwait(false);
-        await powered.Task.WaitAsync(token).ConfigureAwait(false);
+        await _powered.Task.WaitAsync(token).ConfigureAwait(false);
         await OnQueueAsync(() =>
         {
             using var identifier = new NSUuid(deviceId);
-            peripheral = manager!.RetrievePeripheralsWithIdentifiers(identifier).FirstOrDefault()
+            _peripheral = _manager!.RetrievePeripheralsWithIdentifiers(identifier).FirstOrDefault()
                 ?? throw new IOException(Properties.Resources.Get("BluetoothLeDeviceNotFound"));
-            AttachPeripheralHandlers(peripheral);
-            manager.ConnectPeripheral(peripheral, (NSDictionary?)null);
+            AttachPeripheralHandlers(_peripheral);
+            _manager.ConnectPeripheral(_peripheral, (NSDictionary?)null);
         }).ConfigureAwait(false);
-        await connected.Task.WaitAsync(token).ConfigureAwait(false);
-        await OnQueueAsync(() => peripheral!.DiscoverServices(new[] { CBUUID.FromString(profile.Service.ToString()) })).ConfigureAwait(false);
-        await services.Task.WaitAsync(token).ConfigureAwait(false);
+        await _connected.Task.WaitAsync(token).ConfigureAwait(false);
+        await OnQueueAsync(() => _peripheral!.DiscoverServices(new[] { CBUUID.FromString(profile.Service.ToString()) })).ConfigureAwait(false);
+        await _services.Task.WaitAsync(token).ConfigureAwait(false);
         CBService? service = null;
         Task? fallbackDiscovery = null;
         await OnQueueAsync(() =>
         {
             token.ThrowIfCancellationRequested();
-            service = peripheral!.Services?.FirstOrDefault(value => Matches(value.UUID, profile.Service));
+            service = _peripheral!.Services?.FirstOrDefault(value => Matches(value.UUID, profile.Service));
             if (service == null)
             {
-                services = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                fallbackDiscovery = services.Task;
-                peripheral.DiscoverServices();
+                _services = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                fallbackDiscovery = _services.Task;
+                _peripheral.DiscoverServices();
             }
         }).ConfigureAwait(false);
         if (fallbackDiscovery != null)
@@ -173,10 +173,10 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
             await OnQueueAsync(() =>
             {
                 token.ThrowIfCancellationRequested();
-                Guid[] availableServices = (peripheral!.Services ?? Array.Empty<CBService>()).Select(value =>
+                Guid[] availableServices = (_peripheral!.Services ?? Array.Empty<CBService>()).Select(value =>
                     Guid.TryParse(value.UUID.ToString(true), out Guid uuid) ? uuid : Guid.Empty).Where(uuid => uuid != Guid.Empty).ToArray();
-                profile = BluetoothLeServiceSelection.SelectProfile(profile, peripheral.Name, availableServices, settings, deviceId);
-                service = peripheral.Services?.FirstOrDefault(value => Matches(value.UUID, profile.Service))
+                profile = BluetoothLeServiceSelection.SelectProfile(profile, _peripheral.Name, availableServices, settings, deviceId);
+                service = _peripheral.Services?.FirstOrDefault(value => Matches(value.UUID, profile.Service))
                     ?? throw new IOException(Properties.Resources.Get("BluetoothLeServiceNotFound"));
             }).ConfigureAwait(false);
         }
@@ -188,16 +188,16 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
             {
                 ids.Add(CBUUID.FromString(profile.ConfigurationCharacteristic.Value.ToString()));
             }
-            peripheral!.DiscoverCharacteristics(ids.ToArray(), service!);
+            _peripheral!.DiscoverCharacteristics(ids.ToArray(), service!);
         }).ConfigureAwait(false);
-        await characteristics.Task.WaitAsync(token).ConfigureAwait(false);
+        await _characteristics.Task.WaitAsync(token).ConfigureAwait(false);
         CBCharacteristic? configuration = null;
         await OnQueueAsync(() =>
         {
-            read = FindCharacteristic(service!, profile.ReadCharacteristic);
-            write = FindCharacteristic(service!, profile.WriteCharacteristic);
-            GetWriteType(write);
-            if ((read.Properties & (CBCharacteristicProperties.Notify | CBCharacteristicProperties.Indicate)) == 0)
+            _read = FindCharacteristic(service!, profile.ReadCharacteristic);
+            _write = FindCharacteristic(service!, profile.WriteCharacteristic);
+            GetWriteType(_write);
+            if ((_read.Properties & (CBCharacteristicProperties.Notify | CBCharacteristicProperties.Indicate)) == 0)
             {
                 throw new IOException(Properties.Resources.Get("BluetoothLeNotificationsNotSupported"));
             }
@@ -205,10 +205,10 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
             {
                 configuration = FindCharacteristic(service!, profile.ConfigurationCharacteristic.Value);
             }
-            maxWriteSize = Math.Clamp((int)peripheral!.GetMaximumWriteValueLength(GetWriteType(write)), 1, 512);
-            peripheral.SetNotifyValue(true, read);
+            _maxWriteSize = Math.Clamp((int)_peripheral!.GetMaximumWriteValueLength(GetWriteType(_write)), 1, 512);
+            _peripheral.SetNotifyValue(true, _read);
         }).ConfigureAwait(false);
-        await subscribed.Task.WaitAsync(token).ConfigureAwait(false);
+        await _subscribed.Task.WaitAsync(token).ConfigureAwait(false);
         if (configuration != null && profile.ConfigurationValue is byte[] value)
         {
             await WriteCharacteristicAsync(configuration, value, token).ConfigureAwait(false);
@@ -220,11 +220,11 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
     /// <param name="peer">The owned peripheral.</param>
     private void AttachPeripheralHandlers(CBPeripheral peer)
     {
-        peer.DiscoveredService += (_, args) => Complete(services, args.Error);
-        peer.DiscoveredCharacteristics += (_, args) => Complete(characteristics, args.Error);
+        peer.DiscoveredService += (_, args) => Complete(_services, args.Error);
+        peer.DiscoveredCharacteristics += (_, args) => Complete(_characteristics, args.Error);
         peer.UpdatedNotificationState += (_, args) =>
         {
-            if (args.Characteristic == read)
+            if (args.Characteristic == _read)
             {
                 if (args.Error != null || !args.Characteristic.IsNotifying)
                 {
@@ -232,13 +232,13 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
                 }
                 else
                 {
-                    subscribed.TrySetResult();
+                    _subscribed.TrySetResult();
                 }
             }
         };
         peer.UpdatedCharacterteristicValue += (_, args) =>
         {
-            if (args.Characteristic == read && Volatile.Read(ref disposed) == 0)
+            if (args.Characteristic == _read && Volatile.Read(ref _disposed) == 0)
             {
                 if (args.Error != null)
                 {
@@ -248,7 +248,7 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
                 {
                     try
                     {
-                        received(args.Characteristic.Value?.ToArray() ?? Array.Empty<byte>());
+                        _received(args.Characteristic.Value?.ToArray() ?? Array.Empty<byte>());
                     }
                     catch (Exception error)
                     {
@@ -259,19 +259,19 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
         };
         peer.WroteCharacteristicValue += (_, args) =>
         {
-            if (args.Characteristic == writing && written != null)
+            if (args.Characteristic == _writing && _written != null)
             {
-                Complete(written, args.Error);
+                Complete(_written, args.Error);
             }
         };
-        peer.IsReadyToSendWriteWithoutResponse += (_, _) => writable?.TrySetResult();
+        peer.IsReadyToSendWriteWithoutResponse += (_, _) => _writable?.TrySetResult();
         peer.ModifiedServices += (_, _) => ReportFailure(new IOException(Properties.Resources.Get("BluetoothLeDisconnected")));
     }
 
     /// <inheritdoc/>
     public async ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
     {
-        await WriteCharacteristicAsync(write!, data, cancellationToken).ConfigureAwait(false);
+        await WriteCharacteristicAsync(_write!, data, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>Writes an attribute atomically using acknowledgments or native output-buffer flow control.</summary>
@@ -282,7 +282,7 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
     /// <exception cref="IOException">The characteristic cannot accept the complete payload.</exception>
     private async Task WriteCharacteristicAsync(CBCharacteristic destination, ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
     {
-        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, lifetime.Token);
+        using var cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _lifetime.Token);
         while (true)
         {
             cancel.Token.ThrowIfCancellationRequested();
@@ -291,24 +291,24 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
             await OnQueueAsync(() =>
             {
                 CBCharacteristicWriteType type = GetWriteType(destination);
-                if (data.Length > (int)peripheral!.GetMaximumWriteValueLength(type))
+                if (data.Length > (int)_peripheral!.GetMaximumWriteValueLength(type))
                 {
                     throw new IOException(Properties.Resources.Get("BluetoothLeOperationFailed"));
                 }
-                if (type == CBCharacteristicWriteType.WithoutResponse && !peripheral.CanSendWriteWithoutResponse)
+                if (type == CBCharacteristicWriteType.WithoutResponse && !_peripheral.CanSendWriteWithoutResponse)
                 {
-                    writable = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    pending = writable.Task;
+                    _writable = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    pending = _writable.Task;
                     return;
                 }
                 if (type == CBCharacteristicWriteType.WithResponse)
                 {
-                    written = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                    writing = destination;
-                    pending = written.Task;
+                    _written = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+                    _writing = destination;
+                    pending = _written.Task;
                 }
                 using var payload = NSData.FromArray(data.ToArray());
-                peripheral.WriteValue(payload, destination, type);
+                _peripheral.WriteValue(payload, destination, type);
                 sent = true;
             }).ConfigureAwait(false);
             if (pending != null)
@@ -380,11 +380,11 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
     /// <param name="error">The terminal error.</param>
     private void ReportFailure(Exception error)
     {
-        if (Volatile.Read(ref disposed) == 0 && Interlocked.Exchange(ref failureReported, 1) == 0)
+        if (Volatile.Read(ref _disposed) == 0 && Interlocked.Exchange(ref _failureReported, 1) == 0)
         {
             try
             {
-                failed(error);
+                _failed(error);
             }
             catch
             {
@@ -393,7 +393,7 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
             finally
             {
                 // Publish the transport failure before cancellation can wake the opening caller.
-                lifetime.Cancel();
+                _lifetime.Cancel();
             }
         }
     }
@@ -401,24 +401,24 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
     /// <summary>Schedules native work and rejects it after disposal begins.</summary>
     /// <param name="action">The native operation to execute.</param>
     /// <returns>Completion when the operation was submitted.</returns>
-    private Task OnQueueAsync(Action action) => IosBluetoothLeDiscovery.DispatchAsync(queue, () =>
+    private Task OnQueueAsync(Action action) => IosBluetoothLeDiscovery.DispatchAsync(_queue, () =>
     {
-        ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         action();
     });
 
     /// <inheritdoc/>
     public ValueTask DisposeAsync()
     {
-        lock (cleanupSync)
+        lock (_cleanupSync)
         {
-            if (cleanup == null)
+            if (_cleanup == null)
             {
-                Interlocked.Exchange(ref disposed, 1);
-                lifetime.Cancel();
-                cleanup = CleanupAsync();
+                Interlocked.Exchange(ref _disposed, 1);
+                _lifetime.Cancel();
+                _cleanup = CleanupAsync();
             }
-            return new ValueTask(cleanup);
+            return new ValueTask(_cleanup);
         }
     }
 
@@ -428,41 +428,41 @@ internal sealed class IosBluetoothLeConnection : IBluetoothLeConnection
     {
         try
         {
-            await IosBluetoothLeDiscovery.DispatchAsync(queue, () =>
+            await IosBluetoothLeDiscovery.DispatchAsync(_queue, () =>
             {
-                if (manager != null)
+                if (_manager != null)
                 {
                     try
                     {
-                        manager.StopScan();
-                        if (peripheral != null)
+                        _manager.StopScan();
+                        if (_peripheral != null)
                         {
                             try
                             {
-                                if (read?.IsNotifying == true && peripheral.State == CBPeripheralState.Connected)
+                                if (_read?.IsNotifying == true && _peripheral.State == CBPeripheralState.Connected)
                                 {
-                                    peripheral.SetNotifyValue(false, read);
+                                    _peripheral.SetNotifyValue(false, _read);
                                 }
                             }
                             finally
                             {
-                                peripheral.Delegate = null!;
-                                manager.CancelPeripheralConnection(peripheral);
+                                _peripheral.Delegate = null!;
+                                _manager.CancelPeripheralConnection(_peripheral);
                             }
                         }
                     }
                     finally
                     {
-                        peripheral?.Dispose();
-                        manager.Delegate = null!;
-                        manager.Dispose();
+                        _peripheral?.Dispose();
+                        _manager.Delegate = null!;
+                        _manager.Dispose();
                     }
                 }
             }).ConfigureAwait(false);
         }
         finally
         {
-            queue.Dispose();
+            _queue.Dispose();
         }
     }
 }

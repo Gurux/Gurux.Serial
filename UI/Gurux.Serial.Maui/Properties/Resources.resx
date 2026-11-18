@@ -41,7 +41,6 @@
   <data name="Idle" xml:space="preserve"><value>TCP keepalive idle (seconds)</value></data>
   <data name="Interval" xml:space="preserve"><value>TCP keepalive interval (seconds)</value></data>
   <data name="Retries" xml:space="preserve"><value>TCP keepalive retries</value></data>
-  <data name="RefreshBluetoothDevices" xml:space="preserve"><value>Refresh Bluetooth devices</value></data>
   <data name="BluetoothPermissionDenied" xml:space="preserve"><value>Bluetooth connection permission was not granted.</value></data>
   <data name="BluetoothClassic" xml:space="preserve"><value>Bluetooth Classic (RFCOMM)</value></data>
   <data name="BluetoothLowEnergy" xml:space="preserve"><value>Bluetooth Low Energy (GATT)</value></data>
@@ -53,17 +52,10 @@
   <data name="BluetoothRead" xml:space="preserve"><value>BLE notification characteristic UUID</value></data>
   <data name="BluetoothWrite" xml:space="preserve"><value>BLE write characteristic UUID</value></data>
   <data name="BluetoothConfiguration" xml:space="preserve"><value>BLE configuration characteristic UUID (optional)</value></data>
-  <data name="BluetoothConfigurationValue" xml:space="preserve"><value>BLE configuration bytes (hexadecimal, optional)</value></data>
-  <data name="BluetoothInstructions" xml:space="preserve"><value>RFCOMM uses the Serial Port service (0x1101) and resolves its channel through SDP. GATT requires the device profile from devices.csv.</value></data>
   <data name="BluetoothNoDevices" xml:space="preserve"><value>No supported Bluetooth devices were found.</value></data>
   <data name="BluetoothRefreshFailed" xml:space="preserve"><value>Bluetooth devices could not be refreshed. Check Windows Bluetooth settings and try again.</value></data>
   <data name="BluetoothChannelInvalid" xml:space="preserve"><value>The RFCOMM channel must be a whole number between 1 and 30.</value></data>
-  <data name="BluetoothUuidInvalid" xml:space="preserve"><value>Enter a valid, nonempty UUID for each required BLE service and characteristic.</value></data>
-  <data name="BluetoothConfigurationInvalid" xml:space="preserve"><value>BLE configuration bytes must contain an even number of hexadecimal digits without separators.</value></data>
-  <data name="BluetoothConfigurationRequired" xml:space="preserve"><value>Enter a configuration characteristic UUID when supplying BLE configuration bytes.</value></data>
   <data name="BluetoothAddressInvalid" xml:space="preserve"><value>Enter a Bluetooth Classic address containing six hexadecimal byte pairs.</value></data>
-  <data name="BluetoothConfigurationProvider" xml:space="preserve"><value>Configuration command provider</value></data>
-  <data name="BluetoothProfileDeviceMismatch" xml:space="preserve"><value>Select the Bluetooth device before saving its profile.</value></data>
   <data name="ScanBleDevices" xml:space="preserve"><value>Find BLE devices</value></data>
   <data name="StopBleScan" xml:space="preserve"><value>Stop search</value></data>
   <data name="BleScanning" xml:space="preserve"><value>Searching for BLE devices…</value></data>

@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Razor">
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
   <PropertyGroup><TargetFrameworks>net11.0;net10.0</TargetFrameworks><DefaultItemExcludes>$(DefaultItemExcludes);Tests/**</DefaultItemExcludes><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageId>Gurux.Serial.Blazor</PackageId>
     <Version Condition="'$(BUILD_BUILDNUMBER)' == ''">0.0.1-local</Version>
@@ -14,8 +14,8 @@
   <ItemGroup>
     <Compile Remove="Tests/**/*.cs" />
     <None Include="README.md" Pack="true" PackagePath="/" />
-    <PackageReference Include="Gurux.UI.Components" Version="4.0.2611.1301" />
-    <ProjectReference Include="../../Development/Gurux.Serial.csproj" />
+    <PackageReference Include="Gurux.UI.Components" Version="4.0.2611.1801" />
+    <PackageReference Include="Gurux.Serial" Version="9.0.2611.1801" />
 
   </ItemGroup>
 
@@ -33,6 +33,6 @@
     <EmbeddedResource Remove="Tests/**;tests/**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+    <PackageReference Include="Gurux.Common" Version="9.0.2611.1801" />
   </ItemGroup>
 </Project>

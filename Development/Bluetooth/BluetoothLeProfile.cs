@@ -46,9 +46,9 @@ public sealed class BluetoothLeProfile
     [System.Text.Json.Serialization.JsonIgnore]
     public bool CanConfigureUart => BluetoothConfigurationCommands.CanConfigure(ConfigurationCharacteristic, ConfigurationCommandProvider);
     /// <summary>Stores an independent copy of the configuration payload.</summary>
-    private readonly byte[]? configurationValue;
+    private readonly byte[]? _configurationValue;
     /// <summary>Gets a copy of the optional device-specific configuration bytes.</summary>
-    public byte[]? ConfigurationValue => configurationValue?.ToArray();
+    public byte[]? ConfigurationValue => _configurationValue?.ToArray();
     /// <summary>Initializes a service profile with optional device-specific configuration.</summary>
     /// <param name="service">Serial service UUID.</param>
     /// <param name="readCharacteristic">Notification or indication characteristic UUID.</param>
@@ -70,7 +70,7 @@ public sealed class BluetoothLeProfile
         ReadCharacteristic = readCharacteristic;
         WriteCharacteristic = writeCharacteristic;
         ConfigurationCharacteristic = configurationCharacteristic;
-        this.configurationValue = configurationValue?.ToArray();
+        this._configurationValue = configurationValue?.ToArray();
     }
     /// <summary>Builds commands using the explicit provider, then the configuration UUID default, or returns the static payload.</summary>
     /// <param name="settings">The settings to supply to a registered command generator.</param>

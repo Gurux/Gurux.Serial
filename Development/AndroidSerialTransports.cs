@@ -148,11 +148,11 @@ public static partial class AndroidSerialTransports
     sealed class CdcStream(UsbManager manager, UsbDevice device, UsbDeviceConnection connection, UsbInterface control, UsbInterface data, UsbEndpoint input, UsbEndpoint output) : Stream
     {
         /// <summary>Records whether this stream has released its owned connection.</summary>
-        volatile bool disposed;
+        volatile bool _disposed;
         /// <inheritdoc/>
-        public override bool CanRead => !disposed;
+        public override bool CanRead => !_disposed;
         /// <inheritdoc/>
-        public override bool CanWrite => !disposed;
+        public override bool CanWrite => !_disposed;
         /// <inheritdoc/>
         public override bool CanSeek => false;
         /// <inheritdoc/>
@@ -172,7 +172,7 @@ public static partial class AndroidSerialTransports
             while (true)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                ObjectDisposedException.ThrowIf(disposed, this);
+                ObjectDisposedException.ThrowIf(_disposed, this);
                 int count = await Task.Run(() => connection.BulkTransfer(input, bytes, bytes.Length, 200), cancellationToken).ConfigureAwait(false);
                 if (count > 0)
                 {
@@ -193,7 +193,7 @@ public static partial class AndroidSerialTransports
             while (!buffer.IsEmpty)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                ObjectDisposedException.ThrowIf(disposed, this);
+                ObjectDisposedException.ThrowIf(_disposed, this);
                 byte[] bytes = buffer[..Math.Min(buffer.Length, 16384)].ToArray();
                 int count = await Task.Run(() => connection.BulkTransfer(output, bytes, bytes.Length, 1000), cancellationToken).ConfigureAwait(false);
                 if (count <= 0)
@@ -208,9 +208,9 @@ public static partial class AndroidSerialTransports
         /// <inheritdoc/>
         protected override void Dispose(bool disposing)
         {
-            if (!disposed)
+            if (!_disposed)
             {
-                disposed = true;
+                _disposed = true;
                 connection.ReleaseInterface(control);
                 connection.ReleaseInterface(data);
                 connection.Close();

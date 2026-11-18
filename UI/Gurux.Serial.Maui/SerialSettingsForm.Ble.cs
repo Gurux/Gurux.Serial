@@ -38,69 +38,69 @@ public sealed partial class SerialSettingsForm
 {
 #if ANDROID
     /// <summary>Selects paired RFCOMM enumeration or active BLE discovery on Android.</summary>
-    private readonly Picker mobileBluetoothProtocol = new();
+    private readonly Picker _mobileBluetoothProtocol = new();
 #endif
     /// <summary>Lists paired devices or starts and cancels the current explicit BLE scan.</summary>
-    private readonly Button mobileBleScanButton = new() { AutomationId = "ScanBleDevices" };
+    private readonly Button _mobileBleScanButton = new() { AutomationId = "ScanBleDevices" };
     /// <summary>Shows advertised names together with stable device identifiers.</summary>
-    private readonly Picker mobileBleDevices = new() { AutomationId = "BleDevices" };
+    private readonly Picker _mobileBleDevices = new() { AutomationId = "BleDevices" };
     /// <summary>Displays the selected native identifier without accepting manual input.</summary>
-    private readonly Entry mobileBluetoothIdentifier = new() { IsReadOnly = true };
+    private readonly Entry _mobileBluetoothIdentifier = new() { IsReadOnly = true };
     /// <summary>Reports scan progress and failures.</summary>
-    private readonly Label mobileBleFeedback = new() { LineBreakMode = LineBreakMode.WordWrap };
+    private readonly Label _mobileBleFeedback = new() { LineBreakMode = LineBreakMode.WordWrap };
     /// <summary>Displays the selected serial service UUID without allowing edits.</summary>
-    private readonly Entry mobileBleService = new() { IsReadOnly = true };
+    private readonly Entry _mobileBleService = new() { IsReadOnly = true };
     /// <summary>Displays the canonical notification characteristic UUID without accepting input.</summary>
-    private readonly Entry mobileBleRead = new() { IsReadOnly = true };
+    private readonly Entry _mobileBleRead = new() { IsReadOnly = true };
     /// <summary>Displays the canonical output characteristic UUID without accepting input.</summary>
-    private readonly Entry mobileBleWrite = new() { IsReadOnly = true };
+    private readonly Entry _mobileBleWrite = new() { IsReadOnly = true };
     /// <summary>Displays the canonical optional configuration characteristic UUID without accepting input.</summary>
-    private readonly Entry mobileBleConfiguration = new() { IsReadOnly = true };
+    private readonly Entry _mobileBleConfiguration = new() { IsReadOnly = true };
     /// <summary>Stores canonical catalogue profile data independently of presentation fields.</summary>
-    private BluetoothLeProfile? mobileBluetoothProfile;
+    private BluetoothLeProfile? _mobileBluetoothProfile;
     /// <summary>Contains collapsed read-only identifier and UUID information for the selected device.</summary>
-    private readonly VerticalStackLayout mobileBleProfileFields = new() { Spacing = 6, IsVisible = false, Padding = new(16, 0, 0, 0), AutomationId = "BluetoothInformationFields" };
+    private readonly VerticalStackLayout _mobileBleProfileFields = new() { Spacing = 6, IsVisible = false, Padding = new(16, 0, 0, 0), AutomationId = "BluetoothInformationFields" };
     /// <summary>Stores the immutable identities displayed in the picker.</summary>
-    private BluetoothSerialDevice[] mobileBleSnapshot = [];
+    private BluetoothSerialDevice[] _mobileBleSnapshot = [];
     /// <summary>Owns cancellation of the currently active native scan.</summary>
-    private CancellationTokenSource? mobileBleScan;
+    private CancellationTokenSource? _mobileBleScan;
     /// <summary>Counts supported identities observed by discovery independently of retained selections.</summary>
-    private int mobileBleScanCount;
+    private int _mobileBleScanCount;
     /// <summary>Associates the displayed GATT fields with one selected device.</summary>
-    private string? mobileBleProfilePort;
+    private string? _mobileBleProfilePort;
     /// <summary>Prevents profile association during transient picker refreshes.</summary>
-    private bool selectingMobileBle;
+    private bool _selectingMobileBle;
     /// <summary>Prevents refreshed picker choices from acting as fresh user selections.</summary>
-    private bool updatingMobileBleDevices;
+    private bool _updatingMobileBleDevices;
     /// <summary>Marks completed mobile BLE field construction.</summary>
-    private bool mobileBleReady;
+    private bool _mobileBleReady;
 
     /// <summary>Adds mobile BLE discovery without starting a scan or requesting permission during construction.</summary>
     private void AddMobileBleControls()
     {
         var panel = new VerticalStackLayout { Spacing = 8 };
 #if ANDROID
-        mobileBluetoothProtocol.ItemsSource = new[] { SettingsResources.BluetoothClassic, SettingsResources.BluetoothLowEnergy };
-        mobileBluetoothProtocol.SelectedIndex = _settings.PortName?.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0;
+        _mobileBluetoothProtocol.ItemsSource = new[] { SettingsResources.BluetoothClassic, SettingsResources.BluetoothLowEnergy };
+        _mobileBluetoothProtocol.SelectedIndex = _settings.PortName?.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0;
         panel.Children.Add(new Label { Text = SettingsResources.BluetoothTransport });
-        panel.Children.Add(mobileBluetoothProtocol);
-        mobileBluetoothProtocol.SelectedIndexChanged += (_, _) =>
+        panel.Children.Add(_mobileBluetoothProtocol);
+        _mobileBluetoothProtocol.SelectedIndexChanged += (_, _) =>
         {
             CancelMobileBleScan();
             ShowMobileBleDevices(Array.Empty<BluetoothSerialDevice>());
         };
 #endif
-        mobileBleScanButton.Text = SettingsResources.FindDevices;
-        panel.Children.Add(mobileBleScanButton);
-        panel.Children.Add(mobileBleFeedback);
-        AddMobileBleField(SettingsResources.BluetoothIdentifier, mobileBluetoothIdentifier);
-        AddMobileBleField(SettingsResources.BluetoothService, mobileBleService);
-        AddMobileBleField(SettingsResources.BluetoothRead, mobileBleRead);
-        AddMobileBleField(SettingsResources.BluetoothWrite, mobileBleWrite);
-        AddMobileBleField(SettingsResources.BluetoothConfiguration, mobileBleConfiguration);
-        AddGattServiceControls(mobileBleProfileFields);
+        _mobileBleScanButton.Text = SettingsResources.FindDevices;
+        panel.Children.Add(_mobileBleScanButton);
+        panel.Children.Add(_mobileBleFeedback);
+        AddMobileBleField(SettingsResources.BluetoothIdentifier, _mobileBluetoothIdentifier);
+        AddMobileBleField(SettingsResources.BluetoothService, _mobileBleService);
+        AddMobileBleField(SettingsResources.BluetoothRead, _mobileBleRead);
+        AddMobileBleField(SettingsResources.BluetoothWrite, _mobileBleWrite);
+        AddMobileBleField(SettingsResources.BluetoothConfiguration, _mobileBleConfiguration);
+        AddGattServiceControls(_mobileBleProfileFields);
         panel.Children.Add(new Label { Text = SettingsResources.BluetoothDevices });
-        panel.Children.Add(mobileBleDevices);
+        panel.Children.Add(_mobileBleDevices);
         var informationToggle = new Button
         {
             Text = SettingsResources.BluetoothDeviceInformation,
@@ -117,29 +117,29 @@ public sealed partial class SerialSettingsForm
         SemanticProperties.SetDescription(informationToggle, SettingsResources.BluetoothInformationCollapsed);
         informationToggle.Clicked += (_, _) =>
         {
-            mobileBleProfileFields.IsVisible = !mobileBleProfileFields.IsVisible;
-            informationToggle.Text = mobileBleProfileFields.IsVisible
+            _mobileBleProfileFields.IsVisible = !_mobileBleProfileFields.IsVisible;
+            informationToggle.Text = _mobileBleProfileFields.IsVisible
                 ? SettingsResources.BluetoothDeviceInformationExpanded : SettingsResources.BluetoothDeviceInformation;
-            SemanticProperties.SetDescription(informationToggle, mobileBleProfileFields.IsVisible
+            SemanticProperties.SetDescription(informationToggle, _mobileBleProfileFields.IsVisible
                 ? SettingsResources.BluetoothInformationExpanded : SettingsResources.BluetoothInformationCollapsed);
         };
         panel.Children.Add(informationToggle);
-        panel.Children.Add(mobileBleProfileFields);
+        panel.Children.Add(_mobileBleProfileFields);
         AddBluetoothControl(panel);
-        mobileBleReady = true;
-        mobileBleScanButton.Clicked += async (_, _) =>
+        _mobileBleReady = true;
+        _mobileBleScanButton.Clicked += async (_, _) =>
         {
-            if (mobileBleScan is not null) { CancelMobileBleScan(); }
+            if (_mobileBleScan is not null) { CancelMobileBleScan(); }
 #if ANDROID
-            else if (mobileBluetoothProtocol.SelectedIndex == 0) { await RefreshMobileClassicDevicesAsync(); }
+            else if (_mobileBluetoothProtocol.SelectedIndex == 0) { await RefreshMobileClassicDevicesAsync(); }
 #endif
             else { await ScanMobileBleAsync(); }
         };
-        mobileBleDevices.SelectedIndexChanged += (_, _) =>
+        _mobileBleDevices.SelectedIndexChanged += (_, _) =>
         {
-            int index = mobileBleDevices.SelectedIndex;
-            if (updatingMobileBleDevices || index < 0 || index >= mobileBleSnapshot.Length) { return; }
-            BluetoothSerialDevice device = mobileBleSnapshot[index];
+            int index = _mobileBleDevices.SelectedIndex;
+            if (_updatingMobileBleDevices || index < 0 || index >= _mobileBleSnapshot.Length) { return; }
+            BluetoothSerialDevice device = _mobileBleSnapshot[index];
             SelectMobileBluetoothPort((device.Transport == BluetoothSerialTransport.LowEnergy ? "ble:" : "bluetooth:") + device.Id, device.Name);
         };
         HandlerChanging += (_, args) => { if (args.NewHandler is null) { CancelMobileBleScan(); } };
@@ -149,7 +149,7 @@ public sealed partial class SerialSettingsForm
         {
             RefreshPorts(_portNames.Append(saved).Distinct(StringComparer.Ordinal).ToArray());
             _ports.SelectedItem = saved;
-            mobileBluetoothIdentifier.Text = saved[(saved.IndexOf(':') + 1)..];
+            _mobileBluetoothIdentifier.Text = saved[(saved.IndexOf(':') + 1)..];
         }
         BindMobileBleProfile(_ports.SelectedItem as string);
         ShowMobileBleDevices(BluetoothLeDiscovery.GetKnownDevices());
@@ -161,17 +161,17 @@ public sealed partial class SerialSettingsForm
     private async Task RefreshMobileClassicDevicesAsync()
     {
         using var source = new CancellationTokenSource();
-        mobileBleScan = source;
-        mobileBleScanCount = 0;
-        mobileBleScanButton.Text = SettingsResources.StopBleScan;
+        _mobileBleScan = source;
+        _mobileBleScanCount = 0;
+        _mobileBleScanButton.Text = SettingsResources.StopBleScan;
         try
         {
             var permission = OperatingSystem.IsAndroidVersionAtLeast(31)
                 ? await Permissions.RequestAsync<BluetoothConnectionPermission>() : PermissionStatus.Granted;
-            if (!ReferenceEquals(mobileBleScan, source) || source.IsCancellationRequested) { return; }
+            if (!ReferenceEquals(_mobileBleScan, source) || source.IsCancellationRequested) { return; }
             if (permission != PermissionStatus.Granted)
             {
-                mobileBleFeedback.Text = SettingsResources.BluetoothPermissionDenied;
+                _mobileBleFeedback.Text = SettingsResources.BluetoothPermissionDenied;
                 return;
             }
             var manager = Android.App.Application.Context.GetSystemService(Android.Content.Context.BluetoothService) as Android.Bluetooth.BluetoothManager;
@@ -180,18 +180,18 @@ public sealed partial class SerialSettingsForm
                 string.IsNullOrWhiteSpace(device.Name) ? device.Address! : device.Name,
                 BluetoothSerialTransport.Classic, device.Address!, device.GetUuids()?.Select(uuid => Guid.Parse(uuid.ToString()!)))).ToArray() ?? [];
             ShowMobileBleDevices(devices);
-            mobileBleFeedback.Text = !devices.Any(device => device.SupportsSerialPort) ? SettingsResources.BluetoothNoDevices : string.Empty;
+            _mobileBleFeedback.Text = !devices.Any(device => device.SupportsSerialPort) ? SettingsResources.BluetoothNoDevices : string.Empty;
         }
         catch (Exception)
         {
-            if (ReferenceEquals(mobileBleScan, source)) { mobileBleFeedback.Text = SettingsResources.BluetoothRefreshFailed; }
+            if (ReferenceEquals(_mobileBleScan, source)) { _mobileBleFeedback.Text = SettingsResources.BluetoothRefreshFailed; }
         }
         finally
         {
-            if (ReferenceEquals(mobileBleScan, source))
+            if (ReferenceEquals(_mobileBleScan, source))
             {
-                mobileBleScan = null;
-                mobileBleScanButton.Text = SettingsResources.FindDevices;
+                _mobileBleScan = null;
+                _mobileBleScanButton.Text = SettingsResources.FindDevices;
             }
         }
     }
@@ -202,15 +202,15 @@ public sealed partial class SerialSettingsForm
     private void SelectMobileBluetoothPort(string port, string? deviceName = null)
     {
         CancelMobileBleScan();
-        mobileBluetoothIdentifier.Text = port[(port.IndexOf(':') + 1)..];
+        _mobileBluetoothIdentifier.Text = port[(port.IndexOf(':') + 1)..];
         {
-            mobileBleProfilePort = port;
+            _mobileBleProfilePort = port;
             string prefix = port.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) ? "ble:" : "bluetooth:";
-            deviceName ??= mobileBleSnapshot.FirstOrDefault(device =>
+            deviceName ??= _mobileBleSnapshot.FirstOrDefault(device =>
                 string.Equals(prefix + device.Id, port, StringComparison.OrdinalIgnoreCase))?.Name;
             PopulateMobileBleProfile(prefix == "ble:" ? BluetoothLeProfile.FromDeviceName(deviceName) ?? GetSavedBluetoothProfile(port) : null);
         }
-        selectingMobileBle = true;
+        _selectingMobileBle = true;
         try
         {
             RefreshPorts(_portNames.Append(port).Distinct(StringComparer.Ordinal).ToArray());
@@ -218,7 +218,7 @@ public sealed partial class SerialSettingsForm
         }
         finally
         {
-            selectingMobileBle = false;
+            _selectingMobileBle = false;
         }
         UpdateUartAvailability();
     }
@@ -227,21 +227,21 @@ public sealed partial class SerialSettingsForm
     /// <param name="entry">The staged profile input.</param>
     private void AddMobileBleField(string caption, Entry entry)
     {
-        mobileBleProfileFields.Children.Add(new Label { Text = caption });
-        mobileBleProfileFields.Children.Add(entry);
+        _mobileBleProfileFields.Children.Add(new Label { Text = caption });
+        _mobileBleProfileFields.Children.Add(entry);
     }
 
     /// <summary>Stops the current scan and invalidates queued notifications before native cleanup completes.</summary>
     private void CancelMobileBleScan()
     {
-        CancellationTokenSource? source = mobileBleScan;
-        mobileBleScan = null;
+        CancellationTokenSource? source = _mobileBleScan;
+        _mobileBleScan = null;
         source?.Cancel();
-        mobileBleScanButton.Text = SettingsResources.FindDevices;
+        _mobileBleScanButton.Text = SettingsResources.FindDevices;
         if (source is not null)
         {
-            mobileBleFeedback.Text = mobileBleScanCount == 0 ? SettingsResources.BleScanNoDevices
-                : string.Format(CultureInfo.CurrentCulture, SettingsResources.BleScanComplete, mobileBleScanCount);
+            _mobileBleFeedback.Text = _mobileBleScanCount == 0 ? SettingsResources.BleScanNoDevices
+                : string.Format(CultureInfo.CurrentCulture, SettingsResources.BleScanComplete, _mobileBleScanCount);
         }
     }
 
@@ -250,20 +250,20 @@ public sealed partial class SerialSettingsForm
     private async Task ScanMobileBleAsync()
     {
         using var source = new CancellationTokenSource();
-        mobileBleScan = source;
-        mobileBleScanCount = 0;
-        mobileBleScanButton.Text = SettingsResources.StopBleScan;
-        mobileBleFeedback.Text = SettingsResources.BleScanning;
+        _mobileBleScan = source;
+        _mobileBleScanCount = 0;
+        _mobileBleScanButton.Text = SettingsResources.StopBleScan;
+        _mobileBleFeedback.Text = SettingsResources.BleScanning;
         ShowMobileBleDevices(Array.Empty<BluetoothSerialDevice>());
         var found = new Dictionary<string, BluetoothSerialDevice>(StringComparer.OrdinalIgnoreCase);
         try
         {
 #if ANDROID
             var permission = await Permissions.RequestAsync<BleDiscoveryPermission>();
-            if (!ReferenceEquals(mobileBleScan, source) || Handler is null) { return; }
+            if (!ReferenceEquals(_mobileBleScan, source) || Handler is null) { return; }
             if (permission != PermissionStatus.Granted)
             {
-                mobileBleFeedback.Text = SettingsResources.BleScanPermissionDenied;
+                _mobileBleFeedback.Text = SettingsResources.BleScanPermissionDenied;
                 return;
             }
 #endif
@@ -271,28 +271,28 @@ public sealed partial class SerialSettingsForm
             {
                 Dispatcher.Dispatch(() =>
                 {
-                    if (!ReferenceEquals(mobileBleScan, source) || source.IsCancellationRequested || Handler is null || !device.SupportsSerialPort) { return; }
+                    if (!ReferenceEquals(_mobileBleScan, source) || source.IsCancellationRequested || Handler is null || !device.SupportsSerialPort) { return; }
                     found[device.Id] = device;
-                    mobileBleScanCount = found.Count;
+                    _mobileBleScanCount = found.Count;
                     ShowMobileBleDevices(found.Values);
                 });
             }, source.Token);
-            if (ReferenceEquals(mobileBleScan, source) && Handler is not null)
+            if (ReferenceEquals(_mobileBleScan, source) && Handler is not null)
             {
-                mobileBleScanCount = devices.Count(device => device.SupportsSerialPort);
+                _mobileBleScanCount = devices.Count(device => device.SupportsSerialPort);
                 ShowMobileBleDevices(devices);
-                mobileBleFeedback.Text = !devices.Any(device => device.SupportsSerialPort) ? SettingsResources.BleScanNoDevices
+                _mobileBleFeedback.Text = !devices.Any(device => device.SupportsSerialPort) ? SettingsResources.BleScanNoDevices
                     : string.Format(CultureInfo.CurrentCulture, SettingsResources.BleScanComplete, devices.Count(device => device.SupportsSerialPort));
             }
         }
         catch (OperationCanceledException) when (source.IsCancellationRequested) { }
         catch (Exception)
         {
-            if (ReferenceEquals(mobileBleScan, source) && Handler is not null) { mobileBleFeedback.Text = SettingsResources.BleScanFailed; }
+            if (ReferenceEquals(_mobileBleScan, source) && Handler is not null) { _mobileBleFeedback.Text = SettingsResources.BleScanFailed; }
         }
         finally
         {
-            if (ReferenceEquals(mobileBleScan, source)) { mobileBleScan = null; mobileBleScanButton.Text = SettingsResources.FindDevices; }
+            if (ReferenceEquals(_mobileBleScan, source)) { _mobileBleScan = null; _mobileBleScanButton.Text = SettingsResources.FindDevices; }
         }
     }
 
@@ -304,46 +304,46 @@ public sealed partial class SerialSettingsForm
         string prefix = "ble:";
         BluetoothSerialTransport transport = BluetoothSerialTransport.LowEnergy;
 #if ANDROID
-        if (mobileBluetoothProtocol.SelectedIndex == 0)
+        if (_mobileBluetoothProtocol.SelectedIndex == 0)
         {
             prefix = "bluetooth:";
             transport = BluetoothSerialTransport.Classic;
         }
 #endif
         var available = devices.Where(device => device.Transport == transport && device.SupportsSerialPort).ToList();
-        foreach (string? retainedPort in new[] { savedBluetoothPort, selected })
+        foreach (string? retainedPort in new[] { _savedBluetoothPort, selected })
         {
             if (retainedPort?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) == true
-                && (prefix == "bluetooth:" || GetSavedBluetoothProfile(retainedPort) is not null || mobileBleSnapshot.Any(device =>
+                && (prefix == "bluetooth:" || GetSavedBluetoothProfile(retainedPort) is not null || _mobileBleSnapshot.Any(device =>
                     string.Equals(prefix + device.Id, retainedPort, StringComparison.OrdinalIgnoreCase) && device.SupportsSerialPort))
                 && !available.Any(device => string.Equals(prefix + device.Id, retainedPort, StringComparison.OrdinalIgnoreCase)))
             {
                 string id = retainedPort[prefix.Length..];
-                BluetoothSerialDevice? previous = mobileBleSnapshot.FirstOrDefault(device =>
+                BluetoothSerialDevice? previous = _mobileBleSnapshot.FirstOrDefault(device =>
                     string.Equals(prefix + device.Id, retainedPort, StringComparison.OrdinalIgnoreCase));
                 available.Add(previous ?? new BluetoothSerialDevice(id, id, transport, id));
             }
         }
-        updatingMobileBleDevices = true;
+        _updatingMobileBleDevices = true;
         try
         {
-            mobileBleSnapshot = available.OrderBy(device => device.Name, StringComparer.OrdinalIgnoreCase).ToArray();
-            BluetoothSerialDevice? selectedDevice = mobileBleSnapshot.FirstOrDefault(device =>
+            _mobileBleSnapshot = available.OrderBy(device => device.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+            BluetoothSerialDevice? selectedDevice = _mobileBleSnapshot.FirstOrDefault(device =>
                 string.Equals(prefix + device.Id, selected, StringComparison.OrdinalIgnoreCase));
             if (selectedDevice?.Profile is BluetoothLeProfile recognized)
             {
-                mobileBleProfilePort = prefix + selectedDevice.Id;
-                mobileBluetoothIdentifier.Text = selectedDevice.Id;
+                _mobileBleProfilePort = prefix + selectedDevice.Id;
+                _mobileBluetoothIdentifier.Text = selectedDevice.Id;
                 PopulateMobileBleProfile(recognized);
             }
-            mobileBleDevices.ItemsSource = mobileBleSnapshot.Select(device =>
+            _mobileBleDevices.ItemsSource = _mobileBleSnapshot.Select(device =>
                 string.Format(CultureInfo.CurrentCulture, SettingsResources.BleDeviceDisplay, device.Name, device.Address ?? device.Id)).ToArray();
-            mobileBleDevices.SelectedIndex = Array.FindIndex(mobileBleSnapshot,
+            _mobileBleDevices.SelectedIndex = Array.FindIndex(_mobileBleSnapshot,
                 device => string.Equals(prefix + device.Id, selected, StringComparison.OrdinalIgnoreCase));
         }
         finally
         {
-            updatingMobileBleDevices = false;
+            _updatingMobileBleDevices = false;
         }
         UpdateUartAvailability();
     }
@@ -352,12 +352,12 @@ public sealed partial class SerialSettingsForm
     /// <param name="port">The selected serial or BLE port identifier.</param>
     private void BindMobileBleProfile(string? port)
     {
-        if (!mobileBleReady || selectingMobileBle) { return; }
-        if (port is null || string.Equals(port, mobileBleProfilePort, StringComparison.OrdinalIgnoreCase)) { return; }
-        mobileBleProfilePort = port;
-        mobileBluetoothIdentifier.Text = port[(port.IndexOf(':') + 1)..];
+        if (!_mobileBleReady || _selectingMobileBle) { return; }
+        if (port is null || string.Equals(port, _mobileBleProfilePort, StringComparison.OrdinalIgnoreCase)) { return; }
+        _mobileBleProfilePort = port;
+        _mobileBluetoothIdentifier.Text = port[(port.IndexOf(':') + 1)..];
         string prefix = port.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) ? "ble:" : "bluetooth:";
-        BluetoothLeProfile? profile = mobileBleSnapshot.FirstOrDefault(device =>
+        BluetoothLeProfile? profile = _mobileBleSnapshot.FirstOrDefault(device =>
             string.Equals(prefix + device.Id, port, StringComparison.OrdinalIgnoreCase))?.Profile;
         profile ??= GetSavedBluetoothProfile(port);
         if (profile is null)
@@ -372,12 +372,12 @@ public sealed partial class SerialSettingsForm
     /// <param name="profile">The profile whose canonical catalogue values are displayed, or null to clear information.</param>
     private void PopulateMobileBleProfile(BluetoothLeProfile? profile)
     {
-        mobileBluetoothProfile = BluetoothLeProfile.FromSavedProfile(profile);
-        profile = mobileBluetoothProfile;
-        mobileBleService.Text = profile?.Service.ToString() ?? string.Empty;
-        mobileBleRead.Text = profile?.ReadCharacteristic.ToString() ?? string.Empty;
-        mobileBleWrite.Text = profile?.WriteCharacteristic.ToString() ?? string.Empty;
-        mobileBleConfiguration.Text = profile?.ConfigurationCharacteristic?.ToString() ?? string.Empty;
+        _mobileBluetoothProfile = BluetoothLeProfile.FromSavedProfile(profile);
+        profile = _mobileBluetoothProfile;
+        _mobileBleService.Text = profile?.Service.ToString() ?? string.Empty;
+        _mobileBleRead.Text = profile?.ReadCharacteristic.ToString() ?? string.Empty;
+        _mobileBleWrite.Text = profile?.WriteCharacteristic.ToString() ?? string.Empty;
+        _mobileBleConfiguration.Text = profile?.ConfigurationCharacteristic?.ToString() ?? string.Empty;
     }
 
     /// <summary>Applies only the selected canonical catalogue profile; read-only presentation text is never parsed.</summary>
@@ -385,7 +385,7 @@ public sealed partial class SerialSettingsForm
     private void ReadMobileBleSettings()
     {
         string? port = _ports.SelectedItem as string;
-        if (!mobileBleReady || port is null || (!port.StartsWith("ble:", StringComparison.OrdinalIgnoreCase)
+        if (!_mobileBleReady || port is null || (!port.StartsWith("ble:", StringComparison.OrdinalIgnoreCase)
             && !port.StartsWith("bluetooth:", StringComparison.OrdinalIgnoreCase))) { return; }
         BluetoothLeProfile? profile = GetSelectedBluetoothProfile(port);
         if (port.StartsWith("bluetooth:", StringComparison.OrdinalIgnoreCase))

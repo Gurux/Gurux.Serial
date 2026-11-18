@@ -190,3 +190,4 @@ Android/Gurux.Serial.Example/.vs/
 artifacts/
 /Gurux.Serial.Example/.vs
 *.v2
+/UI/Gurux.Serial.Avalonia/.vs

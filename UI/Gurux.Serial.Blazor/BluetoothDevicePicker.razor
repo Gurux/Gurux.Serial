@@ -95,8 +95,8 @@
             }
         }
     </details>
-    @if (error is not null || Model.Status is not null)
+    @if (_error is not null || Model.Status is not null)
     {
-        <p role="status">@(error ?? Model.Status)</p>
+        <p role="status">@(_error ?? Model.Status)</p>
     }
 </section>

@@ -32,33 +32,33 @@ namespace Gurux.Serial;
 internal sealed class AndroidUsbStream : Stream
 {
     /// <summary>Serializes native transfers with disposal.</summary>
-    private readonly object gate = new();
+    private readonly object _gate = new();
     /// <summary>Serializes read operations to protect pending payload bytes.</summary>
-    private readonly SemaphoreSlim readGate = new(1, 1);
+    private readonly SemaphoreSlim _readGate = new(1, 1);
     /// <summary>Serializes multi-transfer writes.</summary>
-    private readonly SemaphoreSlim writeGate = new(1, 1);
+    private readonly SemaphoreSlim _writeGate = new(1, 1);
     /// <summary>Provides current device attachment state.</summary>
-    private readonly UsbManager manager;
+    private readonly UsbManager _manager;
     /// <summary>Identifies the device owned by this stream.</summary>
-    private readonly UsbDevice device;
+    private readonly UsbDevice _device;
     /// <summary>Owns the native USB connection.</summary>
-    private readonly UsbDeviceConnection connection;
+    private readonly UsbDeviceConnection _connection;
     /// <summary>Identifies the claimed interface released at close.</summary>
-    private readonly UsbInterface port;
+    private readonly UsbInterface _port;
     /// <summary>Receives serial payload and optional FTDI headers.</summary>
-    private readonly UsbEndpoint input;
+    private readonly UsbEndpoint _input;
     /// <summary>Transmits serial payload.</summary>
-    private readonly UsbEndpoint output;
+    private readonly UsbEndpoint _output;
     /// <summary>Indicates whether packets contain FTDI modem status headers.</summary>
-    private readonly bool ftdi;
+    private readonly bool _ftdi;
     /// <summary>Stores a complete packet-aligned read and its pending payload.</summary>
-    private readonly byte[] pending;
+    private readonly byte[] _pending;
     /// <summary>Indexes the next pending payload byte.</summary>
-    private int pendingOffset;
+    private int _pendingOffset;
     /// <summary>Counts the remaining pending payload bytes.</summary>
-    private int pendingCount;
+    private int _pendingCount;
     /// <summary>Records whether the owned native connection has been closed.</summary>
-    private volatile bool disposed;
+    private volatile bool _disposed;
 
     /// <summary>Initializes a stream after claiming and configuring its interface.</summary>
     /// <param name="manager">The USB attachment service.</param>
@@ -70,14 +70,14 @@ internal sealed class AndroidUsbStream : Stream
     /// <param name="ftdi">Whether FTDI headers must be removed.</param>
     private AndroidUsbStream(UsbManager manager, UsbDevice device, UsbDeviceConnection connection, UsbInterface port, UsbEndpoint input, UsbEndpoint output, bool ftdi)
     {
-        this.manager = manager;
-        this.device = device;
-        this.connection = connection;
-        this.port = port;
-        this.input = input;
-        this.output = output;
-        this.ftdi = ftdi;
-        pending = new byte[Math.Max(input.MaxPacketSize, (16384 / input.MaxPacketSize) * input.MaxPacketSize)];
+        this._manager = manager;
+        this._device = device;
+        this._connection = connection;
+        this._port = port;
+        this._input = input;
+        this._output = output;
+        this._ftdi = ftdi;
+        _pending = new byte[Math.Max(input.MaxPacketSize, (16384 / input.MaxPacketSize) * input.MaxPacketSize)];
     }
     /// <summary>Claims a selected bulk interface and rolls back ownership if initialization fails.</summary>
     /// <param name="manager">The Android USB service.</param>
@@ -144,9 +144,9 @@ internal sealed class AndroidUsbStream : Stream
         }
     }
     /// <inheritdoc/>
-    public override bool CanRead => !disposed;
+    public override bool CanRead => !_disposed;
     /// <inheritdoc/>
-    public override bool CanWrite => !disposed;
+    public override bool CanWrite => !_disposed;
     /// <inheritdoc/>
     public override bool CanSeek => false;
     /// <inheritdoc/>
@@ -160,62 +160,62 @@ internal sealed class AndroidUsbStream : Stream
     /// <returns>The native transfer result.</returns>
     private int Transfer(UsbEndpoint endpoint, byte[] bytes, int timeout)
     {
-        lock (gate)
+        lock (_gate)
         {
-            ObjectDisposedException.ThrowIf(disposed, this);
-            return connection.BulkTransfer(endpoint, bytes, bytes.Length, timeout);
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return _connection.BulkTransfer(endpoint, bytes, bytes.Length, timeout);
         }
     }
     /// <inheritdoc/>
     public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(disposed, this);
+        ObjectDisposedException.ThrowIf(_disposed, this);
         if (buffer.IsEmpty)
         {
             return 0;
         }
-        await readGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _readGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            while (pendingCount == 0)
+            while (_pendingCount == 0)
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                int count = await Task.Run(() => Transfer(input, pending, 200), cancellationToken).ConfigureAwait(false);
+                int count = await Task.Run(() => Transfer(_input, _pending, 200), cancellationToken).ConfigureAwait(false);
                 if (count > 0)
                 {
-                    pendingOffset = 0;
-                    pendingCount = ftdi ? AndroidUsbProtocol.StripFtdiStatus(pending, count, input.MaxPacketSize) : count;
+                    _pendingOffset = 0;
+                    _pendingCount = _ftdi ? AndroidUsbProtocol.StripFtdiStatus(_pending, count, _input.MaxPacketSize) : count;
                 }
-                else if (!(manager.DeviceList?.ContainsKey(device.DeviceName) ?? false))
+                else if (!(_manager.DeviceList?.ContainsKey(_device.DeviceName) ?? false))
                 {
                     throw new IOException(global::Gurux.Serial.Properties.Resources.Get("USBSerialDeviceWasDisconnected"));
                 }
             }
             cancellationToken.ThrowIfCancellationRequested();
-            ObjectDisposedException.ThrowIf(disposed, this);
-            int length = Math.Min(buffer.Length, pendingCount);
-            pending.AsMemory(pendingOffset, length).CopyTo(buffer);
-            pendingOffset += length;
-            pendingCount -= length;
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            int length = Math.Min(buffer.Length, _pendingCount);
+            _pending.AsMemory(_pendingOffset, length).CopyTo(buffer);
+            _pendingOffset += length;
+            _pendingCount -= length;
             return length;
         }
         finally
         {
-            readGate.Release();
+            _readGate.Release();
         }
     }
     /// <inheritdoc/>
     public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
     {
-        ObjectDisposedException.ThrowIf(disposed, this);
-        await writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        await _writeGate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             while (!buffer.IsEmpty)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 byte[] bytes = buffer[..Math.Min(buffer.Length, 16384)].ToArray();
-                int count = await Task.Run(() => Transfer(output, bytes, 1000), cancellationToken).ConfigureAwait(false);
+                int count = await Task.Run(() => Transfer(_output, bytes, 1000), cancellationToken).ConfigureAwait(false);
                 if (count <= 0 || count > bytes.Length)
                 {
                     throw new IOException(global::Gurux.Serial.Properties.Resources.Get("USBSerialWriteFailed"));
@@ -226,25 +226,25 @@ internal sealed class AndroidUsbStream : Stream
         }
         finally
         {
-            writeGate.Release();
+            _writeGate.Release();
         }
     }
     /// <inheritdoc/>
     protected override void Dispose(bool disposing)
     {
-        lock (gate)
+        lock (_gate)
         {
-            if (!disposed)
+            if (!_disposed)
             {
-                disposed = true;
+                _disposed = true;
                 try
                 {
-                    connection.ReleaseInterface(port);
+                    _connection.ReleaseInterface(_port);
                 }
                 finally
                 {
-                    connection.Close();
-                    connection.Dispose();
+                    _connection.Close();
+                    _connection.Dispose();
                 }
             }
         }
@@ -257,7 +257,7 @@ internal sealed class AndroidUsbStream : Stream
     /// <inheritdoc/>
     public override void Flush()
     {
-        ObjectDisposedException.ThrowIf(disposed, this);
+        ObjectDisposedException.ThrowIf(_disposed, this);
     }
     /// <inheritdoc/>
     public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();

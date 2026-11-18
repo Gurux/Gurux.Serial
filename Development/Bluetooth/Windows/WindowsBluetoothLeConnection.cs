@@ -37,25 +37,25 @@ namespace Gurux.Serial;
 internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
 {
     /// <summary>Owns the native peer device.</summary>
-    private readonly BluetoothLEDevice device;
+    private readonly BluetoothLEDevice _device;
     /// <summary>Owns every service returned during discovery.</summary>
-    private readonly List<GattDeviceService> services;
+    private readonly List<GattDeviceService> _services;
     /// <summary>Publishes incoming values.</summary>
-    private readonly GattCharacteristic read;
+    private readonly GattCharacteristic _read;
     /// <summary>Accepts serial output.</summary>
-    private readonly GattCharacteristic write;
+    private readonly GattCharacteristic _write;
     /// <summary>Delivers independent received buffers.</summary>
-    private readonly Action<byte[]> received;
+    private readonly Action<byte[]> _received;
     /// <summary>Reports an unexpected transport failure.</summary>
-    private readonly Action<Exception> failed;
+    private readonly Action<Exception> _failed;
     /// <summary>Serializes native writes and disposal.</summary>
-    private readonly SemaphoreSlim gate = new(1, 1);
+    private readonly SemaphoreSlim _gate = new(1, 1);
     /// <summary>Signals that close has begun, suppressing further callbacks.</summary>
-    private int disposed;
+    private int _disposed;
     /// <summary>Prevents repeated disconnect reports.</summary>
-    private int failureReported;
+    private int _failureReported;
     /// <summary>Tracks whether notification setup was attempted and needs rollback.</summary>
-    private bool subscriptionAttempted;
+    private bool _subscriptionAttempted;
 
     /// <summary>Initializes ownership of the discovered native objects.</summary>
     /// <param name="device">Peer device.</param>
@@ -66,12 +66,12 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
     /// <param name="failed">Receives failures.</param>
     internal WindowsBluetoothLeConnection(BluetoothLEDevice device, List<GattDeviceService> services, GattCharacteristic read, GattCharacteristic write, Action<byte[]> received, Action<Exception> failed)
     {
-        this.device = device;
-        this.services = services;
-        this.read = read;
-        this.write = write;
-        this.received = received;
-        this.failed = failed;
+        this._device = device;
+        this._services = services;
+        this._read = read;
+        this._write = write;
+        this._received = received;
+        this._failed = failed;
     }
 
     /// <inheritdoc/>
@@ -84,8 +84,8 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
     /// <exception cref="IOException">A required capability or GATT operation fails.</exception>
     internal async Task InitializeAsync(BluetoothLeProfile profile, CancellationToken cancellationToken)
     {
-        GetWriteOption(write);
-        var properties = read.CharacteristicProperties;
+        GetWriteOption(_write);
+        var properties = _read.CharacteristicProperties;
         var notification = (properties & GattCharacteristicProperties.Notify) != 0
             ? GattClientCharacteristicConfigurationDescriptorValue.Notify
             : (properties & GattCharacteristicProperties.Indicate) != 0
@@ -95,13 +95,13 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
         {
             throw new IOException(Properties.Resources.Get("BluetoothLeNotificationsNotSupported"));
         }
-        read.ValueChanged += OnValueChanged;
-        device.ConnectionStatusChanged += OnConnectionStatusChanged;
-        subscriptionAttempted = true;
-        CheckStatus(await read.WriteClientCharacteristicConfigurationDescriptorAsync(notification).AsTask(cancellationToken).ConfigureAwait(false));
+        _read.ValueChanged += OnValueChanged;
+        _device.ConnectionStatusChanged += OnConnectionStatusChanged;
+        _subscriptionAttempted = true;
+        CheckStatus(await _read.WriteClientCharacteristicConfigurationDescriptorAsync(notification).AsTask(cancellationToken).ConfigureAwait(false));
         if (profile.ConfigurationCharacteristic.HasValue && profile.ConfigurationValue is byte[] configuration)
         {
-            var characteristic = await WindowsBluetoothLe.GetCharacteristicAsync(services[0], profile.ConfigurationCharacteristic.Value, cancellationToken).ConfigureAwait(false);
+            var characteristic = await WindowsBluetoothLe.GetCharacteristicAsync(_services[0], profile.ConfigurationCharacteristic.Value, cancellationToken).ConfigureAwait(false);
             if (configuration.Length > 512)
             {
                 throw new IOException(Properties.Resources.Get("WindowsBluetoothLeConfigurationTooLarge"));
@@ -109,7 +109,7 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
             CheckStatus((await characteristic.WriteValueWithResultAsync(configuration.AsBuffer(), GetWriteOption(characteristic)).AsTask(cancellationToken).ConfigureAwait(false)).Status);
         }
         cancellationToken.ThrowIfCancellationRequested();
-        if (device.ConnectionStatus != BluetoothConnectionStatus.Connected || Volatile.Read(ref failureReported) != 0)
+        if (_device.ConnectionStatus != BluetoothConnectionStatus.Connected || Volatile.Read(ref _failureReported) != 0)
         {
             throw new IOException(Properties.Resources.Get("BluetoothLeDisconnected"));
         }
@@ -118,20 +118,20 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
     /// <inheritdoc/>
     public async ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
     {
-        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
-            var option = GetWriteOption(write);
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            var option = GetWriteOption(_write);
             for (int offset = 0; offset < data.Length; offset += MaxWriteSize)
             {
                 byte[] chunk = data.Slice(offset, Math.Min(MaxWriteSize, data.Length - offset)).ToArray();
-                CheckStatus((await write.WriteValueWithResultAsync(chunk.AsBuffer(), option).AsTask(cancellationToken).ConfigureAwait(false)).Status);
+                CheckStatus((await _write.WriteValueWithResultAsync(chunk.AsBuffer(), option).AsTask(cancellationToken).ConfigureAwait(false)).Status);
             }
         }
         finally
         {
-            gate.Release();
+            _gate.Release();
         }
     }
 
@@ -168,13 +168,13 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
     /// <param name="args">Native received value.</param>
     private void OnValueChanged(GattCharacteristic sender, GattValueChangedEventArgs args)
     {
-        if (Volatile.Read(ref disposed) != 0)
+        if (Volatile.Read(ref _disposed) != 0)
         {
             return;
         }
         try
         {
-            received(args.CharacteristicValue.ToArray());
+            _received(args.CharacteristicValue.ToArray());
         }
         catch (Exception ex)
         {
@@ -197,11 +197,11 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
     /// <param name="exception">Transport or receive callback failure.</param>
     private void ReportFailure(Exception exception)
     {
-        if (Volatile.Read(ref disposed) == 0 && Interlocked.Exchange(ref failureReported, 1) == 0)
+        if (Volatile.Read(ref _disposed) == 0 && Interlocked.Exchange(ref _failureReported, 1) == 0)
         {
             try
             {
-                failed(exception);
+                _failed(exception);
             }
             catch
             {
@@ -213,23 +213,23 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
     /// <inheritdoc/>
     public async ValueTask DisposeAsync()
     {
-        if (Interlocked.Exchange(ref disposed, 1) != 0)
+        if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             return;
         }
-        read.ValueChanged -= OnValueChanged;
-        device.ConnectionStatusChanged -= OnConnectionStatusChanged;
+        _read.ValueChanged -= OnValueChanged;
+        _device.ConnectionStatusChanged -= OnConnectionStatusChanged;
         bool entered = false;
         try
         {
             // Native cancellation is advisory; closing must also release a stalled write's handles.
-            entered = await gate.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
-            if (entered && subscriptionAttempted)
+            entered = await _gate.WaitAsync(TimeSpan.FromSeconds(2)).ConfigureAwait(false);
+            if (entered && _subscriptionAttempted)
             {
                 try
                 {
                     using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));
-                    var unsubscribe = read.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None).AsTask(timeout.Token);
+                    var unsubscribe = _read.WriteClientCharacteristicConfigurationDescriptorAsync(GattClientCharacteristicConfigurationDescriptorValue.None).AsTask(timeout.Token);
                     _ = unsubscribe.ContinueWith(task => { _ = task.Exception; }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
                     await unsubscribe.WaitAsync(timeout.Token).ConfigureAwait(false);
                 }
@@ -241,14 +241,14 @@ internal sealed class WindowsBluetoothLeConnection : IBluetoothLeConnection
         }
         finally
         {
-            foreach (var service in services)
+            foreach (var service in _services)
             {
                 service.Dispose();
             }
-            device.Dispose();
+            _device.Dispose();
             if (entered)
             {
-                gate.Release();
+                _gate.Release();
             }
         }
     }

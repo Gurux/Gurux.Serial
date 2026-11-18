@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Adatbitek:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>Eop:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Áramlásszabályozás:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Paritás:</value>
   </data>

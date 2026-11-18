@@ -326,19 +326,19 @@ internal static class LinuxBluetoothLe
     private sealed class Session : IBluetoothLeConnection
     {
         /// <summary>Receives payloads from BlueZ notifications.</summary>
-        private readonly Action<byte[]> received;
+        private readonly Action<byte[]> _received;
         /// <summary>Receives transport failures.</summary>
-        private readonly Action<Exception> failed;
+        private readonly Action<Exception> _failed;
         /// <summary>Prevents duplicate cleanup and callbacks after disposal.</summary>
-        private int disposed;
+        private int _disposed;
         /// <summary>Prevents duplicate terminal failure callbacks.</summary>
-        private int failureReported;
+        private int _failureReported;
         /// <summary>Records whether cancellation already closed the dedicated bus.</summary>
-        private int aborted;
+        private int _aborted;
         /// <summary>Records whether opening completed before failure delivery.</summary>
-        private int ready;
+        private int _ready;
         /// <summary>Retains the first failure encountered during opening.</summary>
-        private Exception? pendingFailure;
+        private Exception? _pendingFailure;
         /// <summary>Owns the BlueZ service-owner subscription.</summary>
         internal IDisposable? ServiceWatch;
         /// <summary>Retains the connect reply so rollback can observe its completion.</summary>
@@ -366,8 +366,8 @@ internal static class LinuxBluetoothLe
         /// <param name="failed">Receives terminal errors.</param>
         internal Session(Action<byte[]> received, Action<Exception> failed)
         {
-            this.received = received;
-            this.failed = failed;
+            this._received = received;
+            this._failed = failed;
             Bus.StateChanged += BusStateChanged;
         }
         /// <inheritdoc/>
@@ -376,29 +376,29 @@ internal static class LinuxBluetoothLe
         /// <param name="bytes">The received payload.</param>
         internal void Receive(byte[] bytes)
         {
-            if (Volatile.Read(ref disposed) == 0)
+            if (Volatile.Read(ref _disposed) == 0)
             {
-                received(bytes);
+                _received(bytes);
             }
         }
         /// <summary>Reports the first asynchronous transport failure.</summary>
         /// <param name="error">The connection error.</param>
         internal void ReportFailure(Exception error)
         {
-            Interlocked.CompareExchange(ref pendingFailure, error, null);
-            if (Volatile.Read(ref disposed) == 0 && Interlocked.Exchange(ref failureReported, 1) == 0)
+            Interlocked.CompareExchange(ref _pendingFailure, error, null);
+            if (Volatile.Read(ref _disposed) == 0 && Interlocked.Exchange(ref _failureReported, 1) == 0)
             {
-                if (Volatile.Read(ref ready) != 0)
+                if (Volatile.Read(ref _ready) != 0)
                 {
-                    failed(error);
+                    _failed(error);
                 }
             }
         }
         /// <summary>Completes startup or propagates an asynchronous startup failure.</summary>
         internal void Activate()
         {
-            Volatile.Write(ref ready, 1);
-            if (Volatile.Read(ref pendingFailure) is Exception error)
+            Volatile.Write(ref _ready, 1);
+            if (Volatile.Read(ref _pendingFailure) is Exception error)
             {
                 throw error;
             }
@@ -416,13 +416,13 @@ internal static class LinuxBluetoothLe
         /// <summary>Aborts bus operations that cannot accept a cancellation token.</summary>
         internal void Abort()
         {
-            Interlocked.Exchange(ref aborted, 1);
+            Interlocked.Exchange(ref _aborted, 1);
             Bus.Dispose();
         }
         /// <inheritdoc/>
         public async ValueTask WriteAsync(ReadOnlyMemory<byte> data, CancellationToken cancellationToken)
         {
-            ObjectDisposedException.ThrowIf(Volatile.Read(ref disposed) != 0, this);
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
             using var cancellation = cancellationToken.Register(Abort);
             for (int offset = 0; offset < data.Length; offset += MaxWriteSize)
             {
@@ -433,7 +433,7 @@ internal static class LinuxBluetoothLe
         /// <inheritdoc/>
         public async ValueTask DisposeAsync()
         {
-            if (Interlocked.Exchange(ref disposed, 1) != 0)
+            if (Interlocked.Exchange(ref _disposed, 1) != 0)
             {
                 return;
             }
@@ -469,7 +469,7 @@ internal static class LinuxBluetoothLe
                             _ = ConnectOperation.ContinueWith(operation => { _ = operation.Exception; }, CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
                         }
                     }
-                    if (Volatile.Read(ref aborted) != 0)
+                    if (Volatile.Read(ref _aborted) != 0)
                     {
                         using var cleanup = new Connection(Address.System);
                         using var cleanupTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(2));

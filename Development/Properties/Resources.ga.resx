@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Giotáin Sonraí:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>Eop:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Rialú Sreabhadh:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Cothroime:</value>
   </data>

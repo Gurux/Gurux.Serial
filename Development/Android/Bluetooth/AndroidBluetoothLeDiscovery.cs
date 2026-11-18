@@ -82,30 +82,30 @@ internal static class AndroidBluetoothLeDiscovery
     private sealed class DiscoveryCallback : ScanCallback
     {
         /// <summary>Publishes device metadata without retaining native device handles.</summary>
-        private readonly Action<BluetoothSerialDevice> found;
+        private readonly Action<BluetoothSerialDevice> _found;
         /// <summary>Signals native or observer failures to the scan owner.</summary>
-        private readonly TaskCompletionSource failed;
+        private readonly TaskCompletionSource _failed;
         /// <summary>Rejects callbacks once cleanup begins.</summary>
-        private int stopped;
+        private int _stopped;
         /// <summary>Orders callback failures against scan shutdown.</summary>
-        private readonly object sync = new();
+        private readonly object _sync = new();
 
         /// <summary>Creates an observer for one scan.</summary>
         /// <param name="found">Receives discovered device identities.</param>
         /// <param name="failed">Receives failures from native callbacks.</param>
-        internal DiscoveryCallback(Action<BluetoothSerialDevice> found, TaskCompletionSource failed) { this.found = found; this.failed = failed; }
+        internal DiscoveryCallback(Action<BluetoothSerialDevice> found, TaskCompletionSource failed) { this._found = found; this._failed = failed; }
         /// <summary>Prevents future callbacks from publishing devices.</summary>
-        internal void Stop() { lock (sync) { Interlocked.Exchange(ref stopped, 1); } }
+        internal void Stop() { lock (_sync) { Interlocked.Exchange(ref _stopped, 1); } }
         /// <summary>Reports a callback failure only while this scan still owns its observer.</summary>
         /// <param name="error">The native or observer failure.</param>
         private void Fail(Exception error)
         {
-            lock (sync) { if (Volatile.Read(ref stopped) == 0) { failed.TrySetException(error); } }
+            lock (_sync) { if (Volatile.Read(ref _stopped) == 0) { _failed.TrySetException(error); } }
         }
         /// <inheritdoc/>
         public override void OnScanResult(ScanCallbackType callbackType, ScanResult? result)
         {
-            if (Volatile.Read(ref stopped) != 0 || result?.Device is not BluetoothDevice device) { return; }
+            if (Volatile.Read(ref _stopped) != 0 || result?.Device is not BluetoothDevice device) { return; }
             try
             {
                 if (OperatingSystem.IsAndroidVersionAtLeast(26) && !result.IsConnectable) { return; }
@@ -116,7 +116,7 @@ internal static class AndroidBluetoothLeDiscovery
                     .Concat(result.ScanRecord?.ServiceData?.Keys.AsEnumerable() ?? Enumerable.Empty<Android.OS.ParcelUuid>())
                     .Select(value => Guid.TryParse(value?.Uuid?.ToString(), out Guid uuid) ? uuid : Guid.Empty)
                     .Where(uuid => uuid != Guid.Empty).Distinct().ToArray();
-                found(new BluetoothSerialDevice(address, name, BluetoothSerialTransport.LowEnergy, address, serviceUuids));
+                _found(new BluetoothSerialDevice(address, name, BluetoothSerialTransport.LowEnergy, address, serviceUuids));
             }
             catch (Exception error) { Fail(error); }
         }

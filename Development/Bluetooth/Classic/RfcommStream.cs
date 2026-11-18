@@ -39,23 +39,23 @@ namespace Gurux.Serial.Bluetooth.Classic;
 internal sealed class RfcommStream : Stream
 {
     /// <summary>Serializes short native calls with handle disposal to prevent descriptor reuse races.</summary>
-    private readonly object gate = new();
+    private readonly object _gate = new();
     /// <summary>Preserves write ordering while a partial native send waits for capacity.</summary>
-    private readonly SemaphoreSlim writes = new(1, 1);
+    private readonly SemaphoreSlim _writes = new(1, 1);
     /// <summary>Preserves read ordering across concurrent consumers.</summary>
-    private readonly SemaphoreSlim reads = new(1, 1);
+    private readonly SemaphoreSlim _reads = new(1, 1);
     /// <summary>Records the platform ABI selected when creating the socket.</summary>
-    private readonly bool windows;
+    private readonly bool _windows;
     /// <summary>Stores the owned native socket, or minus one after disposal.</summary>
-    private IntPtr socket = new(-1);
+    private IntPtr _socket = new(-1);
     /// <summary>Records ownership of one successful Winsock startup reference.</summary>
-    private bool winsockStarted;
+    private bool _winsockStarted;
 
     /// <summary>Creates a native socket and configures nonblocking operation.</summary>
     /// <param name="windows">Whether to use Winsock instead of Linux sockets.</param>
     private RfcommStream(bool windows)
     {
-        this.windows = windows;
+        this._windows = windows;
         try
         {
             if (windows)
@@ -65,21 +65,21 @@ internal sealed class RfcommStream : Stream
                 {
                     throw new SocketException(error);
                 }
-                winsockStarted = true;
-                socket = RfcommNative.WindowsSocket(32, 1, 3);
+                _winsockStarted = true;
+                _socket = RfcommNative.WindowsSocket(32, 1, 3);
             }
             else
             {
-                socket = new IntPtr(RfcommNative.LinuxSocket(31, 1 | 0x800 | 0x80000, 3));
+                _socket = new IntPtr(RfcommNative.LinuxSocket(31, 1 | 0x800 | 0x80000, 3));
             }
-            if (socket == new IntPtr(-1))
+            if (_socket == new IntPtr(-1))
             {
                 throw NativeException();
             }
             if (windows)
             {
                 uint enabled = 1;
-                if (RfcommNative.WindowsIoctl(socket, 0x8004667e, ref enabled) != 0)
+                if (RfcommNative.WindowsIoctl(_socket, 0x8004667e, ref enabled) != 0)
                 {
                     throw NativeException();
                 }
@@ -109,10 +109,10 @@ internal sealed class RfcommStream : Stream
         RfcommStream stream = new(OperatingSystem.IsWindows());
         try
         {
-            byte[] endpoint = RfcommEndpoint.Serialize(address, channel, stream.windows);
-            int result = stream.windows
-                ? RfcommNative.WindowsConnect(stream.socket, endpoint, endpoint.Length)
-                : RfcommNative.LinuxConnect(stream.socket, endpoint, endpoint.Length);
+            byte[] endpoint = RfcommEndpoint.Serialize(address, channel, stream._windows);
+            int result = stream._windows
+                ? RfcommNative.WindowsConnect(stream._socket, endpoint, endpoint.Length)
+                : RfcommNative.LinuxConnect(stream._socket, endpoint, endpoint.Length);
             if (result != 0)
             {
                 int error = stream.LastError();
@@ -140,18 +140,18 @@ internal sealed class RfcommStream : Stream
     private bool ConnectionReady()
     {
         int ready;
-        if (windows)
+        if (_windows)
         {
             int offset = IntPtr.Size == 8 ? 8 : 4;
             byte[] write = new byte[offset + IntPtr.Size];
             BitConverter.GetBytes(1).CopyTo(write, 0);
             if (IntPtr.Size == 8)
             {
-                BitConverter.GetBytes(socket.ToInt64()).CopyTo(write, offset);
+                BitConverter.GetBytes(_socket.ToInt64()).CopyTo(write, offset);
             }
             else
             {
-                BitConverter.GetBytes(socket.ToInt32()).CopyTo(write, offset);
+                BitConverter.GetBytes(_socket.ToInt32()).CopyTo(write, offset);
             }
             byte[] error = (byte[])write.Clone();
             ready = RfcommNative.WindowsSelect(0, IntPtr.Zero, write, error, new byte[8]);
@@ -159,7 +159,7 @@ internal sealed class RfcommStream : Stream
         else
         {
             byte[] descriptor = new byte[8];
-            BitConverter.GetBytes(socket.ToInt32()).CopyTo(descriptor, 0);
+            BitConverter.GetBytes(_socket.ToInt32()).CopyTo(descriptor, 0);
             BitConverter.GetBytes((short)4).CopyTo(descriptor, 4);
             ready = RfcommNative.LinuxPoll(descriptor, 1, 0);
         }
@@ -178,9 +178,9 @@ internal sealed class RfcommStream : Stream
         }
         int length = 4;
         int value;
-        int result = windows
-            ? RfcommNative.WindowsGetError(socket, 0xffff, 0x1007, out value, ref length)
-            : RfcommNative.LinuxGetError(socket, 1, 4, out value, ref length);
+        int result = _windows
+            ? RfcommNative.WindowsGetError(_socket, 0xffff, 0x1007, out value, ref length)
+            : RfcommNative.LinuxGetError(_socket, 1, 4, out value, ref length);
         if (result != 0)
         {
             throw NativeException();
@@ -194,17 +194,17 @@ internal sealed class RfcommStream : Stream
 
     /// <summary>Returns the platform error immediately after a failed native call.</summary>
     /// <returns>The native Winsock error or Linux errno.</returns>
-    private int LastError() => windows ? RfcommNative.WindowsError() : Marshal.GetLastPInvokeError();
+    private int LastError() => _windows ? RfcommNative.WindowsError() : Marshal.GetLastPInvokeError();
     /// <summary>Creates an exception from the most recent native socket error.</summary>
     /// <returns>The socket failure.</returns>
     private SocketException NativeException() => new(LastError());
     /// <summary>Recognizes retryable nonblocking and interrupted socket operations.</summary>
     /// <param name="error">The native socket error.</param>
     /// <returns>Whether an asynchronous retry can make progress.</returns>
-    private bool IsPending(int error) => windows ? error is 10035 or 10036 or 10037 : error is 11 or 115 or 114 or 4;
+    private bool IsPending(int error) => _windows ? error is 10035 or 10036 or 10037 : error is 11 or 115 or 114 or 4;
 
     /// <inheritdoc/>
-    public override bool CanRead => socket != new IntPtr(-1);
+    public override bool CanRead => _socket != new IntPtr(-1);
     /// <inheritdoc/>
     public override bool CanWrite => CanRead;
     /// <inheritdoc/>
@@ -245,7 +245,7 @@ internal sealed class RfcommStream : Stream
     /// <inheritdoc/>
     public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
     {
-        await reads.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _reads.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ObjectDisposedException.ThrowIf(!CanRead, this);
@@ -268,14 +268,14 @@ internal sealed class RfcommStream : Stream
         }
         finally
         {
-            reads.Release();
+            _reads.Release();
         }
     }
 
     /// <inheritdoc/>
     public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
     {
-        await writes.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _writes.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ObjectDisposedException.ThrowIf(!CanWrite, this);
@@ -296,7 +296,7 @@ internal sealed class RfcommStream : Stream
         }
         finally
         {
-            writes.Release();
+            _writes.Release();
         }
     }
 
@@ -306,17 +306,17 @@ internal sealed class RfcommStream : Stream
     /// <returns>The transferred count, zero on peer EOF, or minus one when retrying is necessary.</returns>
     private int Transfer(byte[] buffer, bool write)
     {
-        lock (gate)
+        lock (_gate)
         {
             ObjectDisposedException.ThrowIf(!CanRead, this);
             int result;
-            if (windows)
+            if (_windows)
             {
-                result = write ? RfcommNative.WindowsSend(socket, buffer, buffer.Length, 0) : RfcommNative.WindowsReceive(socket, buffer, buffer.Length, 0);
+                result = write ? RfcommNative.WindowsSend(_socket, buffer, buffer.Length, 0) : RfcommNative.WindowsReceive(_socket, buffer, buffer.Length, 0);
             }
             else
             {
-                result = (int)(write ? RfcommNative.LinuxSend(socket, buffer, (nuint)buffer.Length, 0x4000) : RfcommNative.LinuxReceive(socket, buffer, (nuint)buffer.Length, 0));
+                result = (int)(write ? RfcommNative.LinuxSend(_socket, buffer, (nuint)buffer.Length, 0x4000) : RfcommNative.LinuxReceive(_socket, buffer, (nuint)buffer.Length, 0));
             }
             if (result < 0)
             {
@@ -333,24 +333,24 @@ internal sealed class RfcommStream : Stream
     /// <inheritdoc/>
     protected override void Dispose(bool disposing)
     {
-        lock (gate)
+        lock (_gate)
         {
-            if (socket != new IntPtr(-1))
+            if (_socket != new IntPtr(-1))
             {
-                if (windows)
+                if (_windows)
                 {
-                    RfcommNative.WindowsClose(socket);
+                    RfcommNative.WindowsClose(_socket);
                 }
                 else
                 {
-                    RfcommNative.LinuxClose(socket);
+                    RfcommNative.LinuxClose(_socket);
                 }
-                socket = new IntPtr(-1);
+                _socket = new IntPtr(-1);
             }
-            if (winsockStarted)
+            if (_winsockStarted)
             {
                 RfcommNative.WindowsCleanup();
-                winsockStarted = false;
+                _winsockStarted = false;
             }
         }
         base.Dispose(disposing);

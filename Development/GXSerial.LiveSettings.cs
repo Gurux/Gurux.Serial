@@ -33,7 +33,7 @@ namespace Gurux.Serial;
 public partial class GXSerial
 {
     /// <summary>Identifies injected configuration callbacks that may close this media reentrantly.</summary>
-    private readonly AsyncLocal<bool> inSettingsApply = new();
+    private readonly AsyncLocal<bool> _inSettingsApply = new();
 
     /// <inheritdoc/>
     public async Task ApplySettingsAsync(SerialPortSettings settings, CancellationToken cancellationToken = default)
@@ -44,35 +44,35 @@ public partial class GXSerial
         cancellationToken.ThrowIfCancellationRequested();
         Stream? observed;
         CancellationTokenSource waiting;
-        lock (lifecycle)
+        lock (_lifecycle)
         {
-            observed = stream;
-            waiting = stopping == null
+            observed = _stream;
+            waiting = _stopping == null
                 ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken)
-                : CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, stopping.Token);
+                : CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _stopping.Token);
         }
         using var waitingLifetime = waiting;
-        await writer.WaitAsync(waiting.Token).ConfigureAwait(false);
+        await _writer.WaitAsync(waiting.Token).ConfigureAwait(false);
         TaskCompletionSource? completed = null;
         Stream? active = null;
         CancellationTokenSource? linked = null;
-        bool previousCallback = inSettingsApply.Value;
+        bool previousCallback = _inSettingsApply.Value;
         try
         {
             SerialPort? owner;
-            lock (lifecycle)
+            lock (_lifecycle)
             {
                 waiting.Token.ThrowIfCancellationRequested();
-                if (!ReferenceEquals(stream, observed))
+                if (!ReferenceEquals(_stream, observed))
                 {
                     throw new OperationCanceledException(waiting.Token);
                 }
-                if (openingDone != null || (stream == null && workers.Any(task => !task.IsCompleted)))
+                if (_openingDone != null || (_stream == null && _workers.Any(task => !task.IsCompleted)))
                 {
                     throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("LiveSettingsLifecycleBusy"));
                 }
-                active = stream;
-                owner = port;
+                active = _stream;
+                owner = _port;
                 if (active == null)
                 {
                     PortSettings = next;
@@ -86,19 +86,19 @@ public partial class GXSerial
                 {
                     throw new NotSupportedException(global::Gurux.Serial.Properties.Resources.Get("LiveSettingsUnsupported"));
                 }
-                linked = CancellationTokenSource.CreateLinkedTokenSource(waiting.Token, stopping!.Token);
+                linked = CancellationTokenSource.CreateLinkedTokenSource(waiting.Token, _stopping!.Token);
                 completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                workers.Add(completed.Task);
+                _workers.Add(completed.Task);
             }
-            inSettingsApply.Value = true;
+            _inSettingsApply.Value = true;
             if (owner != null)
             {
                 await Task.Run(() =>
                 {
-                    lock (lifecycle)
+                    lock (_lifecycle)
                     {
                         linked.Token.ThrowIfCancellationRequested();
-                        if (!ReferenceEquals(stream, active) || !ReferenceEquals(port, owner))
+                        if (!ReferenceEquals(_stream, active) || !ReferenceEquals(_port, owner))
                         {
                             throw new OperationCanceledException(linked.Token);
                         }
@@ -110,9 +110,9 @@ public partial class GXSerial
             else
             {
                 await ((IGXSerialSettings)active).ApplySettingsAsync(next, linked.Token).ConfigureAwait(false);
-                lock (lifecycle)
+                lock (_lifecycle)
                 {
-                    if (!ReferenceEquals(stream, active))
+                    if (!ReferenceEquals(_stream, active))
                     {
                         throw new OperationCanceledException(linked.Token);
                     }
@@ -122,14 +122,14 @@ public partial class GXSerial
         }
         finally
         {
-            inSettingsApply.Value = previousCallback;
+            _inSettingsApply.Value = previousCallback;
             linked?.Dispose();
             if (completed != null)
             {
                 completed.TrySetResult();
-                lock (lifecycle) { workers.Remove(completed.Task); }
+                lock (_lifecycle) { _workers.Remove(completed.Task); }
             }
-            writer.Release();
+            _writer.Release();
         }
     }
 

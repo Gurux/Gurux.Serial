@@ -34,15 +34,15 @@ namespace Gurux.Serial.Example;
 public sealed class ExampleUsbDeviceSelection
 {
     /// <summary>Keeps identity separate from the transport library and releases it with its settings owner.</summary>
-    private static readonly ConditionalWeakTable<SerialPortSettings, ExampleUsbDeviceSelection> Selections = new();
+    private static readonly ConditionalWeakTable<SerialPortSettings, ExampleUsbDeviceSelection> _selections = new();
     /// <summary>Identifies the device path for which this remembered identity was selected.</summary>
-    private readonly string deviceName;
+    private readonly string _deviceName;
     /// <summary>Identifies the selected USB vendor.</summary>
-    private readonly int vendorId;
+    private readonly int _vendorId;
     /// <summary>Identifies the selected USB product.</summary>
-    private readonly int productId;
+    private readonly int _productId;
     /// <summary>Distinguishes identical adapters when Android exposes a serial number.</summary>
-    private readonly string? serialNumber;
+    private readonly string? _serialNumber;
 
     /// <summary>Captures the immutable identity of a selected USB device.</summary>
     /// <param name="deviceName">The Android device path at selection time.</param>
@@ -51,10 +51,10 @@ public sealed class ExampleUsbDeviceSelection
     /// <param name="serialNumber">The hardware serial number, when available.</param>
     private ExampleUsbDeviceSelection(string deviceName, int vendorId, int productId, string? serialNumber)
     {
-        this.deviceName = deviceName;
-        this.vendorId = vendorId;
-        this.productId = productId;
-        this.serialNumber = serialNumber;
+        this._deviceName = deviceName;
+        this._vendorId = vendorId;
+        this._productId = productId;
+        this._serialNumber = serialNumber;
     }
 
     /// <summary>Remembers a selected adapter without changing transport settings or opening a device.</summary>
@@ -68,7 +68,7 @@ public sealed class ExampleUsbDeviceSelection
     {
         ArgumentNullException.ThrowIfNull(settings);
         ArgumentNullException.ThrowIfNull(deviceName);
-        Selections.AddOrUpdate(settings, new(deviceName, vendorId, productId, serialNumber));
+        _selections.AddOrUpdate(settings, new(deviceName, vendorId, productId, serialNumber));
     }
 
     /// <summary>Captures identity only while the selected port still belongs to the remembered adapter.</summary>
@@ -78,16 +78,16 @@ public sealed class ExampleUsbDeviceSelection
     public static JsonObject? Capture(SerialPortSettings settings)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        if (!Selections.TryGetValue(settings, out var selected) || !MatchesPort(settings.PortName, selected.deviceName))
+        if (!_selections.TryGetValue(settings, out var selected) || !MatchesPort(settings.PortName, selected._deviceName))
         {
             return null;
         }
         return new JsonObject
         {
-            ["DeviceName"] = selected.deviceName,
-            ["VendorId"] = selected.vendorId,
-            ["ProductId"] = selected.productId,
-            ["SerialNumber"] = selected.serialNumber
+            ["DeviceName"] = selected._deviceName,
+            ["VendorId"] = selected._vendorId,
+            ["ProductId"] = selected._productId,
+            ["SerialNumber"] = selected._serialNumber
         };
     }
 
@@ -99,7 +99,7 @@ public sealed class ExampleUsbDeviceSelection
     public static void Restore(SerialPortSettings settings, JsonObject? values)
     {
         ArgumentNullException.ThrowIfNull(settings);
-        Selections.Remove(settings);
+        _selections.Remove(settings);
         if (values is null)
         {
             return;
@@ -133,14 +133,14 @@ public sealed class ExampleUsbDeviceSelection
         ArgumentNullException.ThrowIfNull(vendor);
         ArgumentNullException.ThrowIfNull(product);
         ArgumentNullException.ThrowIfNull(serial);
-        if (!Selections.TryGetValue(settings, out var selected) || !MatchesPort(settings.PortName, selected.deviceName))
+        if (!_selections.TryGetValue(settings, out var selected) || !MatchesPort(settings.PortName, selected._deviceName))
         {
             return devices.FirstOrDefault(device => MatchesPort(settings.PortName, name(device)));
         }
-        var candidates = devices.Where(device => vendor(device) == selected.vendorId && product(device) == selected.productId).ToArray();
-        if (!string.IsNullOrEmpty(selected.serialNumber))
+        var candidates = devices.Where(device => vendor(device) == selected._vendorId && product(device) == selected._productId).ToArray();
+        if (!string.IsNullOrEmpty(selected._serialNumber))
         {
-            var known = candidates.Where(device => string.Equals(serial(device), selected.serialNumber, StringComparison.Ordinal)).ToArray();
+            var known = candidates.Where(device => string.Equals(serial(device), selected._serialNumber, StringComparison.Ordinal)).ToArray();
             if (known.Length != 0)
             {
                 return known.Length == 1 ? known[0] : null;

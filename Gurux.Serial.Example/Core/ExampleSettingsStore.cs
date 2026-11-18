@@ -35,18 +35,18 @@ namespace Gurux.Serial.Example;
 public sealed class ExampleSettingsStore
 {
     /// <summary>Serializes writes so an older snapshot cannot replace a newer one.</summary>
-    private readonly SemaphoreSlim writes = new(1, 1);
+    private readonly SemaphoreSlim _writes = new(1, 1);
     /// <summary>Identifies the JSON file owned by this application.</summary>
-    private readonly string fileName;
+    private readonly string _fileName;
     /// <summary>Tracks the last successfully written document to avoid redundant disk writes.</summary>
-    private string? saved;
+    private string? _saved;
 
     /// <summary>Creates a store in this example's directory under the current user's local application data.</summary>
     public ExampleSettingsStore()
     {
         string root = Environment.GetEnvironmentVariable("GURUX_EXAMPLE_SETTINGS_DIRECTORY")
             ?? Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Gurux", "Examples");
-        fileName = Path.Combine(root, "serial", "settings.json");
+        _fileName = Path.Combine(root, "serial", "settings.json");
     }
 
     /// <summary>Reads the saved JSON object without opening any media connection.</summary>
@@ -59,7 +59,7 @@ public sealed class ExampleSettingsStore
     {
         try
         {
-            string json = await File.ReadAllTextAsync(fileName).ConfigureAwait(false);
+            string json = await File.ReadAllTextAsync(_fileName).ConfigureAwait(false);
             return JsonNode.Parse(json)?.AsObject();
         }
         catch (FileNotFoundException)
@@ -83,20 +83,20 @@ public sealed class ExampleSettingsStore
         ArgumentNullException.ThrowIfNull(settings);
         string json = settings.ToJsonString().Replace("\r\n", "\n", StringComparison.Ordinal)
             .Replace("\n", "\r\n", StringComparison.Ordinal);
-        await writes.WaitAsync().ConfigureAwait(false);
+        await _writes.WaitAsync().ConfigureAwait(false);
         string? temporary = null;
         try
         {
-            if (saved == json)
+            if (_saved == json)
             {
                 return;
             }
-            Directory.CreateDirectory(Path.GetDirectoryName(fileName)!);
-            temporary = fileName + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            Directory.CreateDirectory(Path.GetDirectoryName(_fileName)!);
+            temporary = _fileName + "." + Guid.NewGuid().ToString("N") + ".tmp";
             await File.WriteAllTextAsync(temporary, json, new UTF8Encoding(false)).ConfigureAwait(false);
-            File.Move(temporary, fileName, true);
+            File.Move(temporary, _fileName, true);
             temporary = null;
-            saved = json;
+            _saved = json;
         }
         finally
         {
@@ -109,7 +109,7 @@ public sealed class ExampleSettingsStore
             }
             finally
             {
-                writes.Release();
+                _writes.Release();
             }
         }
     }

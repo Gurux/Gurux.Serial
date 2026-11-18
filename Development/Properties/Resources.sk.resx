@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Dátové bity:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>EOP:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Riadenie prietoku:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Parita:</value>
   </data>

@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Darnau Data:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>Eop:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Rheoli Llif:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Cydraddoldeb:</value>
   </data>

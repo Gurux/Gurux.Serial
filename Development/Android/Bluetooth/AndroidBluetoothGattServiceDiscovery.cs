@@ -164,47 +164,47 @@ internal static class AndroidBluetoothGattServiceDiscovery
     private sealed class ServiceCallback : BluetoothGattCallback
     {
         /// <summary>Orders callback processing against request shutdown.</summary>
-        private readonly object sync = new();
+        private readonly object _sync = new();
         /// <summary>Signals successful establishment of this client's connection.</summary>
-        private readonly TaskCompletionSource connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
         /// <summary>Signals the remote service UUID snapshot.</summary>
-        private readonly TaskCompletionSource<Guid[]> services = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<Guid[]> _services = new(TaskCreationOptions.RunContinuationsAsynchronously);
         /// <summary>Prevents late callbacks from completing a finished request.</summary>
-        private bool stopped;
+        private bool _stopped;
 
         /// <summary>Gets the asynchronous connection result.</summary>
-        internal Task Connected => connected.Task;
+        internal Task Connected => _connected.Task;
         /// <summary>Gets the asynchronous service UUID result.</summary>
-        internal Task<Guid[]> Services => services.Task;
+        internal Task<Guid[]> Services => _services.Task;
 
         /// <summary>Stops accepting callbacks and observes failures from stages the caller did not reach.</summary>
         internal void Stop()
         {
-            lock (sync)
+            lock (_sync)
             {
-                stopped = true;
-                _ = connected.Task.Exception;
-                _ = services.Task.Exception;
+                _stopped = true;
+                _ = _connected.Task.Exception;
+                _ = _services.Task.Exception;
             }
         }
 
         /// <inheritdoc/>
         public override void OnConnectionStateChange(BluetoothGatt? gatt, GattStatus status, ProfileState newState)
         {
-            lock (sync)
+            lock (_sync)
             {
-                if (stopped) { return; }
+                if (_stopped) { return; }
                 if (status != GattStatus.Success || newState == ProfileState.Disconnected)
                 {
                     IOException error = status != GattStatus.Success
                         ? new IOException(string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.Get("BluetoothLeOperationFailedWithStatus"), status))
                         : Error("BluetoothLeDisconnected");
-                    connected.TrySetException(error);
-                    services.TrySetException(error);
+                    _connected.TrySetException(error);
+                    _services.TrySetException(error);
                 }
                 else if (newState == ProfileState.Connected)
                 {
-                    connected.TrySetResult();
+                    _connected.TrySetResult();
                 }
             }
         }
@@ -212,12 +212,12 @@ internal static class AndroidBluetoothGattServiceDiscovery
         /// <inheritdoc/>
         public override void OnServicesDiscovered(BluetoothGatt? gatt, GattStatus status)
         {
-            lock (sync)
+            lock (_sync)
             {
-                if (stopped) { return; }
+                if (_stopped) { return; }
                 if (status != GattStatus.Success || gatt is null)
                 {
-                    services.TrySetException(status != GattStatus.Success
+                    _services.TrySetException(status != GattStatus.Success
                         ? new IOException(string.Format(System.Globalization.CultureInfo.CurrentCulture, Properties.Resources.Get("BluetoothLeOperationFailedWithStatus"), status))
                         : Error("BluetoothLeOperationFailed"));
                     return;
@@ -227,11 +227,11 @@ internal static class AndroidBluetoothGattServiceDiscovery
                     Guid[] result = (gatt.Services ?? Array.Empty<BluetoothGattService>())
                         .Select(service => Guid.TryParse(service.Uuid?.ToString(), out Guid uuid) ? uuid : Guid.Empty)
                         .Where(uuid => uuid != Guid.Empty).Distinct().OrderBy(uuid => uuid).ToArray();
-                    services.TrySetResult(result);
+                    _services.TrySetResult(result);
                 }
                 catch (Exception error)
                 {
-                    services.TrySetException(new IOException(Properties.Resources.Get("BluetoothLeOperationFailed"), error));
+                    _services.TrySetException(new IOException(Properties.Resources.Get("BluetoothLeOperationFailed"), error));
                 }
             }
         }

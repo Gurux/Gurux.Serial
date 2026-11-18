@@ -32,11 +32,11 @@ namespace Gurux.Serial;
 internal sealed class DuplexStream(Stream input, Stream output, Action close) : Stream
 {
     /// <summary>Records whether this stream has released its owned connection.</summary>
-    int disposed;
+    int _disposed;
     /// <inheritdoc/>
-    public override bool CanRead => Volatile.Read(ref disposed) == 0 && input.CanRead;
+    public override bool CanRead => Volatile.Read(ref _disposed) == 0 && input.CanRead;
     /// <inheritdoc/>
-    public override bool CanWrite => Volatile.Read(ref disposed) == 0 && output.CanWrite;
+    public override bool CanWrite => Volatile.Read(ref _disposed) == 0 && output.CanWrite;
     /// <inheritdoc/>
     public override bool CanSeek => false;
     /// <inheritdoc/>
@@ -59,7 +59,7 @@ internal sealed class DuplexStream(Stream input, Stream output, Action close) : 
     /// <inheritdoc/>
     protected override void Dispose(bool disposing)
     {
-        if (Interlocked.Exchange(ref disposed, 1) == 0)
+        if (Interlocked.Exchange(ref _disposed, 1) == 0)
         {
             try
             {

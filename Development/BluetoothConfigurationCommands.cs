@@ -38,10 +38,10 @@ namespace Gurux.Serial;
 public static class BluetoothConfigurationCommands
 {
     /// <summary>Maps stable profile names to explicitly registered, AOT-compatible factories.</summary>
-    private static readonly ConcurrentDictionary<string, Func<IBluetoothConfigurationCommands>> providers = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, Func<IBluetoothConfigurationCommands>> _providers = new(StringComparer.Ordinal);
 
     /// <summary>Maps configuration characteristic UUIDs to application-owned default generators.</summary>
-    private static readonly ConcurrentDictionary<Guid, Func<IBluetoothConfigurationCommands>> characteristicProviders = new();
+    private static readonly ConcurrentDictionary<Guid, Func<IBluetoothConfigurationCommands>> _characteristicProviders = new();
 
     /// <summary>Registers the default generator for a catalogue configuration characteristic UUID.</summary>
     /// <param name="configurationCharacteristic">The nonempty ConfigurationService UUID from the device catalogue.</param>
@@ -57,7 +57,7 @@ public static class BluetoothConfigurationCommands
         {
             throw new ArgumentException(Properties.Resources.Get("BluetoothLeProfileInvalid"), nameof(configurationCharacteristic));
         }
-        characteristicProviders[configurationCharacteristic] = factory;
+        _characteristicProviders[configurationCharacteristic] = factory;
     }
 
     /// <summary>Checks whether a configuration destination has a registered UART command generator without invoking its factory.</summary>
@@ -67,8 +67,8 @@ public static class BluetoothConfigurationCommands
     public static bool CanConfigure(Guid? configurationCharacteristic, string? provider = null) =>
         configurationCharacteristic.HasValue && configurationCharacteristic.Value != Guid.Empty
         && (string.IsNullOrWhiteSpace(provider)
-            ? characteristicProviders.ContainsKey(configurationCharacteristic.Value)
-            : providers.ContainsKey(provider));
+            ? _characteristicProviders.ContainsKey(configurationCharacteristic.Value)
+            : _providers.ContainsKey(provider));
 
     /// <summary>Registers a generator with a public parameterless constructor under its full type name.</summary>
     /// <typeparam name="T">The device-specific command generator to instantiate when opening.</typeparam>
@@ -93,7 +93,7 @@ public static class BluetoothConfigurationCommands
         }
         string key = name ?? commandType.FullName ?? commandType.Name;
         ArgumentException.ThrowIfNullOrWhiteSpace(key);
-        providers[key] = factory;
+        _providers[key] = factory;
         return key;
     }
 
@@ -106,7 +106,7 @@ public static class BluetoothConfigurationCommands
     /// <exception cref="ArgumentException">The generated configuration exceeds the supported GATT value size.</exception>
     internal static byte[] Create(string name, SerialPortSettings settings)
     {
-        if (!providers.TryGetValue(name, out var factory))
+        if (!_providers.TryGetValue(name, out var factory))
         {
             throw new NotSupportedException(string.Format(CultureInfo.CurrentCulture,
                 Properties.Resources.Get("BluetoothConfigurationProviderNotRegistered"), name));
@@ -121,7 +121,7 @@ public static class BluetoothConfigurationCommands
     /// <exception cref="InvalidOperationException">The factory or generator returns null.</exception>
     /// <exception cref="ArgumentException">The encoded commands exceed 512 bytes.</exception>
     internal static byte[]? Create(Guid characteristic, SerialPortSettings settings) =>
-        characteristicProviders.TryGetValue(characteristic, out var factory) ? Encode(factory, settings) : null;
+        _characteristicProviders.TryGetValue(characteristic, out var factory) ? Encode(factory, settings) : null;
 
     /// <summary>Invokes a selected factory and validates its exact UTF-8 command payload.</summary>
     /// <param name="factory">The registered application factory.</param>

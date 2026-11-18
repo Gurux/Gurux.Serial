@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Biți de date:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>Eop:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Controlul debitului:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Paritate:</value>
   </data>

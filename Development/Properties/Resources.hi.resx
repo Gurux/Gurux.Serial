@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>डेटा बिट्स:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>EOP:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>प्रवाह नियंत्रण:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>समानता:</value>
   </data>

@@ -16,7 +16,7 @@
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="Avalonia" Version="12.1.6" />
-        <ProjectReference Include="../../Development/Gurux.Serial.csproj" />
+        <PackageReference Include="Gurux.Serial" Version="9.0.2611.1801" />
         <None Include="README.md" Pack="true" PackagePath="/" />
     </ItemGroup>
     <PropertyGroup>
@@ -33,6 +33,6 @@
         <EmbeddedResource Remove="Tests/**;tests/**" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+        <PackageReference Include="Gurux.Common" Version="9.0.2611.1801" />
     </ItemGroup>
 </Project>

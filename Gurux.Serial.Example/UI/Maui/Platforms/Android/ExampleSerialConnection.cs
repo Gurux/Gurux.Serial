@@ -49,7 +49,7 @@ namespace Gurux.Serial.Example.Platforms;
 public static class ExampleSerialConnection
 {
     /// <summary>Stores only the latest USB attachment path until the next explicit Open action.</summary>
-    private static string? pendingUsbDeviceName;
+    private static string? _pendingUsbDeviceName;
 
     /// <summary>Records an Android USB attachment without opening the connection or retaining a Java device object.</summary>
     /// <param name="intent">The native activity intent, or null for a normal launcher start.</param>
@@ -72,7 +72,7 @@ public static class ExampleSerialConnection
         }
         if (device is not null)
         {
-            Interlocked.Exchange(ref pendingUsbDeviceName, device.DeviceName);
+            Interlocked.Exchange(ref _pendingUsbDeviceName, device.DeviceName);
         }
     }
 
@@ -113,7 +113,7 @@ public static class ExampleSerialConnection
     {
         cancellationToken.ThrowIfCancellationRequested();
         var context = Platform.AppContext;
-        string? attached = Interlocked.Exchange(ref pendingUsbDeviceName, null);
+        string? attached = Interlocked.Exchange(ref _pendingUsbDeviceName, null);
         if (attached is not null
             && context.GetSystemService(Context.UsbService) is UsbManager attachedManager
             && attachedManager.DeviceList?.ContainsKey(attached) == true)

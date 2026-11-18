@@ -32,21 +32,21 @@ namespace Gurux.Serial;
 public sealed class SerialPortAvailability
 {
     /// <summary>Protects snapshot identity and pending discovery state.</summary>
-    private readonly object sync = new();
+    private readonly object _sync = new();
     /// <summary>Checks a physical port or a known native Bluetooth identifier.</summary>
-    private readonly Func<string?, CancellationToken, Task<bool>> probe;
+    private readonly Func<string?, CancellationToken, Task<bool>> _probe;
     /// <summary>Limits how often an unchanged selection is enumerated.</summary>
-    private readonly long refreshMilliseconds;
+    private readonly long _refreshMilliseconds;
     /// <summary>Identifies the currently selected device.</summary>
-    private string? selected;
+    private string? _selected;
     /// <summary>Records the last completed result for the current selection.</summary>
-    private bool available;
+    private bool _available;
     /// <summary>Prevents stale discovery results from enabling a different selection.</summary>
-    private long generation;
+    private long _generation;
     /// <summary>Stores the next monotonic time at which a repeated probe may start.</summary>
-    private long nextRefresh;
+    private long _nextRefresh;
     /// <summary>Coalesces repeated refresh calls for an unchanged selection.</summary>
-    private Task pending = Task.CompletedTask;
+    private Task _pending = Task.CompletedTask;
 
     /// <summary>Creates an initially unavailable snapshot with optional host-provided discovery.</summary>
     /// <param name="probe">A discovery callback; defaults to GXSerial.IsPortAvailableAsync.</param>
@@ -59,8 +59,8 @@ public sealed class SerialPortAvailability
         {
             throw new ArgumentOutOfRangeException(nameof(refreshInterval));
         }
-        this.probe = probe ?? GXSerial.IsPortAvailableAsync;
-        refreshMilliseconds = (long)interval.TotalMilliseconds;
+        this._probe = probe ?? GXSerial.IsPortAvailableAsync;
+        _refreshMilliseconds = (long)interval.TotalMilliseconds;
     }
 
     /// <summary>Gets whether the current selection was found by its latest successful discovery.</summary>
@@ -68,9 +68,9 @@ public sealed class SerialPortAvailability
     {
         get
         {
-            lock (sync)
+            lock (_sync)
             {
-                return available;
+                return _available;
             }
         }
     }
@@ -81,35 +81,35 @@ public sealed class SerialPortAvailability
     /// <returns>The current probe or a completed task when no probe is needed. Discovery failures are represented by IsAvailable being false.</returns>
     public Task RefreshAsync(string? portName, CancellationToken cancellationToken = default)
     {
-        lock (sync)
+        lock (_sync)
         {
-            bool changed = !string.Equals(selected, portName, StringComparison.Ordinal);
+            bool changed = !string.Equals(_selected, portName, StringComparison.Ordinal);
             if (changed)
             {
-                selected = portName;
-                available = false;
-                ++generation;
-                nextRefresh = 0;
+                _selected = portName;
+                _available = false;
+                ++_generation;
+                _nextRefresh = 0;
             }
             if (string.IsNullOrWhiteSpace(portName) || cancellationToken.IsCancellationRequested)
             {
-                available = false;
-                ++generation;
+                _available = false;
+                ++_generation;
                 return Task.CompletedTask;
             }
-            if (!changed && !pending.IsCompleted)
+            if (!changed && !_pending.IsCompleted)
             {
-                return pending;
+                return _pending;
             }
             long now = Environment.TickCount64;
-            if (!changed && now < nextRefresh)
+            if (!changed && now < _nextRefresh)
             {
                 return Task.CompletedTask;
             }
-            nextRefresh = now + refreshMilliseconds;
-            long version = generation;
-            pending = Task.Run(() => ProbeAsync(portName, version, cancellationToken));
-            return pending;
+            _nextRefresh = now + _refreshMilliseconds;
+            long version = _generation;
+            _pending = Task.Run(() => ProbeAsync(portName, version, cancellationToken));
+            return _pending;
         }
     }
 
@@ -123,18 +123,18 @@ public sealed class SerialPortAvailability
         bool found;
         try
         {
-            found = await probe(portName, cancellationToken).ConfigureAwait(false) && !cancellationToken.IsCancellationRequested;
+            found = await _probe(portName, cancellationToken).ConfigureAwait(false) && !cancellationToken.IsCancellationRequested;
         }
         catch (Exception)
         {
             // Permission, driver, service and cancellation failures all disable opening.
             found = false;
         }
-        lock (sync)
+        lock (_sync)
         {
-            if (version == generation && string.Equals(selected, portName, StringComparison.Ordinal))
+            if (version == _generation && string.Equals(_selected, portName, StringComparison.Ordinal))
             {
-                available = found;
+                _available = found;
             }
         }
     }

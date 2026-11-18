@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Битови на податоци:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>Еоп:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Контрола на проток:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Паритет:</value>
   </data>

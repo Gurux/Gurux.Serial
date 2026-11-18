@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Біты дадзеных:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>Eop:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Кантроль патоку:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Парытэт:</value>
   </data>

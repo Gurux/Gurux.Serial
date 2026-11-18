@@ -71,7 +71,7 @@ public sealed class SettingsForm : IDisposable, IAsyncDisposable
     /// <summary>Stores transfers from controls into a private draft.</summary>
     private readonly List<Action> _read = [];
     /// <summary>Identifies Bluetooth discovery and profile controls independently of the public field order.</summary>
-    private readonly HashSet<Control> bluetoothFields = [];
+    private readonly HashSet<Control> _bluetoothFields = [];
     /// <summary>Tracks required port selections and their discovery snapshots.</summary>
     private readonly List<(ComboBox Control, string[] Ports)> _portSelections = [];
     /// <summary>Gets whether every serial input has selected a port from its discovery snapshot.</summary>
@@ -91,7 +91,7 @@ public sealed class SettingsForm : IDisposable, IAsyncDisposable
         var bluetooth = new StackPanel { Spacing = 8 };
         foreach (var field in Fields)
         {
-            if (bluetoothFields.Contains(field.View))
+            if (_bluetoothFields.Contains(field.View))
             {
                 bluetooth.Children.Add(field.View);
             }
@@ -353,7 +353,7 @@ public sealed class SettingsForm : IDisposable, IAsyncDisposable
         addField("BluetoothDevices", devices);
         panel.Children.Add(CreateBluetoothInformation(details));
         Fields.Add((Resources.Get("BluetoothSettings"), panel));
-        bluetoothFields.Add(panel);
+        _bluetoothFields.Add(panel);
         Action<string> bindProfile = selected =>
         {
             if (string.Equals(profilePort, selected, StringComparison.OrdinalIgnoreCase)) { return; }

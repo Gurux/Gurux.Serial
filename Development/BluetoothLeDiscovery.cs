@@ -33,9 +33,9 @@ public static class BluetoothLeDiscovery
     /// <summary>Bounds both per-scan results and the recent device cache.</summary>
     private const int MaximumDevices = 256;
     /// <summary>Protects recently observed device identities.</summary>
-    private static readonly object sync = new();
+    private static readonly object _sync = new();
     /// <summary>Stores recent advertisements for availability checks after an explicit scan.</summary>
-    private static readonly Dictionary<string, (BluetoothSerialDevice Device, long Seen)> known = new(StringComparer.OrdinalIgnoreCase);
+    private static readonly Dictionary<string, (BluetoothSerialDevice Device, long Seen)> _known = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Gets whether this build and operating system provide a native BLE discovery backend.</summary>
     /// <remarks>This does not start discovery, request permissions, or test whether the radio is enabled.</remarks>
@@ -57,14 +57,14 @@ public static class BluetoothLeDiscovery
     /// <returns>A detached snapshot of devices seen during the last five minutes.</returns>
     public static BluetoothSerialDevice[] GetKnownDevices()
     {
-        lock (sync)
+        lock (_sync)
         {
             long now = Environment.TickCount64;
-            foreach (string id in known.Where(item => now - item.Value.Seen > 300000).Select(item => item.Key).ToArray())
+            foreach (string id in _known.Where(item => now - item.Value.Seen > 300000).Select(item => item.Key).ToArray())
             {
-                known.Remove(id);
+                _known.Remove(id);
             }
-            return known.Values.Select(item => item.Device).OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ToArray();
+            return _known.Values.Select(item => item.Device).OrderBy(item => item.Name, StringComparer.OrdinalIgnoreCase).ToArray();
         }
     }
 
@@ -122,13 +122,13 @@ public static class BluetoothLeDiscovery
                     }
                     if (!results.ContainsKey(device.Id) && results.Count >= MaximumDevices) { return; }
                     results[device.Id] = device;
-                    lock (sync)
+                    lock (_sync)
                     {
-                        if (!known.ContainsKey(device.Id) && known.Count >= MaximumDevices)
+                        if (!_known.ContainsKey(device.Id) && _known.Count >= MaximumDevices)
                         {
-                            known.Remove(known.MinBy(item => item.Value.Seen).Key);
+                            _known.Remove(_known.MinBy(item => item.Value.Seen).Key);
                         }
-                        known[device.Id] = (device, Environment.TickCount64);
+                        _known[device.Id] = (device, Environment.TickCount64);
                     }
                     deviceFound?.Invoke(device);
                 }

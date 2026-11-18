@@ -53,49 +53,49 @@ internal sealed class BluetoothLeStream : Stream
 #endif
 
     /// <summary>Serializes all GATT requests, including initialization.</summary>
-    private readonly SemaphoreSlim operations = new(1, 1);
+    private readonly SemaphoreSlim _operations = new(1, 1);
     /// <summary>Preserves complete-write ordering across concurrent callers.</summary>
-    private readonly SemaphoreSlim writers = new(1, 1);
+    private readonly SemaphoreSlim _writers = new(1, 1);
     /// <summary>Serializes consumers while preserving partial notification reads.</summary>
-    private readonly SemaphoreSlim readers = new(1, 1);
+    private readonly SemaphoreSlim _readers = new(1, 1);
     /// <summary>Bounds incoming packet storage without blocking Android callback threads.</summary>
-    private readonly Channel<byte[]> incoming;
+    private readonly Channel<byte[]> _incoming;
     /// <summary>Protects pending callback completion and terminal state.</summary>
-    private readonly object sync = new();
+    private readonly object _sync = new();
     /// <summary>Maximum duration of a native request.</summary>
-    private readonly TimeSpan timeout;
+    private readonly TimeSpan _timeout;
     /// <summary>Receives native lifecycle and operation callbacks.</summary>
-    private readonly BluetoothLeCallback callback;
+    private readonly BluetoothLeCallback _callback;
     /// <summary>Owns the native connection.</summary>
-    private BluetoothGatt? gatt;
+    private BluetoothGatt? _gatt;
     /// <summary>Publishes connection establishment.</summary>
-    private readonly TaskCompletionSource<bool> connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
+    private readonly TaskCompletionSource<bool> _connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
     /// <summary>Publishes the currently outstanding native operation.</summary>
-    private TaskCompletionSource<bool>? pending;
+    private TaskCompletionSource<bool>? _pending;
     /// <summary>Identifies the expected callback category.</summary>
-    private string? pendingKind;
+    private string? _pendingKind;
     /// <summary>Stores the first terminal failure.</summary>
-    private Exception? failure;
+    private Exception? _failure;
     /// <summary>Tracks disposal independently of native callbacks.</summary>
-    private bool closed;
+    private bool _closed;
     /// <summary>Characteristic providing notifications.</summary>
-    private BluetoothGattCharacteristic? input;
+    private BluetoothGattCharacteristic? _input;
     /// <summary>Characteristic receiving outgoing bytes.</summary>
-    private BluetoothGattCharacteristic? output;
+    private BluetoothGattCharacteristic? _output;
     /// <summary>Negotiated ATT payload size, initially the minimum MTU minus its header.</summary>
-    private int payloadSize = 20;
+    private int _payloadSize = 20;
     /// <summary>Partially consumed notification packet.</summary>
-    private byte[]? current;
+    private byte[]? _current;
     /// <summary>Offset into the current packet.</summary>
-    private int currentOffset;
+    private int _currentOffset;
     /// <summary>Initializes bounded receive storage and the callback owner.</summary>
     /// <param name="timeout">Maximum native operation duration.</param>
     /// <param name="capacity">Maximum queued packets.</param>
     private BluetoothLeStream(TimeSpan timeout, int capacity)
     {
-        this.timeout = timeout;
-        incoming = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(capacity) { FullMode = BoundedChannelFullMode.Wait, SingleReader = true, SingleWriter = false });
-        callback = new BluetoothLeCallback(this);
+        this._timeout = timeout;
+        _incoming = Channel.CreateBounded<byte[]>(new BoundedChannelOptions(capacity) { FullMode = BoundedChannelFullMode.Wait, SingleReader = true, SingleWriter = false });
+        _callback = new BluetoothLeCallback(this);
     }
     /// <summary>Connects, discovers characteristics, configures the device and subscribes to its input.</summary>
     /// <param name="context">Application connection context.</param>
@@ -113,45 +113,45 @@ internal sealed class BluetoothLeStream : Stream
         try
         {
             token.ThrowIfCancellationRequested();
-            BluetoothGatt connection = ConnectGatt(context, device, stream.callback)
+            BluetoothGatt connection = ConnectGatt(context, device, stream._callback)
                 ?? throw Error("BluetoothLeConnectionFailed");
-            lock (stream.sync)
+            lock (stream._sync)
             {
-                if (stream.closed)
+                if (stream._closed)
                 {
                     CloseNative(connection);
                     stream.ThrowIfClosed();
                 }
-                stream.gatt = connection;
+                stream._gatt = connection;
             }
-            await stream.connected.Task.WaitAsync(timeout, token).ConfigureAwait(false);
-            await stream.RequestAsync("services", () => stream.gatt.DiscoverServices(), token).ConfigureAwait(false);
-            var service = stream.gatt.GetService(UUID.FromString(profile.Service.ToString())!);
+            await stream._connected.Task.WaitAsync(timeout, token).ConfigureAwait(false);
+            await stream.RequestAsync("services", () => stream._gatt.DiscoverServices(), token).ConfigureAwait(false);
+            var service = stream._gatt.GetService(UUID.FromString(profile.Service.ToString())!);
             if (service is null)
             {
                 profile = BluetoothLeServiceSelection.SelectProfile(profile, device.Name,
-                    stream.gatt.Services?.Select(item => Guid.Parse(item.Uuid!.ToString()!)) ?? Enumerable.Empty<Guid>(),
+                    stream._gatt.Services?.Select(item => Guid.Parse(item.Uuid!.ToString()!)) ?? Enumerable.Empty<Guid>(),
                     settings ?? new SerialPortSettings(), device.Address);
-                service = stream.gatt.GetService(UUID.FromString(profile.Service.ToString())!) ?? throw Error("BluetoothLeProfileNotFound");
+                service = stream._gatt.GetService(UUID.FromString(profile.Service.ToString())!) ?? throw Error("BluetoothLeProfileNotFound");
             }
-            stream.input = service.GetCharacteristic(UUID.FromString(profile.ReadCharacteristic.ToString())!) ?? throw Error("BluetoothLeProfileNotFound");
-            stream.output = service.GetCharacteristic(UUID.FromString(profile.WriteCharacteristic.ToString())!) ?? throw Error("BluetoothLeProfileNotFound");
-            if ((stream.input.Properties & (GattProperty.Notify | GattProperty.Indicate)) == 0 || (stream.output.Properties & (GattProperty.Write | GattProperty.WriteNoResponse)) == 0)
+            stream._input = service.GetCharacteristic(UUID.FromString(profile.ReadCharacteristic.ToString())!) ?? throw Error("BluetoothLeProfileNotFound");
+            stream._output = service.GetCharacteristic(UUID.FromString(profile.WriteCharacteristic.ToString())!) ?? throw Error("BluetoothLeProfileNotFound");
+            if ((stream._input.Properties & (GattProperty.Notify | GattProperty.Indicate)) == 0 || (stream._output.Properties & (GattProperty.Write | GattProperty.WriteNoResponse)) == 0)
             {
                 throw Error("BluetoothLeUnsupportedCharacteristics");
             }
-            await stream.RequestAsync("mtu", () => stream.gatt.RequestMtu(mtu), token).ConfigureAwait(false);
+            await stream.RequestAsync("mtu", () => stream._gatt.RequestMtu(mtu), token).ConfigureAwait(false);
             if (profile.ConfigurationValue is byte[] configuration)
             {
                 var characteristic = service.GetCharacteristic(UUID.FromString(profile.ConfigurationCharacteristic!.Value.ToString())!) ?? throw Error("BluetoothLeProfileNotFound");
                 await stream.WriteCharacteristicAsync(characteristic, configuration, token).ConfigureAwait(false);
             }
-            var descriptor = stream.input.GetDescriptor(UUID.FromString("00002902-0000-1000-8000-00805f9b34fb")!) ?? throw Error("BluetoothLeProfileNotFound");
-            if (!stream.gatt.SetCharacteristicNotification(stream.input, true))
+            var descriptor = stream._input.GetDescriptor(UUID.FromString("00002902-0000-1000-8000-00805f9b34fb")!) ?? throw Error("BluetoothLeProfileNotFound");
+            if (!stream._gatt.SetCharacteristicNotification(stream._input, true))
             {
                 throw Error("BluetoothLeOperationFailed");
             }
-            byte[] subscription = (stream.input.Properties & GattProperty.Notify) != 0 ? new byte[] { 1, 0 } : new byte[] { 2, 0 };
+            byte[] subscription = (stream._input.Properties & GattProperty.Notify) != 0 ? new byte[] { 1, 0 } : new byte[] { 2, 0 };
             await stream.RequestAsync("descriptor", () => stream.WriteDescriptor(descriptor, subscription), token).ConfigureAwait(false);
             return stream;
         }
@@ -199,22 +199,22 @@ internal sealed class BluetoothLeStream : Stream
     /// <returns>A task completing after the native callback.</returns>
     private async Task RequestAsync(string kind, Func<bool> start, CancellationToken token)
     {
-        await operations.WaitAsync(token).ConfigureAwait(false);
+        await _operations.WaitAsync(token).ConfigureAwait(false);
         try
         {
             TaskCompletionSource<bool> completion;
-            lock (sync)
+            lock (_sync)
             {
                 ThrowIfClosed();
                 completion = new(TaskCreationOptions.RunContinuationsAsynchronously);
-                pending = completion;
-                pendingKind = kind;
+                _pending = completion;
+                _pendingKind = kind;
             }
             if (!start())
             {
                 throw Error("BluetoothLeOperationFailed");
             }
-            await completion.Task.WaitAsync(timeout, token).ConfigureAwait(false);
+            await completion.Task.WaitAsync(_timeout, token).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -224,12 +224,12 @@ internal sealed class BluetoothLeStream : Stream
         }
         finally
         {
-            lock (sync)
+            lock (_sync)
             {
-                pending = null;
-                pendingKind = null;
+                _pending = null;
+                _pendingKind = null;
             }
-            operations.Release();
+            _operations.Release();
         }
     }
     /// <summary>Completes the expected request without allowing notifications to consume operation completions.</summary>
@@ -237,17 +237,17 @@ internal sealed class BluetoothLeStream : Stream
     /// <param name="status">Native result.</param>
     internal void Complete(string kind, GattStatus status)
     {
-        lock (sync)
+        lock (_sync)
         {
-            if (pendingKind == kind)
+            if (_pendingKind == kind)
             {
                 if (status == GattStatus.Success || kind == "mtu")
                 {
-                    pending?.TrySetResult(true);
+                    _pending?.TrySetResult(true);
                 }
                 else
                 {
-                    pending?.TrySetException(Error("BluetoothLeOperationFailed"));
+                    _pending?.TrySetException(Error("BluetoothLeOperationFailed"));
                 }
             }
         }
@@ -259,7 +259,7 @@ internal sealed class BluetoothLeStream : Stream
     {
         if (status == GattStatus.Success && state == ProfileState.Connected)
         {
-            connected.TrySetResult(true);
+            _connected.TrySetResult(true);
         }
         else if (status != GattStatus.Success || state == ProfileState.Disconnected)
         {
@@ -273,7 +273,7 @@ internal sealed class BluetoothLeStream : Stream
     {
         if (status == GattStatus.Success)
         {
-            payloadSize = BluetoothLeLimits.GetPayloadSize(mtu);
+            _payloadSize = BluetoothLeLimits.GetPayloadSize(mtu);
         }
         Complete("mtu", status);
     }
@@ -282,11 +282,11 @@ internal sealed class BluetoothLeStream : Stream
     /// <param name="value">Native packet bytes.</param>
     internal void Receive(BluetoothGattCharacteristic characteristic, byte[] value)
     {
-        if (characteristic.Uuid?.Equals(input?.Uuid) != true || value.Length == 0)
+        if (characteristic.Uuid?.Equals(_input?.Uuid) != true || value.Length == 0)
         {
             return;
         }
-        if (value.Length > BluetoothLeLimits.MaximumAttributeLength || !incoming.Writer.TryWrite(value.ToArray()))
+        if (value.Length > BluetoothLeLimits.MaximumAttributeLength || !_incoming.Writer.TryWrite(value.ToArray()))
         {
             Fail(Error("BluetoothLeReceiveOverflow"));
         }
@@ -296,19 +296,19 @@ internal sealed class BluetoothLeStream : Stream
     private void Fail(Exception exception)
     {
         BluetoothGatt? owned;
-        lock (sync)
+        lock (_sync)
         {
-            if (closed)
+            if (_closed)
             {
                 return;
             }
-            closed = true;
-            failure = exception;
-            connected.TrySetException(exception);
-            pending?.TrySetException(exception);
-            incoming.Writer.TryComplete(exception);
-            owned = gatt;
-            gatt = null;
+            _closed = true;
+            _failure = exception;
+            _connected.TrySetException(exception);
+            _pending?.TrySetException(exception);
+            _incoming.Writer.TryComplete(exception);
+            owned = _gatt;
+            _gatt = null;
         }
         if (owned != null)
         {
@@ -340,9 +340,9 @@ internal sealed class BluetoothLeStream : Stream
     /// <summary>Rejects use after disconnect or disposal.</summary>
     private void ThrowIfClosed()
     {
-        if (closed)
+        if (_closed)
         {
-            throw failure ?? new ObjectDisposedException(nameof(BluetoothLeStream));
+            throw _failure ?? new ObjectDisposedException(nameof(BluetoothLeStream));
         }
     }
     /// <summary>Writes a descriptor using the memory-safe Android 13 API when available.</summary>
@@ -353,11 +353,11 @@ internal sealed class BluetoothLeStream : Stream
     {
         if (OperatingSystem.IsAndroidVersionAtLeast(33))
         {
-            return (int)gatt!.WriteDescriptor(descriptor, value) == 0;
+            return (int)_gatt!.WriteDescriptor(descriptor, value) == 0;
         }
 #pragma warning disable CA1422
         descriptor.SetValue(value);
-        return gatt!.WriteDescriptor(descriptor);
+        return _gatt!.WriteDescriptor(descriptor);
 #pragma warning restore CA1422
     }
     /// <summary>Writes one characteristic in negotiated-MTU chunks.</summary>
@@ -372,9 +372,9 @@ internal sealed class BluetoothLeStream : Stream
         {
             throw Error("BluetoothLeUnsupportedCharacteristics");
         }
-        for (int offset = 0; offset < value.Length; offset += payloadSize)
+        for (int offset = 0; offset < value.Length; offset += _payloadSize)
         {
-            byte[] chunk = value.Slice(offset, Math.Min(payloadSize, value.Length - offset)).ToArray();
+            byte[] chunk = value.Slice(offset, Math.Min(_payloadSize, value.Length - offset)).ToArray();
             await RequestAsync("write", () => StartWrite(characteristic, chunk, type), token).ConfigureAwait(false);
         }
     }
@@ -387,20 +387,20 @@ internal sealed class BluetoothLeStream : Stream
     {
         if (OperatingSystem.IsAndroidVersionAtLeast(33))
         {
-            return (int)gatt!.WriteCharacteristic(characteristic, value, (int)type) == 0;
+            return (int)_gatt!.WriteCharacteristic(characteristic, value, (int)type) == 0;
         }
 #pragma warning disable CA1422
         characteristic.WriteType = type;
         characteristic.SetValue(value);
-        return gatt!.WriteCharacteristic(characteristic);
+        return _gatt!.WriteCharacteristic(characteristic);
 #pragma warning restore CA1422
     }
     /// <inheritdoc/>
-    public override bool CanRead => !closed;
+    public override bool CanRead => !_closed;
     /// <inheritdoc/>
     public override bool CanSeek => false;
     /// <inheritdoc/>
-    public override bool CanWrite => !closed;
+    public override bool CanWrite => !_closed;
     /// <inheritdoc/>
     public override long Length => throw new NotSupportedException();
     /// <inheritdoc/>
@@ -428,41 +428,41 @@ internal sealed class BluetoothLeStream : Stream
         {
             return 0;
         }
-        await readers.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _readers.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
             ThrowIfClosed();
-            if (current == null)
+            if (_current == null)
             {
-                current = await incoming.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
-                currentOffset = 0;
+                _current = await _incoming.Reader.ReadAsync(cancellationToken).ConfigureAwait(false);
+                _currentOffset = 0;
             }
-            int count = Math.Min(buffer.Length, current.Length - currentOffset);
-            current.AsMemory(currentOffset, count).CopyTo(buffer);
-            currentOffset += count;
-            if (currentOffset == current.Length)
+            int count = Math.Min(buffer.Length, _current.Length - _currentOffset);
+            _current.AsMemory(_currentOffset, count).CopyTo(buffer);
+            _currentOffset += count;
+            if (_currentOffset == _current.Length)
             {
-                current = null;
+                _current = null;
             }
             return count;
         }
         finally
         {
-            readers.Release();
+            _readers.Release();
         }
     }
     /// <inheritdoc/>
     public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
     {
         ThrowIfClosed();
-        await writers.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _writers.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            await WriteCharacteristicAsync(output!, buffer, cancellationToken).ConfigureAwait(false);
+            await WriteCharacteristicAsync(_output!, buffer, cancellationToken).ConfigureAwait(false);
         }
         finally
         {
-            writers.Release();
+            _writers.Release();
         }
     }
     /// <inheritdoc/>

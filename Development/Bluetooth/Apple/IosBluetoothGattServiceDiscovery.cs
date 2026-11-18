@@ -60,23 +60,23 @@ internal static class IosBluetoothGattServiceDiscovery
     private sealed class Session : IAsyncDisposable
     {
         /// <summary>Serializes all CoreBluetooth state, requests and cleanup.</summary>
-        private readonly DispatchQueue queue = new("fi.gurux.serial.ble.services");
+        private readonly DispatchQueue _queue = new("fi.gurux.serial.ble.services");
         /// <summary>Signals that the manager can connect to peripherals.</summary>
-        private readonly TaskCompletionSource powered = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _powered = new(TaskCreationOptions.RunContinuationsAsynchronously);
         /// <summary>Signals establishment of this manager's peripheral connection.</summary>
-        private readonly TaskCompletionSource connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource _connected = new(TaskCreationOptions.RunContinuationsAsynchronously);
         /// <summary>Signals the discovered service UUID snapshot.</summary>
-        private readonly TaskCompletionSource<Guid[]> services = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<Guid[]> _services = new(TaskCreationOptions.RunContinuationsAsynchronously);
         /// <summary>Owns only this metadata request's central manager.</summary>
-        private CBCentralManager? manager;
+        private CBCentralManager? _manager;
         /// <summary>Retains the peripheral while this request is active.</summary>
-        private CBPeripheral? peripheral;
+        private CBPeripheral? _peripheral;
         /// <summary>Records whether this manager submitted its own connection request.</summary>
-        private bool ownsConnection;
+        private bool _ownsConnection;
         /// <summary>Rejects callbacks after native cleanup begins on the queue.</summary>
-        private bool stopped;
+        private bool _stopped;
         /// <summary>Prevents repeated cleanup requests.</summary>
-        private int disposed;
+        private int _disposed;
 
         /// <summary>Creates the manager, connects the selected peripheral and requests its complete service list.</summary>
         /// <param name="deviceId">The UUID identifying a previously discovered peripheral.</param>
@@ -89,30 +89,30 @@ internal static class IosBluetoothGattServiceDiscovery
             await OnQueueAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                manager = new CBCentralManager(null, queue);
-                manager.UpdatedState += OnUpdatedState;
-                manager.ConnectedPeripheral += OnConnected;
-                manager.FailedToConnectPeripheral += OnConnectionFailed;
-                manager.DisconnectedPeripheral += OnDisconnected;
+                _manager = new CBCentralManager(null, _queue);
+                _manager.UpdatedState += OnUpdatedState;
+                _manager.ConnectedPeripheral += OnConnected;
+                _manager.FailedToConnectPeripheral += OnConnectionFailed;
+                _manager.DisconnectedPeripheral += OnDisconnected;
             }).ConfigureAwait(false);
-            await powered.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _powered.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
             await OnQueueAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 using var identifier = new NSUuid(deviceId);
-                peripheral = manager!.RetrievePeripheralsWithIdentifiers(identifier).FirstOrDefault()
+                _peripheral = _manager!.RetrievePeripheralsWithIdentifiers(identifier).FirstOrDefault()
                     ?? throw new IOException(Properties.Resources.Get("BluetoothLeDeviceNotFound"));
-                peripheral.DiscoveredService += OnServicesDiscovered;
-                ownsConnection = true;
-                manager.ConnectPeripheral(peripheral, (NSDictionary?)null);
+                _peripheral.DiscoveredService += OnServicesDiscovered;
+                _ownsConnection = true;
+                _manager.ConnectPeripheral(_peripheral, (NSDictionary?)null);
             }).ConfigureAwait(false);
-            await connected.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            await _connected.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
             await OnQueueAsync(() =>
             {
                 cancellationToken.ThrowIfCancellationRequested();
-                peripheral!.DiscoverServices();
+                _peripheral!.DiscoverServices();
             }).ConfigureAwait(false);
-            Guid[] result = await services.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
+            Guid[] result = await _services.Task.WaitAsync(cancellationToken).ConfigureAwait(false);
             cancellationToken.ThrowIfCancellationRequested();
             return result;
         }
@@ -122,12 +122,12 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <param name="args">The native state change notification.</param>
         private void OnUpdatedState(object? sender, EventArgs args)
         {
-            if (stopped) { return; }
-            if (manager!.State == CBManagerState.PoweredOn)
+            if (_stopped) { return; }
+            if (_manager!.State == CBManagerState.PoweredOn)
             {
-                powered.TrySetResult();
+                _powered.TrySetResult();
             }
-            else if (manager.State != CBManagerState.Unknown && manager.State != CBManagerState.Resetting)
+            else if (_manager.State != CBManagerState.Unknown && _manager.State != CBManagerState.Resetting)
             {
                 Fail(new IOException(Properties.Resources.Get("BluetoothUnavailable")));
             }
@@ -138,7 +138,7 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <param name="args">The peripheral whose connection completed.</param>
         private void OnConnected(object? sender, CBPeripheralEventArgs args)
         {
-            if (!stopped && args.Peripheral == peripheral) { connected.TrySetResult(); }
+            if (!_stopped && args.Peripheral == _peripheral) { _connected.TrySetResult(); }
         }
 
         /// <summary>Reports failure of this manager's peripheral connection request.</summary>
@@ -146,7 +146,7 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <param name="args">The peripheral and its native connection failure.</param>
         private void OnConnectionFailed(object? sender, CBPeripheralErrorEventArgs args)
         {
-            if (!stopped && args.Peripheral == peripheral) { Fail(NativeError(args.Error)); }
+            if (!_stopped && args.Peripheral == _peripheral) { Fail(NativeError(args.Error)); }
         }
 
         /// <summary>Wakes pending discovery if this request's connection is lost.</summary>
@@ -154,7 +154,7 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <param name="args">The peripheral and optional native disconnect error.</param>
         private void OnDisconnected(object? sender, CBPeripheralErrorEventArgs args)
         {
-            if (!stopped && args.Peripheral == peripheral)
+            if (!_stopped && args.Peripheral == _peripheral)
             {
                 Fail(args.Error is null ? new IOException(Properties.Resources.Get("BluetoothLeDisconnected")) : NativeError(args.Error));
             }
@@ -165,7 +165,7 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <param name="args">The optional native discovery error.</param>
         private void OnServicesDiscovered(object? sender, NSErrorEventArgs args)
         {
-            if (stopped) { return; }
+            if (_stopped) { return; }
             if (args.Error is not null)
             {
                 Fail(NativeError(args.Error));
@@ -173,10 +173,10 @@ internal static class IosBluetoothGattServiceDiscovery
             }
             try
             {
-                Guid[] result = (peripheral!.Services ?? Array.Empty<CBService>())
+                Guid[] result = (_peripheral!.Services ?? Array.Empty<CBService>())
                     .Select(service => Guid.TryParse(service.UUID.ToString(true), out Guid uuid) ? uuid : Guid.Empty)
                     .Where(uuid => uuid != Guid.Empty).Distinct().OrderBy(uuid => uuid).ToArray();
-                services.TrySetResult(result);
+                _services.TrySetResult(result);
             }
             catch (Exception error)
             {
@@ -188,10 +188,10 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <param name="error">The localized native operation error.</param>
         private void Fail(Exception error)
         {
-            if (stopped) { return; }
-            powered.TrySetException(error);
-            connected.TrySetException(error);
-            services.TrySetException(error);
+            if (_stopped) { return; }
+            _powered.TrySetException(error);
+            _connected.TrySetException(error);
+            _services.TrySetException(error);
         }
 
         /// <summary>Wraps the platform diagnostic with a localized operation message.</summary>
@@ -203,27 +203,27 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <summary>Runs one native action on this session's owning serial queue.</summary>
         /// <param name="action">The native operation to execute.</param>
         /// <returns>Completion after the queued native action has run.</returns>
-        private Task OnQueueAsync(Action action) => IosBluetoothLeDiscovery.DispatchAsync(queue, action);
+        private Task OnQueueAsync(Action action) => IosBluetoothLeDiscovery.DispatchAsync(_queue, action);
 
         /// <summary>Releases each owned native resource independently so one teardown failure cannot prevent the remaining cleanup.</summary>
         private void ReleaseNative()
         {
-            stopped = true;
-            if (peripheral is not null)
+            _stopped = true;
+            if (_peripheral is not null)
             {
                 try
                 {
-                    peripheral.DiscoveredService -= OnServicesDiscovered;
+                    _peripheral.DiscoveredService -= OnServicesDiscovered;
                 }
                 catch (Exception)
                 {
                     // The manager is still released even if a native peripheral already ended.
                 }
-                if (ownsConnection && manager is not null)
+                if (_ownsConnection && _manager is not null)
                 {
                     try
                     {
-                        manager.CancelPeripheralConnection(peripheral);
+                        _manager.CancelPeripheralConnection(_peripheral);
                     }
                     catch (Exception)
                     {
@@ -232,21 +232,21 @@ internal static class IosBluetoothGattServiceDiscovery
                 }
                 try
                 {
-                    peripheral.Dispose();
+                    _peripheral.Dispose();
                 }
                 catch (Exception)
                 {
                     // Release the manager even when peripheral teardown races native shutdown.
                 }
             }
-            if (manager is not null)
+            if (_manager is not null)
             {
                 try
                 {
-                    manager.UpdatedState -= OnUpdatedState;
-                    manager.ConnectedPeripheral -= OnConnected;
-                    manager.FailedToConnectPeripheral -= OnConnectionFailed;
-                    manager.DisconnectedPeripheral -= OnDisconnected;
+                    _manager.UpdatedState -= OnUpdatedState;
+                    _manager.ConnectedPeripheral -= OnConnected;
+                    _manager.FailedToConnectPeripheral -= OnConnectionFailed;
+                    _manager.DisconnectedPeripheral -= OnDisconnected;
                 }
                 catch (Exception)
                 {
@@ -254,7 +254,7 @@ internal static class IosBluetoothGattServiceDiscovery
                 }
                 try
                 {
-                    manager.Delegate = null!;
+                    _manager.Delegate = null!;
                 }
                 catch (Exception)
                 {
@@ -262,7 +262,7 @@ internal static class IosBluetoothGattServiceDiscovery
                 }
                 try
                 {
-                    manager.Dispose();
+                    _manager.Dispose();
                 }
                 catch (Exception)
                 {
@@ -274,7 +274,7 @@ internal static class IosBluetoothGattServiceDiscovery
         /// <returns>Completion once the owned peripheral, manager and queue have been released.</returns>
         public async ValueTask DisposeAsync()
         {
-            if (Interlocked.Exchange(ref disposed, 1) != 0) { return; }
+            if (Interlocked.Exchange(ref _disposed, 1) != 0) { return; }
             try
             {
                 await OnQueueAsync(ReleaseNative).ConfigureAwait(false);
@@ -285,12 +285,12 @@ internal static class IosBluetoothGattServiceDiscovery
             }
             finally
             {
-                _ = powered.Task.Exception;
-                _ = connected.Task.Exception;
-                _ = services.Task.Exception;
+                _ = _powered.Task.Exception;
+                _ = _connected.Task.Exception;
+                _ = _services.Task.Exception;
                 try
                 {
-                    queue.Dispose();
+                    _queue.Dispose();
                 }
                 catch (Exception)
                 {

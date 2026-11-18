@@ -123,12 +123,6 @@
   <data name="DataBitsTxt" xml:space="preserve">
     <value>Biti za Takwimu:</value>
   </data>
-  <data name="EopTxt" xml:space="preserve">
-    <value>Eop:</value>
-  </data>
-  <data name="FlowControlTxt" xml:space="preserve">
-    <value>Udhibiti wa Mtiririko:</value>
-  </data>
   <data name="ParityTxt" xml:space="preserve">
     <value>Usawa:</value>
   </data>

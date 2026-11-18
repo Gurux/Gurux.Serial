@@ -46,31 +46,31 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
     }
 
     /// <summary>Creates an owned platform stream instead of opening a desktop serial port.</summary>
-    readonly Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? factory;
+    readonly Func<SerialPortSettings, CancellationToken, ValueTask<Stream>>? _factory;
     /// <summary>Serializes access to lifecycle transitions and pending cleanup state.</summary>
-    readonly object lifecycle = new();
+    readonly object _lifecycle = new();
     /// <summary>Prevents concurrent writes from interleaving bytes on the transport.</summary>
-    readonly SemaphoreSlim writer = new(1, 1);
+    readonly SemaphoreSlim _writer = new(1, 1);
     /// <summary>Identifies callbacks executing within the current asynchronous open operation.</summary>
-    readonly AsyncLocal<bool> inOpening = new();
+    readonly AsyncLocal<bool> _inOpening = new();
     /// <summary>Cancels the currently pending serial stream creation.</summary>
-    CancellationTokenSource? openingCancellation;
+    CancellationTokenSource? _openingCancellation;
     /// <summary>Signals completion of the currently pending open operation.</summary>
-    TaskCompletionSource? openingDone;
+    TaskCompletionSource? _openingDone;
     /// <summary>Identifies callbacks executing within the receive loop to avoid waiting on themselves.</summary>
-    readonly AsyncLocal<bool> inReader = new();
+    readonly AsyncLocal<bool> _inReader = new();
     /// <summary>Holds the owned readable and writable connection while the media is open.</summary>
-    Stream? stream;
+    Stream? _stream;
     /// <summary>Owns the desktop serial port associated with the active stream.</summary>
-    SerialPort? port;
+    SerialPort? _port;
     /// <summary>Cancels the active receive loop when the connection closes.</summary>
-    CancellationTokenSource? stopping;
+    CancellationTokenSource? _stopping;
     /// <summary>Tracks receive and cleanup tasks that must finish before a subsequent open.</summary>
-    readonly HashSet<Task> workers = [];
+    readonly HashSet<Task> _workers = [];
     /// <summary>Identifies close callbacks to prevent recursive cleanup waits.</summary>
-    readonly AsyncLocal<bool> inClosing = new();
+    readonly AsyncLocal<bool> _inClosing = new();
     /// <summary>Identifies cleanup work whose closed callback is permitted to reopen the media.</summary>
-    readonly AsyncLocal<Task?> completedCleanup = new();
+    readonly AsyncLocal<Task?> _completedCleanup = new();
     /// <summary>Creates serial media that opens an operating system serial port.</summary>
     public GXSerial()
     {
@@ -79,7 +79,7 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
     /// <summary>Creates serial media that owns the stream returned by the supplied transport factory.</summary>
     /// <param name="streamFactory">Creates an owned readable and writable stream for the supplied serial settings and cancellation token.</param>
     /// <exception cref="ArgumentNullException">The stream factory is null.</exception>
-    public GXSerial(Func<SerialPortSettings, CancellationToken, ValueTask<Stream>> streamFactory) => factory = streamFactory ?? throw new ArgumentNullException(nameof(streamFactory));
+    public GXSerial(Func<SerialPortSettings, CancellationToken, ValueTask<Stream>> streamFactory) => _factory = streamFactory ?? throw new ArgumentNullException(nameof(streamFactory));
     /// <summary>Gets the framing and device settings used by the underlying serial connection.</summary>
     public SerialPortSettings PortSettings { get; private set; } = new();
     /// <summary>Gets or sets the operating system port name or platform accessory identifier.</summary>
@@ -103,7 +103,7 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
     /// <inheritdoc/>
     public override string MediaType => "Serial";
     /// <inheritdoc/>
-    public override bool IsOpen => stream != null;
+    public override bool IsOpen => _stream != null;
 
     /// <summary>Gets or replaces serial settings using the legacy Port, Bps and ByteSize XML element names.</summary>
     /// <remarks>Accepts XML fragments or a Serial wrapper. Null or empty input restores defaults.
@@ -135,9 +135,9 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
         }
         set
         {
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                if (IsOpen || openingDone != null || workers.Count != 0)
+                if (IsOpen || _openingDone != null || _workers.Count != 0)
                 {
                     throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("CloseTheMediaAndAwaitCleanupBeforeChangingSettings"));
                 }
@@ -179,9 +179,9 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
         get => JsonSerializer.Serialize(PortSettings, SerialJsonContext.Default.SerialPortSettings);
         set
         {
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                if (IsOpen || openingDone != null || workers.Count != 0)
+                if (IsOpen || _openingDone != null || _workers.Count != 0)
                 {
                     throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("CloseTheMediaAndAwaitCleanupBeforeChangingSettings"));
                 }
@@ -230,9 +230,9 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
     {
         CancellationTokenSource cancel;
         TaskCompletionSource done;
-        lock (lifecycle)
+        lock (_lifecycle)
         {
-            if (openingDone != null)
+            if (_openingDone != null)
             {
                 throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("SerialMediaIsAlreadyOpening"));
             }
@@ -242,19 +242,19 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
                 return;
             }
 
-            if (workers.Any(task => !task.IsCompleted && !ReferenceEquals(task, completedCleanup.Value)))
+            if (_workers.Any(task => !task.IsCompleted && !ReferenceEquals(task, _completedCleanup.Value)))
             {
                 throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("SerialMediaIsStillClosingAwaitCloseAsyncBeforeReopening"));
             }
 
-            openingCancellation = cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-            openingDone = done = new(TaskCreationOptions.RunContinuationsAsynchronously);
+            _openingCancellation = cancel = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+            _openingDone = done = new(TaskCreationOptions.RunContinuationsAsynchronously);
         }
 
         Stream? source = null;
         SerialPort? owner = null;
-        bool previous = inOpening.Value;
-        inOpening.Value = true;
+        bool previous = _inOpening.Value;
+        _inOpening.Value = true;
         try
         {
             SetState(MediaState.Opening);
@@ -265,9 +265,9 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
                 PortSettings.Validate();
                 throw new ArgumentException(errors[0].Message);
             }
-            if (factory != null)
+            if (_factory != null)
             {
-                source = await factory(PortSettings, cancel.Token).ConfigureAwait(false);
+                source = await _factory(PortSettings, cancel.Token).ConfigureAwait(false);
             }
 #if IOS || MACCATALYST
             else if (PortName?.StartsWith("ble:", StringComparison.OrdinalIgnoreCase) == true)
@@ -311,38 +311,38 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
                 throw new IOException(global::Gurux.Serial.Properties.Resources.Get("TransportMustBeReadableAndWritable"));
             }
 
-            lock (lifecycle)
+            lock (_lifecycle)
             {
                 cancel.Token.ThrowIfCancellationRequested();
-                stream = source;
-                port = owner;
-                stopping = new CancellationTokenSource();
+                _stream = source;
+                _port = owner;
+                _stopping = new CancellationTokenSource();
                 ReceiveBuffer.Open();
             }
 
             SetState(MediaState.Open);
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                if (ReferenceEquals(stream, source) && stopping != null)
+                if (ReferenceEquals(_stream, source) && _stopping != null)
                 {
                     var active = source;
                     var serialPort = owner;
-                    var token = stopping.Token;
+                    var token = _stopping.Token;
                     TrackWorker(Task.Run(() => ReadLoopAsync(active, serialPort, token)));
                 }
             }
         }
         catch
         {
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                if (ReferenceEquals(stream, source))
+                if (ReferenceEquals(_stream, source))
                 {
-                    stream = null;
-                    port = null;
-                    stopping?.Cancel();
-                    stopping?.Dispose();
-                    stopping = null;
+                    _stream = null;
+                    _port = null;
+                    _stopping?.Cancel();
+                    _stopping?.Dispose();
+                    _stopping = null;
                 }
 
                 ReceiveBuffer.Close();
@@ -358,15 +358,15 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
         }
         finally
         {
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                openingCancellation = null;
-                openingDone = null;
+                _openingCancellation = null;
+                _openingDone = null;
             }
 
             cancel.Dispose();
             done.TrySetResult();
-            inOpening.Value = previous;
+            _inOpening.Value = previous;
         }
     }
 
@@ -383,7 +383,7 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
     /// <returns>A task completing when the receive loop and its cleanup finish.</returns>
     async Task ReadLoopAsync(Stream source, SerialPort? owner, CancellationToken token)
     {
-        inReader.Value = true;
+        _inReader.Value = true;
         byte[] buffer = new byte[4096];
         try
         {
@@ -409,14 +409,14 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
         finally
         {
             bool disconnected = false;
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                if (ReferenceEquals(stream, source))
+                if (ReferenceEquals(_stream, source))
                 {
-                    stream = null;
-                    if (ReferenceEquals(port, owner))
+                    _stream = null;
+                    if (ReferenceEquals(_port, owner))
                     {
-                        port = null;
+                        _port = null;
                     }
 
                     ReceiveBuffer.Close();
@@ -431,24 +431,24 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
                 SetState(MediaState.Closed);
             }
 
-            inReader.Value = false;
+            _inReader.Value = false;
         }
     }
 
     /// <inheritdoc/>
     public override async ValueTask SendAsync(ReadOnlyMemory<byte> data, string? receiver = null, CancellationToken cancellationToken = default)
     {
-        await writer.WaitAsync(cancellationToken).ConfigureAwait(false);
+        await _writer.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            var active = stream ?? throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("SerialMediaIsClosed"));
+            var active = _stream ?? throw new InvalidOperationException(global::Gurux.Serial.Properties.Resources.Get("SerialMediaIsClosed"));
             await active.WriteAsync(data, cancellationToken).ConfigureAwait(false);
             await active.FlushAsync(cancellationToken).ConfigureAwait(false);
             AddBytesSent(data.Length);
         }
         finally
         {
-            writer.Release();
+            _writer.Release();
         }
     }
 
@@ -456,15 +456,15 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
     /// <param name="task">The asynchronous work to retain until it completes.</param>
     void TrackWorker(Task task)
     {
-        lock (lifecycle)
+        lock (_lifecycle)
         {
-            workers.Add(task);
+            _workers.Add(task);
         }
         _ = task.ContinueWith(completed =>
         {
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                workers.Remove(completed);
+                _workers.Remove(completed);
             }
         }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
     }
@@ -490,24 +490,24 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
         SerialPort? owner;
         CancellationTokenSource? cancel;
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        lock (lifecycle)
+        lock (_lifecycle)
         {
-            openingCancellation?.Cancel();
-            pending = workers.Concat(openingDone == null ? [] : new[] { openingDone.Task }).ToArray();
-            workers.Add(completion.Task);
-            active = stream;
-            stream = null;
-            owner = port;
-            port = null;
-            cancel = stopping;
-            stopping = null;
+            _openingCancellation?.Cancel();
+            pending = _workers.Concat(_openingDone == null ? [] : new[] { _openingDone.Task }).ToArray();
+            _workers.Add(completion.Task);
+            active = _stream;
+            _stream = null;
+            owner = _port;
+            _port = null;
+            cancel = _stopping;
+            _stopping = null;
             ReceiveBuffer.Close();
             cancel?.Cancel();
         }
 
-        bool reentrant = inClosing.Value || inReader.Value || inOpening.Value || inSettingsApply.Value;
-        bool previous = inClosing.Value;
-        inClosing.Value = true;
+        bool reentrant = _inClosing.Value || _inReader.Value || _inOpening.Value || _inSettingsApply.Value;
+        bool previous = _inClosing.Value;
+        _inClosing.Value = true;
         Exception? failure = null;
         // Attempts one cleanup action while retaining the first failure for the caller.
         // action: The resource cleanup operation to attempt.
@@ -566,25 +566,25 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
 
             if (active != null)
             {
-                var previousCleanup = completedCleanup.Value;
-                completedCleanup.Value = completion.Task;
+                var previousCleanup = _completedCleanup.Value;
+                _completedCleanup.Value = completion.Task;
                 try
                 {
                     Cleanup(() => SetState(MediaState.Closed));
                 }
                 finally
                 {
-                    completedCleanup.Value = previousCleanup;
+                    _completedCleanup.Value = previousCleanup;
                 }
             }
         }
         finally
         {
-            inClosing.Value = previous;
+            _inClosing.Value = previous;
             completion.TrySetResult();
-            lock (lifecycle)
+            lock (_lifecycle)
             {
-                workers.Remove(completion.Task);
+                _workers.Remove(completion.Task);
             }
         }
 

@@ -31,9 +31,9 @@ namespace Gurux.Serial.Avalonia.Properties;
 internal static class Resources
 {
     /// <summary>Resolves resources from this adapter assembly.</summary>
-    private static readonly ResourceManager Manager = new("Gurux.Serial.Avalonia.Properties.Resources", typeof(Resources).Assembly);
+    private static readonly ResourceManager _manager = new("Gurux.Serial.Avalonia.Properties.Resources", typeof(Resources).Assembly);
     /// <summary>Retrieves a resource using the current user interface culture.</summary>
     /// <param name="key">The stable resource identifier.</param>
     /// <returns>The translated text.</returns>
-    internal static string Get(string key) => Manager.GetString(key, CultureInfo.CurrentUICulture)!;
+    internal static string Get(string key) => _manager.GetString(key, CultureInfo.CurrentUICulture)!;
 }

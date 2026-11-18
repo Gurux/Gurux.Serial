@@ -22,10 +22,10 @@
   </PropertyGroup>
   <ItemGroup>
     <!-- Keep each target on its matching MAUI major release. -->
-    <PackageReference Include="Microsoft.Maui.Controls" Version="[11.0.10,12.0.0)" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '11.0'" />
-    <PackageReference Include="Microsoft.Maui.Controls" Version="[10.0.110,11.0.0)" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '10.0'" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.130" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '11.0'" />
+    <PackageReference Include="Microsoft.Maui.Controls" Version="10.0.130" Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '10.0'" />
     <None Include="README.md" Pack="true" PackagePath="/" />
-    <ProjectReference Include="../../Development/Gurux.Serial.csproj" />
+    <PackageReference Include="Gurux.Serial" Version="9.0.2611.1801" />
 
   </ItemGroup>
 
@@ -43,6 +43,6 @@
     <EmbeddedResource Remove="Tests/**;tests/**" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+    <PackageReference Include="Gurux.Common" Version="9.0.2611.1801" />
   </ItemGroup>
 </Project>
