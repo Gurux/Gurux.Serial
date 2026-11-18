@@ -24,7 +24,7 @@
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
     <PackageIcon>GXSerial.png</PackageIcon>
-    <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.2611.1601</GuruxCommonVersion>
+    <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.*</GuruxCommonVersion>
   </PropertyGroup>
   <ItemGroup>
     <None Include="../../Development/GXSerial.png" Pack="true" PackagePath="/" />

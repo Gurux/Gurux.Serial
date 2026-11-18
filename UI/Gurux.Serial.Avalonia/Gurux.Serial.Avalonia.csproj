@@ -1,31 +1,38 @@
 <Project Sdk="Microsoft.NET.Sdk">
-  <PropertyGroup>
-    <TargetFrameworks>net11.0;net10.0</TargetFrameworks><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile><DefaultItemExcludes>$(DefaultItemExcludes);Tests/**</DefaultItemExcludes>
-    <PackageId>Gurux.Serial.Avalonia</PackageId><Version Condition="'$(BUILD_BUILDNUMBER)' == ''">0.0.1-local</Version><Version Condition="'$(BUILD_BUILDNUMBER)' != ''">$(BUILD_BUILDNUMBER)</Version>
-    <Authors>Gurux Ltd</Authors><Company>Gurux Ltd</Company><Description>Avalonia settings editor for Gurux Serial media.</Description><PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression><PackageReadmeFile>README.md</PackageReadmeFile>
-  </PropertyGroup>
-  <ItemGroup>
-    <PackageReference Include="Avalonia" Version="12.1.6" />
-    <ProjectReference Include="../../Development/Gurux.Serial.csproj" />
-
-    <None Include="README.md" Pack="true" PackagePath="/" />
-  </ItemGroup>
-
-  <PropertyGroup>
-    <RepositoryUrl>https://github.com/Gurux/Gurux.Serial</RepositoryUrl>
-    <IncludeSymbols>true</IncludeSymbols>
-    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-    <PackageIcon>GXSerial.png</PackageIcon>
-    <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.2611.1601</GuruxCommonVersion>
-  </PropertyGroup>
-  <ItemGroup>
-    <None Include="../../Development/GXSerial.png" Pack="true" PackagePath="/" />
-    <None Remove="Tests/**;tests/**" />
-    <Content Remove="Tests/**;tests/**" />
-    <EmbeddedResource Remove="Tests/**;tests/**" />
-  </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
-  </ItemGroup>
+    <PropertyGroup>
+        <TargetFrameworks>net11.0;net10.0</TargetFrameworks>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <GenerateDocumentationFile>true</GenerateDocumentationFile>
+        <DefaultItemExcludes>$(DefaultItemExcludes);Tests/**</DefaultItemExcludes>
+        <PackageId>Gurux.Serial.Avalonia</PackageId>
+        <Version Condition="'$(BUILD_BUILDNUMBER)' == ''">0.0.1-local</Version>
+        <Version Condition="'$(BUILD_BUILDNUMBER)' != ''">$(BUILD_BUILDNUMBER)</Version>
+        <Authors>Gurux Ltd</Authors>
+        <Company>Gurux Ltd</Company>
+        <Description>Avalonia settings editor for Gurux Serial media.</Description>
+        <PackageLicenseExpression>GPL-2.0-only</PackageLicenseExpression>
+        <PackageReadmeFile>README.md</PackageReadmeFile>
+    </PropertyGroup>
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="12.1.6" />
+        <ProjectReference Include="../../Development/Gurux.Serial.csproj" />
+        <None Include="README.md" Pack="true" PackagePath="/" />
+    </ItemGroup>
+    <PropertyGroup>
+        <RepositoryUrl>https://github.com/Gurux/Gurux.Serial</RepositoryUrl>
+        <IncludeSymbols>true</IncludeSymbols>
+        <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+        <PackageIcon>GXSerial.png</PackageIcon>
+        <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.*</GuruxCommonVersion>
+    </PropertyGroup>
+    <ItemGroup>
+        <None Include="../../Development/GXSerial.png" Pack="true" PackagePath="/" />
+        <None Remove="Tests/**;tests/**" />
+        <Content Remove="Tests/**;tests/**" />
+        <EmbeddedResource Remove="Tests/**;tests/**" />
+    </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+    </ItemGroup>
 </Project>

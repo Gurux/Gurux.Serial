@@ -22,7 +22,7 @@
         <GenerateDocumentationFile>true</GenerateDocumentationFile>
         <IncludeSymbols>true</IncludeSymbols>
         <SymbolPackageFormat>snupkg</SymbolPackageFormat>
-        <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.2611.1302</GuruxCommonVersion>
+        <GuruxCommonVersion Condition="'$(GuruxCommonVersion)' == ''">9.0.*</GuruxCommonVersion>
     </PropertyGroup>
     <ItemGroup>
         <PackageReference Include="System.IO.Ports" Version="11.0.0" />
@@ -38,14 +38,14 @@
         <EmbeddedResource Include="Properties/Resources.resx" />
         <EmbeddedResource Include="Bluetooth/devices.csv" LogicalName="Gurux.Serial.BluetoothDevices.csv" />
     </ItemGroup>
-  <ItemGroup>
-    <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="Gurux.Common" Version="9.0.2611.1601" />
+    </ItemGroup>
     <ItemGroup>
         <!-- Legacy Windows Forms editors do not belong to the UI-independent transport library. -->
         <Compile Remove="Shared/PropertiesForm.cs;Shared/PropertiesForm.Designer.cs" />
     </ItemGroup>
-  <ItemGroup>
-    <EmbeddedResource Include="GXSerial.png" LogicalName="Gurux.Serial.MediaIcon.png" />
-  </ItemGroup>
+    <ItemGroup>
+        <EmbeddedResource Include="GXSerial.png" LogicalName="Gurux.Serial.MediaIcon.png" />
+    </ItemGroup>
 </Project>

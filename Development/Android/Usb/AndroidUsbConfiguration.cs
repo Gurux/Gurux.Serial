@@ -59,6 +59,8 @@ internal static class AndroidUsbConfiguration
     /// <param name="token">The opening cancellation token.</param>
     /// <exception cref="NotSupportedException">The requested framing or handshake is unsupported.</exception>
     /// <exception cref="IOException">A control transfer fails or returns a short response.</exception>
+    /// <exception cref="OperationCanceledException">Opening is cancelled before or between control transfers.</exception>
+    /// <remarks>CH34x initialization reads a complete two-byte version response, resets the handshake before configuring framing, and enables short-packet transmission only for chip versions greater than 0x27.</remarks>
     internal static void Apply(UsbDeviceConnection connection, AndroidUsbChipset chipset, int id, SerialPortSettings settings, CancellationToken token)
     {
         if (settings.Handshake != Handshake.None || settings.DataBits is < 5 or > 8 ||
@@ -117,9 +119,11 @@ internal static class AndroidUsbConfiguration
                 Transfer(connection, token, 0x40, 0xa1, 0, 0);
                 byte[] version = new byte[2];
                 Transfer(connection, token, 0xc0, 0x5f, 0, 0, version);
+                int chipVersion = version[0];
                 Transfer(connection, token, 0x40, 0x9a, 0x1312, 0xd982);
                 Transfer(connection, token, 0x40, 0x9a, 0x0f2c, 4);
                 Transfer(connection, token, 0x40, 0x9a, 0x2727, 0);
+                Transfer(connection, token, 0x40, 0xa4, 0xff, 0);
                 int parity = settings.Parity switch
                 {
                     Parity.None => 0,
@@ -131,7 +135,7 @@ internal static class AndroidUsbConfiguration
                 };
                 int framing = 0xc0 | parity | (settings.DataBits - 5) | (stop == 2 ? 4 : 0);
                 Transfer(connection, token, 0x40, 0xa1, 0x9c | (framing << 8), 0x88);
-                Transfer(connection, token, 0x40, 0x9a, 0x1312, version[0] > 0x27 ? a | 0x80 : a);
+                Transfer(connection, token, 0x40, 0x9a, 0x1312, chipVersion > 0x27 ? a | 0x80 : a);
                 Transfer(connection, token, 0x40, 0x9a, 0x0f2c, b);
                 Transfer(connection, token, 0x40, 0xa4, (~((settings.DtrEnable ? 0x20 : 0) | (settings.RtsEnable ? 0x40 : 0))) & 0xffff, 0);
                 break;

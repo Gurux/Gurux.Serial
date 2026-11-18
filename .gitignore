@@ -180,5 +180,13 @@ Android/Gurux.Serial.Example/.vs/
 
 # Tests and validation outputs stay local.
 **/[Tt]ests/
+# Keep CH34x regression sources while excluding other tests and generated outputs.
+!/[Tt]ests/
+/[Tt]ests/*
+!/[Tt]ests/Gurux.Serial.Usb.Tests/
+/[Tt]ests/Gurux.Serial.Usb.Tests/*
+!/[Tt]ests/Gurux.Serial.Usb.Tests/*.cs
+!/[Tt]ests/Gurux.Serial.Usb.Tests/*.csproj
 artifacts/
 /Gurux.Serial.Example/.vs
+*.v2
