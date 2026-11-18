@@ -38,7 +38,7 @@ public static class MediaComponentServices
     /// <returns>The same collection for chained registrations.</returns>
     public static IServiceCollection AddGuruxMediaComponents(this IServiceCollection services)
     {
-        services.AddGXAppearance(options => options.Defaults.Layout = GXLayoutStyle.Auto);
+        services.AddGXAppearance(options => options.Defaults.Layout = Gurux.UI.Components.Enums.LayoutStyle.Auto);
         return services;
     }
 }

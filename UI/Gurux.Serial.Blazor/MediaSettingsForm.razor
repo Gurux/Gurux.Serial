@@ -83,8 +83,11 @@
     private string? _error;
     /// <summary>Prevents duplicate form submissions.</summary>
     private bool _completed;
-    /// <summary>Refreshes general port controls and Save availability after direct Bluetooth selection.</summary>
-    private void BluetoothChanged() => StateHasChanged();
+    /// <summary>Handles Bluetooth selection changes so Blazor refreshes this form's port controls and Save availability.</summary>
+    /// <remarks>Blazor automatically renders this form after its event callback completes.</remarks>
+    private void BluetoothChanged()
+    {
+    }
     /// <summary>Validates and commits the staged values.</summary>
     /// <returns>A task completing after save notification.</returns>
     private async Task Save()
