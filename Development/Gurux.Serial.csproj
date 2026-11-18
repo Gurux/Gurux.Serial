@@ -39,7 +39,7 @@
         <EmbeddedResource Include="Bluetooth/devices.csv" LogicalName="Gurux.Serial.BluetoothDevices.csv" />
     </ItemGroup>
     <ItemGroup>
-        <PackageReference Include="Gurux.Common" Version="9.0.2611.1801" />
+        <PackageReference Include="Gurux.Common" Version="9.0.2611.1802" />
     </ItemGroup>
     <ItemGroup>
         <!-- Legacy Windows Forms editors do not belong to the UI-independent transport library. -->

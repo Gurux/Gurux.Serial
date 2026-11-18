@@ -6,6 +6,9 @@
     <TargetFrameworks Condition="'$(BuildDesktop)' == 'true' Or $([System.String]::Copy('$(RuntimeIdentifier)').StartsWith('linux'))">net11.0;net10.0</TargetFrameworks>
     <TargetFrameworks Condition="'$(BuildMobile)' == 'true'">$(TargetFrameworks);net11.0-android;net10.0-android</TargetFrameworks>
     <TargetFrameworks Condition="'$(BuildApple)' == 'true'">$(TargetFrameworks);net11.0-ios;net10.0-ios</TargetFrameworks>
+    <!-- Keep framework-specific MAUI versions behind one package reference for design-time restore. -->
+    <MauiVersion Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '10.0'">10.0.130</MauiVersion>
+    <MauiVersion Condition="$([MSBuild]::GetTargetFrameworkVersion('$(TargetFramework)')) == '11.0'">11.0.10</MauiVersion>
     <UseMaui Condition="'$(TargetFramework)' != '' And $([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) != ''">true</UseMaui>
     <SingleProject>true</SingleProject>
     <OutputType>Exe</OutputType>
