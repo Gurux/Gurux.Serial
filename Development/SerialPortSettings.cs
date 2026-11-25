@@ -49,10 +49,12 @@ public sealed class SerialPortSettings
     public StopBits StopBits { get; set; } = StopBits.One;
     /// <summary>Gets or sets the hardware or software flow control policy.</summary>
     public Handshake Handshake { get; set; }
-    /// <summary>Gets or sets whether the data terminal ready signal is asserted.</summary>
-    public bool DtrEnable { get; set; }
-    /// <summary>Gets or sets whether the request to send signal is asserted.</summary>
-    public bool RtsEnable { get; set; }
+    /// <summary>Gets or sets whether the data terminal ready signal is asserted. Defaults to true for optical-head and legacy example compatibility.</summary>
+    /// <remarks>Set to false explicitly when the connected device requires the signal to remain inactive.</remarks>
+    public bool DtrEnable { get; set; } = true;
+    /// <summary>Gets or sets whether the request to send signal is asserted. Defaults to true for optical-head and legacy example compatibility.</summary>
+    /// <remarks>Set to false explicitly when the connected device requires the signal to remain inactive.</remarks>
+    public bool RtsEnable { get; set; } = true;
 
     /// <summary>Collects invalid device selection and framing settings without opening or changing the transport.</summary>
     /// <returns>All localized configuration errors, or an empty list when the settings are valid.</returns>

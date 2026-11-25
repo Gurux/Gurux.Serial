@@ -109,13 +109,15 @@ Configure the device and line settings before opening.
 | `Parity` | `None` | Parity checking. |
 | `StopBits` | `One` | Stop interval. |
 | `Handshake` | `None` | Hardware/software flow control policy. |
-| `DtrEnable` / `RtsEnable` | `false` | Manually controlled modem signals, where supported. |
+| `DtrEnable` / `RtsEnable` | `true` | Asserted by default for optical heads and legacy examples, where supported. Explicit `false` disables either signal. |
 | `PortSettings.BluetoothChannel` | `0` | Desktop RFCOMM automatic SDP resolution; 1–30 selects an explicit channel. |
 | `PortSettings.BluetoothProfile` | `null` | BLE service and characteristic profile. Required for `ble:` identifiers. |
 
 The properties on `GXSerial` forward to its `PortSettings` object. `GetAvailableBaudRates()` returns conventional choices, including 57600, 128000, 230400, 460800 and 921600; it does not probe hardware.
 
 `Settings` stores legacy XML configuration, including the `Port`, `Bps` and `ByteSize` names. `JsonSettings` stores source-generated JSON. Both preserve Bluetooth profile configuration; replacing either requires closed media with no pending open or cleanup operation.
+
+XML and JSON configurations that omit `DtrEnable` or `RtsEnable` use the enabled defaults. Opening a port preserves explicitly configured signal values.
 
 ### Changing settings while connected
 

@@ -94,9 +94,9 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
     public StopBits StopBits { get => PortSettings.StopBits; set => PortSettings.StopBits = value; }
     /// <summary>Gets or sets the hardware or software flow control policy.</summary>
     public Handshake Handshake { get => PortSettings.Handshake; set => PortSettings.Handshake = value; }
-    /// <summary>Gets or sets whether the data terminal ready signal is asserted.</summary>
+    /// <summary>Gets or sets whether the data terminal ready signal is asserted. Defaults to true; an explicit false value is preserved when opening.</summary>
     public bool DtrEnable { get => PortSettings.DtrEnable; set => PortSettings.DtrEnable = value; }
-    /// <summary>Gets or sets whether the request to send signal is asserted.</summary>
+    /// <summary>Gets or sets whether the request to send signal is asserted. Defaults to true; an explicit false value is preserved when opening.</summary>
     public bool RtsEnable { get => PortSettings.RtsEnable; set => PortSettings.RtsEnable = value; }
     /// <inheritdoc/>
     public override string Name => PortName ?? string.Empty;
@@ -151,8 +151,8 @@ public partial class GXSerial : GXMediaBase, IGXSerialSettings, IGXMediaIconProv
                     StopBits = Enum.Parse<StopBits>((string?)xml.Element("StopBits") ?? "One"),
                     Parity = Enum.Parse<Parity>((string?)xml.Element("Parity") ?? "None"),
                     Handshake = Enum.Parse<Handshake>((string?)xml.Element("Handshake") ?? "None"),
-                    DtrEnable = (bool?)xml.Element("DtrEnable") ?? false,
-                    RtsEnable = (bool?)xml.Element("RtsEnable") ?? false,
+                    DtrEnable = (bool?)xml.Element("DtrEnable") ?? true,
+                    RtsEnable = (bool?)xml.Element("RtsEnable") ?? true,
                     BluetoothChannel = (int?)xml.Element("BluetoothChannel") ?? 0,
                     BluetoothProfile = xml.Element("BluetoothProfile") is XElement bluetooth ? new BluetoothLeProfile(
                         Guid.Parse((string)bluetooth.Element("Service")!),
